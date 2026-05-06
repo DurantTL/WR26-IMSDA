@@ -63,6 +63,47 @@ function wr26_normalize_payment_method($method) {
     return $payment_method;
 }
 
+function wr26_extract_amount($raw, $entry_id, $wpdb) {
+    $amount = 0.0;
+    $meta = $wpdb->get_var($wpdb->prepare("SELECT value FROM {$wpdb->prefix}fluentform_submission_meta WHERE submission_id=%d AND meta_key='_payment_entries' ORDER BY id DESC LIMIT 1", $entry_id));
+    if ($meta) {
+        $m = json_decode($meta, true);
+        if (is_array($m)) {
+            $amt = 0;
+            if (isset($m['amount'])) $amt = $m['amount'];
+            elseif (!empty($m[0]['amount'])) $amt = $m[0]['amount'];
+            $amount = floatval($amt) / 100;
+        }
+    }
+    if ($amount > 0) return $amount;
+    foreach (array('total', 'payment_total', 'registration_total', 'amount', 'final_amount', 'calculated_total', 'order_total') as $key) {
+        if (!isset($raw[$key])) continue;
+        $candidate = is_array($raw[$key]) ? '' : str_replace(array('$', ','), '', (string) $raw[$key]);
+        if (is_numeric($candidate) && floatval($candidate) > 0) {
+            return floatval($candidate);
+        }
+    }
+    return 0.0;
+}
+
+function wr26_has_meaningful_attendee_data($candidate) {
+    $checks = array(
+        wr26_value_from_keys($candidate, array('first_name', 'attendee_first_name', 'firstName'), ''),
+        wr26_value_from_keys($candidate, array('last_name', 'attendee_last_name', 'lastName'), ''),
+        wr26_value_from_keys($candidate, array('email', 'attendee_email'), ''),
+        wr26_value_from_keys($candidate, array('phone', 'attendee_phone'), ''),
+        wr26_value_from_keys($candidate, array('meal_preference', 'attendee_meal_preference'), ''),
+        wr26_value_from_keys($candidate, array('dietary_needs', 'attendee_dietary_needs'), ''),
+        wr26_value_from_keys($candidate, array('childcare_needed', 'attendee_childcare_needed'), '')
+    );
+    foreach ($checks as $value) {
+        if (is_array($value) && !empty($value)) return true;
+        if (trim((string) $value) !== '') return true;
+    }
+    $seminars = wr26_build_seminar_preferences($candidate);
+    return !empty($seminars);
+}
+
 function wr26_build_seminar_preferences($attendee) {
     $preferences = array();
     $direct = wr26_value_from_keys($attendee, array('seminar_preferences', 'session_preferences'), array());
@@ -132,17 +173,7 @@ function wr26_parse_ff_entry($entry_id) {
     }
     $payment_method = wr26_normalize_payment_method($raw['payment_method'] ?? $raw['payment'] ?? $raw['pay_method'] ?? get_option('wr26_payment_default', 'pay_later'));
     $promo = strtoupper(sanitize_text_field($raw['promo_code'] ?? $raw['discount_code'] ?? $raw['coupon_code'] ?? $raw['coupon'] ?? ''));
-    $amount = 0.0;
-    $meta = $wpdb->get_var($wpdb->prepare("SELECT value FROM {$wpdb->prefix}fluentform_submission_meta WHERE submission_id=%d AND meta_key='_payment_entries' ORDER BY id DESC LIMIT 1", $entry_id));
-    if ($meta) {
-        $m = json_decode($meta, true);
-        if (is_array($m)) {
-            $amt = 0;
-            if (isset($m['amount'])) $amt = $m['amount'];
-            elseif (!empty($m[0]['amount'])) $amt = $m[0]['amount'];
-            $amount = floatval($amt) / 100;
-        }
-    }
+    $amount = wr26_extract_amount($raw, $entry_id, $wpdb);
     $attendees = array();
     foreach (array('attendees', 'attendee', 'guests', 'registrants', 'people') as $container_key) {
         if (!empty($raw[$container_key]) && is_array($raw[$container_key])) {
@@ -150,7 +181,7 @@ function wr26_parse_ff_entry($entry_id) {
                 if (!is_array($candidate)) continue;
                 $first_name = sanitize_text_field(wr26_value_from_keys($candidate, array('first_name', 'attendee_first_name', 'firstName'), ''));
                 $last_name = sanitize_text_field(wr26_value_from_keys($candidate, array('last_name', 'attendee_last_name', 'lastName'), ''));
-                if (!$first_name && !$last_name) continue;
+                if (!wr26_has_meaningful_attendee_data($candidate)) continue;
                 $attendees[] = array(
                     'attendee_id' => 'A-'.intval($entry_id).'-'.($idx + 1),
                     'first_name' => $first_name,

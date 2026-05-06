@@ -238,6 +238,19 @@ When creating the Web App deployment, set **Execute as: Me** and **Access: Anyon
 - Missing edit links: verify Edit Registration Page URL in WP settings.
 - Square payment delay: the `fluentform/payment_paid` hook only fires after Square's webhook confirms the charge, which can take 15–45 seconds after the registrant submits. The entry will not appear in the queue until that hook fires. This is expected behavior, not a bug.
 
+## Before deployment
+- Run `wr26EnsureSheetSetup()`.
+- Run `wr26SetupCheck()`.
+- Confirm all Config values are present and correct.
+- Confirm Fluent Forms attendee repeater field names match parser mappings.
+- Submit a single-attendee Pay Later test.
+- Submit a multi-attendee Pay Later test.
+- Submit a Square/card test and ensure it remains pending until `fluentform/payment_paid`.
+- Confirm Attendees rows are written correctly.
+- Confirm SeminarPreferences rows are written correctly.
+- Confirm confirmation email wording includes payment/edit guidance and childcare messaging.
+- Confirm Check-In **Record Payment** sets status to `paid_onsite`.
+
 ## 22) Implementation checklist
 - Confirm Fluent Forms attendee repeater field names.
 - Confirm seminar titles and capacities.
