@@ -233,6 +233,8 @@ Stats tab shows a live Payments Pending count so you can track outstanding balan
 
 When creating the Web App deployment, set **Execute as: Me** and **Access: Anyone, even anonymous**. If Execute as is set to **User accessing the web app**, all requests will fail with a permissions error.
 
+`gas/.clasp.json` in this repo should contain a placeholder script ID only. Replace it locally with your real Apps Script `scriptId` before running `clasp push`, and do not commit private IDs.
+
 ## 21) Troubleshooting
 - Unauthorized: ensure WP secret equals Config SECRET.
 - No sync: run queue manually from dashboard action.
@@ -252,6 +254,16 @@ When creating the Web App deployment, set **Execute as: Me** and **Access: Anyon
 - Confirm SeminarPreferences rows are written correctly.
 - Confirm confirmation email wording includes payment/edit guidance and childcare messaging.
 - Confirm Check-In **Record Payment** sets status to `paid_onsite`.
+- The WR26 admin management pages currently require a UI implementation or server-rendered fallback. Settings works, but Registrations/Waitlist/Check-In/Rosters/Promo pages are scaffolds unless UI code is added.
+
+### Manual runtime/data-integrity regression checklist
+- Submit the same Fluent Forms entry twice (or retry queue): no duplicate registration row.
+- Submit the same waitlist entry twice: no duplicate waitlist row.
+- Promote a waitlist entry: no `checkCapacity()` crash.
+- Public edit link save works via `wr26_save_edit`.
+- Admin edit API action works (`adminEditRegistration`).
+- Duplicate GAS response does not increment WordPress registered/waitlist count.
+- Full-capacity register attempt fails clearly (or routes safely via existing waitlist logic).
 
 ## 22) Implementation checklist
 - Confirm Fluent Forms attendee repeater field names.

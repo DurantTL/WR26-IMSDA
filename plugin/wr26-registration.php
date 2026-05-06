@@ -244,8 +244,8 @@ function wr26_build_and_send($entry_id, $action) {
     if (is_wp_error($r)) return $r->get_error_message();
     $body = json_decode(wp_remote_retrieve_body($r), true);
     if (empty($body['success'])) return !empty($body['message']) ? $body['message'] : 'Unknown GAS error';
-    if ($action === 'register') update_option('wr26_registered_count', intval(get_option('wr26_registered_count', 0)) + 1, false);
-    if ($action === 'waitlist') update_option('wr26_waitlist_count', intval(get_option('wr26_waitlist_count', 0)) + 1, false);
+    if ($action === 'register' && empty($body['duplicate'])) update_option('wr26_registered_count', intval(get_option('wr26_registered_count', 0)) + 1, false);
+    if ($action === 'waitlist' && empty($body['duplicate'])) update_option('wr26_waitlist_count', intval(get_option('wr26_waitlist_count', 0)) + 1, false);
     return true;
 }
 
@@ -355,7 +355,7 @@ add_action('admin_menu', function(){
 add_action('admin_enqueue_scripts', function(){ wp_enqueue_script('jquery'); wp_localize_script('jquery','wr26',array('ajax_url'=>admin_url('admin-ajax.php'),'nonce'=>wp_create_nonce('wr26_admin_nonce'))); });
 function wr26_admin_header($title,$active){ echo '<div class="wrap"><h1>'.esc_html($title).'</h1><h2 class="nav-tab-wrapper">'; foreach(array('dashboard'=>'Dashboard','registrations'=>'Registrations','waitlist'=>'Waitlist','checkin'=>'Check-In','rosters'=>'Church Rosters','promo'=>'Promo Codes','settings'=>'Settings') as $slug=>$label){$page='wr26-'.$slug;echo '<a class="nav-tab '.($active===$slug?'nav-tab-active':'').'" href="'.esc_url(admin_url('admin.php?page='.$page)).'">'.esc_html($label).'</a>';} echo '</h2></div>'; }
 function wr26_page_dashboard(){ wr26_admin_header('WR26 Dashboard','dashboard'); echo '<p>Use other tabs for full management. Queue and failed items are managed via AJAX actions.</p>'; }
-function wr26_page_generic(){ wr26_admin_header('WR26',''); echo '<div id="wr26-app"></div>'; }
+function wr26_page_generic(){ wr26_admin_header('WR26',''); echo '<div class="notice notice-warning"><p>The WR26 admin management pages currently require a UI implementation or server-rendered fallback. Settings works, but Registrations/Waitlist/Check-In/Rosters/Promo pages are scaffolds unless UI code is added.</p></div><div id="wr26-app"></div>'; }
 function wr26_page_settings(){
     if(isset($_POST['wr26_save_settings'])&&check_admin_referer('wr26_save_settings')){ foreach(array('wr26_gas_url','wr26_form_id','wr26_capacity','wr26_waitlist_enabled','wr26_edit_page_url','wr26_event_name','wr26_event_dates','wr26_event_location','wr26_payment_default','wr26_worker_registration_url') as $k){ if(isset($_POST[$k])) update_option($k,sanitize_text_field($_POST[$k])); } if($_POST['wr26_registered_count']!=='') update_option('wr26_registered_count',intval($_POST['wr26_registered_count'])); echo '<div class="updated"><p>Saved.</p></div>'; }
     wr26_admin_header('WR26 Settings','settings');
