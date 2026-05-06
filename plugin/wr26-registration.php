@@ -201,7 +201,18 @@ add_action('wp_ajax_wr26_admin_action', function(){
     if($a==='runQueue'){ wr26_process_dispatch_queue(); wp_send_json_success(array('message'=>'Queue processed')); }
     if($a==='dismissFailed'){ $i=intval($_POST['index']??-1); $f=get_option('wr26_failed_submissions',array()); if(isset($f[$i])){array_splice($f,$i,1);} update_option('wr26_failed_submissions',$f,false); wp_send_json_success(); }
     if($a==='retryFailed'){ $i=intval($_POST['index']??-1); $f=get_option('wr26_failed_submissions',array()); if(!isset($f[$i])) wp_send_json_error(); $item=$f[$i]; $item['attempts']=0; unset($item['error'],$item['failed_at']); $q=get_option('wr26_dispatch_queue',array()); $q[]=$item; update_option('wr26_dispatch_queue',$q,false); array_splice($f,$i,1); update_option('wr26_failed_submissions',$f,false); wp_send_json_success(); }
-    $map=array('getRegistrations','adminEditRegistration','transferRegistration','getWaitlist','promoteWaitlist','removeWaitlist','checkinByToken','checkinById','searchRegistrations','getChurchRosters','getCheckInStats','getPromoCodes','savePromoCode','deletePromoCode');
+    if($a==='recordPayment'){
+        wp_send_json(wr26_gas_request(array(
+            'action' => 'recordPayment',
+            'registrationId' => sanitize_text_field($_POST['registration_id'] ?? ''),
+            'paymentMethod' => sanitize_text_field($_POST['payment_method'] ?? ''),
+            'amountPaid' => floatval($_POST['amount_paid'] ?? 0),
+            'checkNumber' => sanitize_text_field($_POST['check_number'] ?? ''),
+            'paymentNotes' => sanitize_textarea_field($_POST['payment_notes'] ?? ''),
+            'adminUser' => wp_get_current_user()->user_login,
+        )));
+    }
+    $map=array('getRegistrations','adminEditRegistration','transferRegistration','getWaitlist','promoteWaitlist','removeWaitlist','checkinByToken','checkinById','searchRegistrations','getChurchRosters','getCheckInStats','getPromoCodes','savePromoCode','deletePromoCode','recordPayment');
     if(!in_array($a,$map,true)) wp_send_json_error(array('message'=>'Invalid action'));
     $payload=array('action'=>$a,'registrationId'=>sanitize_text_field($_POST['registration_id']??''),'waitlistId'=>sanitize_text_field($_POST['waitlist_id']??''),'token'=>sanitize_text_field($_POST['token']??''),'q'=>sanitize_text_field($_POST['q']??''),'status'=>sanitize_text_field($_POST['status']??''),'code'=>sanitize_text_field($_POST['code']??''),'fields'=>$_POST['fields']??array(),'adminUser'=>wp_get_current_user()->user_email,'newFirstName'=>sanitize_text_field($_POST['new_first_name']??''),'newLastName'=>sanitize_text_field($_POST['new_last_name']??''),'newEmail'=>sanitize_email($_POST['new_email']??''),'newPhone'=>sanitize_text_field($_POST['new_phone']??''),'newChurch'=>sanitize_text_field($_POST['new_church']??''),'reason'=>sanitize_textarea_field($_POST['reason']??''),'refundNotes'=>sanitize_textarea_field($_POST['refund_notes']??''),'adminNotes'=>sanitize_textarea_field($_POST['admin_notes']??''),'promo'=>array_map('sanitize_text_field',$_POST['promo']??array()));
     wp_send_json(wr26_gas_request($payload));

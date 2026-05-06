@@ -61,12 +61,28 @@ When full, queue action becomes `waitlist`; promote/remove from Waitlist tab; pr
 ## 11) Check-in day guide
 Use Check-In tab QR scanner (camera) first; if needed use manual search and check-in by ID.
 
-## 12) Deployment notes
+## 12) On-site payment collection
+Registrants who paid by check or who arrive with an outstanding balance can have payment recorded directly from the Check-In tab without interrupting the check-in flow.
+
+From the QR Scanner or Manual Search tab:
+1. Complete check-in as normal.
+2. If the result card shows a payment warning, tap Record Payment.
+3. Select method (Cash / Check / Square / Other).
+4. Confirm the amount and enter a check number if applicable.
+5. Tap Save Payment — the registration is updated immediately in the Google Sheet.
+
+From the Registrations tab:
+- Any row with a pending payment status shows a 💲 Record button.
+- Use this for pre-event payment cleanup before check-in day.
+
+Stats tab shows a live Payments Pending count so you can track outstanding balances throughout the event.
+
+## 13) Deployment notes
 `clasp push` then create new deployment URL; update WP `wr26_gas_url` after every redeploy URL change.
 
 When creating the Web App deployment, set **Execute as: Me** and **Access: Anyone, even anonymous**. If Execute as is set to **User accessing the web app**, all requests will fail with a permissions error.
 
-## 13) Troubleshooting
+## 14) Troubleshooting
 - Unauthorized: ensure WP secret equals Config SECRET.
 - No sync: run queue manually from dashboard action.
 - Wrong form: verify `wr26_form_id`.
