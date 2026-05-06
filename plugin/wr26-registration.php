@@ -97,7 +97,7 @@ function wr26_parse_ff_entry($entry_id) {
         'entry_id' => intval($sub['id']), 'form_id' => intval($sub['form_id']),
         'first_name' => sanitize_text_field($first), 'last_name' => sanitize_text_field($last),
         'email' => sanitize_email($raw['email'] ?? ''), 'phone' => sanitize_text_field($raw['phone'] ?? ''),
-        'church' => sanitize_text_field($raw['church'] ?? ''), 'housing_option' => sanitize_text_field($raw['housing_option'] ?? $raw['housing'] ?? ''),
+        'church' => sanitize_text_field($raw['church'] ?? ''),
         'arrival_date' => sanitize_text_field($raw['arrival_date'] ?? ''), 'departure_date' => sanitize_text_field($raw['departure_date'] ?? ''),
         'dietary_needs' => sanitize_textarea_field($raw['dietary_needs'] ?? ''),
         'emergency_contact_name' => sanitize_text_field($raw['emergency_contact_name'] ?? ''),
@@ -187,8 +187,6 @@ function wr26_admin_guard() {
     if (!check_ajax_referer('wr26_admin_nonce', 'nonce', false)) wp_send_json_error(array('message' => 'Invalid nonce'), 403);
 }
 
-add_action('wp_ajax_wr26_get_availability', fn() => wp_send_json(wr26_gas_request(array('action' => 'getAvailability'))));
-add_action('wp_ajax_nopriv_wr26_get_availability', fn() => wp_send_json(wr26_gas_request(array('action' => 'getAvailability'))));
 add_action('wp_ajax_wr26_get_reg_by_token', function(){ $token=sanitize_text_field($_POST['token']??''); wp_send_json(wr26_gas_request(array('action'=>'getRegistrationByEditToken','token'=>$token))); });
 add_action('wp_ajax_nopriv_wr26_get_reg_by_token', function(){ $token=sanitize_text_field($_POST['token']??''); wp_send_json(wr26_gas_request(array('action'=>'getRegistrationByEditToken','token'=>$token))); });
 add_action('wp_ajax_wr26_save_edit', function(){
@@ -232,6 +230,4 @@ function wr26_page_settings(){
     echo '<p>GAS Secret: <code>'.esc_html(get_option('wr26_gas_secret','')).'</code></p><p><button class="button button-primary" name="wr26_save_settings" value="1">Save</button></p></form>';
 }
 
-add_shortcode('wr_availability', fn()=>'<div id="wr26-availability">Loading availability...</div>');
-add_shortcode('wr_availability_banner', fn()=>'<div id="wr26-availability-banner">Loading...</div>');
 add_shortcode('wr_edit_registration', fn()=>'<div id="wr26-edit-registration">Edit form loads via AJAX using token.</div>');
