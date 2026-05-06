@@ -27,8 +27,58 @@ function wr26_default_options() {
         'wr26_dispatch_last_run' => '',
         'wr26_event_name' => "Women's Retreat 2026",
         'wr26_event_dates' => 'October 9–11, 2026',
-        'wr26_event_location' => 'Des Moines, IA'
+        'wr26_event_location' => 'Des Moines, IA',
+        'wr26_payment_default' => 'pay_later',
+        'wr26_early_bird_price' => '120',
+        'wr26_regular_price' => '140',
+        'wr26_early_bird_end_date' => '2026-08-14',
+        'wr26_regular_end_date' => '2026-09-17',
+        'wr26_worker_registration_url' => '',
+        'wr26_childcare_enabled' => '1',
+        'wr26_childcare_minimum_children' => '',
+        'wr26_square_fee_enabled' => '0',
+        'wr26_square_fee_percent' => '',
+        'wr26_square_fee_fixed' => '',
+        'wr26_seminar_full_behavior' => 'allow_with_review',
+        'wr26_seminar_capacity_default' => ''
     );
+}
+
+function wr26_value_from_keys($source, $keys, $default = '') {
+    foreach ((array) $keys as $key) {
+        if (is_array($source) && array_key_exists($key, $source) && $source[$key] !== '' && $source[$key] !== null) {
+            return $source[$key];
+        }
+    }
+    return $default;
+}
+
+function wr26_normalize_payment_method($method) {
+    $payment_method = strtolower(sanitize_text_field($method));
+    if (!$payment_method) return 'pay_later';
+    if (strpos($payment_method, 'pay later') !== false || strpos($payment_method, 'later') !== false) return 'pay_later';
+    if (strpos($payment_method, 'square') !== false || strpos($payment_method, 'card') !== false || strpos($payment_method, 'credit') !== false) return 'square';
+    if (strpos($payment_method, 'check') !== false) return 'check';
+    if (strpos($payment_method, 'cash') !== false) return 'cash';
+    return $payment_method;
+}
+
+function wr26_build_seminar_preferences($attendee) {
+    $preferences = array();
+    $direct = wr26_value_from_keys($attendee, array('seminar_preferences', 'session_preferences'), array());
+    if (!empty($direct)) {
+        $preferences['raw'] = $direct;
+    }
+    foreach (array('friday_session', 'saturday_session_1', 'saturday_session_2', 'sunday_session') as $slot) {
+        $value = wr26_value_from_keys($attendee, array($slot), '');
+        if ($value !== '') $preferences[$slot] = $value;
+    }
+    foreach ($attendee as $key => $value) {
+        if (preg_match('/^session_\d+_preference_\d+$/', (string) $key)) {
+            $preferences[$key] = $value;
+        }
+    }
+    return $preferences;
 }
 
 function wr26_activate() {
@@ -80,7 +130,7 @@ function wr26_parse_ff_entry($entry_id) {
             if (!$last && !empty($v['last_name'])) $last = $v['last_name'];
         }
     }
-    $payment_method = strtolower(sanitize_text_field($raw['payment_method'] ?? $raw['payment'] ?? $raw['pay_method'] ?? ''));
+    $payment_method = wr26_normalize_payment_method($raw['payment_method'] ?? $raw['payment'] ?? $raw['pay_method'] ?? get_option('wr26_payment_default', 'pay_later'));
     $promo = strtoupper(sanitize_text_field($raw['promo_code'] ?? $raw['discount_code'] ?? $raw['coupon_code'] ?? $raw['coupon'] ?? ''));
     $amount = 0.0;
     $meta = $wpdb->get_var($wpdb->prepare("SELECT value FROM {$wpdb->prefix}fluentform_submission_meta WHERE submission_id=%d AND meta_key='_payment_entries' ORDER BY id DESC LIMIT 1", $entry_id));
@@ -93,6 +143,46 @@ function wr26_parse_ff_entry($entry_id) {
             $amount = floatval($amt) / 100;
         }
     }
+    $attendees = array();
+    foreach (array('attendees', 'attendee', 'guests', 'registrants', 'people') as $container_key) {
+        if (!empty($raw[$container_key]) && is_array($raw[$container_key])) {
+            foreach ($raw[$container_key] as $idx => $candidate) {
+                if (!is_array($candidate)) continue;
+                $first_name = sanitize_text_field(wr26_value_from_keys($candidate, array('first_name', 'attendee_first_name', 'firstName'), ''));
+                $last_name = sanitize_text_field(wr26_value_from_keys($candidate, array('last_name', 'attendee_last_name', 'lastName'), ''));
+                if (!$first_name && !$last_name) continue;
+                $attendees[] = array(
+                    'attendee_id' => 'A-'.intval($entry_id).'-'.($idx + 1),
+                    'first_name' => $first_name,
+                    'last_name' => $last_name,
+                    'phone' => sanitize_text_field(wr26_value_from_keys($candidate, array('phone', 'attendee_phone'), '')),
+                    'email' => sanitize_email(wr26_value_from_keys($candidate, array('email', 'attendee_email'), '')),
+                    'church' => sanitize_text_field(wr26_value_from_keys($candidate, array('church', 'attendee_church'), '')),
+                    'attendee_type' => sanitize_text_field(wr26_value_from_keys($candidate, array('adult_child', 'attendee_type', 'type', 'age_group'), '')),
+                    'meal_preference' => sanitize_text_field(wr26_value_from_keys($candidate, array('meal_preference', 'attendee_meal_preference'), '')),
+                    'dietary_needs' => sanitize_textarea_field(wr26_value_from_keys($candidate, array('dietary_needs', 'attendee_dietary_needs'), '')),
+                    'childcare_needed' => sanitize_text_field(wr26_value_from_keys($candidate, array('childcare_needed', 'attendee_childcare_needed'), '')),
+                    'seminar_preferences' => wr26_build_seminar_preferences($candidate)
+                );
+            }
+        }
+    }
+    if (empty($attendees)) {
+        $attendees[] = array(
+            'attendee_id' => 'A-'.intval($entry_id).'-1',
+            'first_name' => sanitize_text_field($first),
+            'last_name' => sanitize_text_field($last),
+            'phone' => sanitize_text_field($raw['phone'] ?? ''),
+            'email' => sanitize_email($raw['email'] ?? ''),
+            'church' => sanitize_text_field($raw['church'] ?? ''),
+            'attendee_type' => sanitize_text_field(wr26_value_from_keys($raw, array('adult_child', 'attendee_type', 'type', 'age_group'), '')),
+            'meal_preference' => sanitize_text_field(wr26_value_from_keys($raw, array('meal_preference', 'attendee_meal_preference'), '')),
+            'dietary_needs' => sanitize_textarea_field($raw['dietary_needs'] ?? ''),
+            'childcare_needed' => sanitize_text_field(wr26_value_from_keys($raw, array('childcare_needed', 'attendee_childcare_needed'), '')),
+            'seminar_preferences' => wr26_build_seminar_preferences($raw)
+        );
+    }
+
     return array(
         'entry_id' => intval($sub['id']), 'form_id' => intval($sub['form_id']),
         'first_name' => sanitize_text_field($first), 'last_name' => sanitize_text_field($last),
@@ -104,7 +194,9 @@ function wr26_parse_ff_entry($entry_id) {
         'emergency_contact_phone' => sanitize_text_field($raw['emergency_contact_phone'] ?? ''),
         'special_needs' => sanitize_textarea_field($raw['special_needs'] ?? ''), 'promo_code' => $promo,
         'payment_method' => $payment_method, 'amount' => floatval($amount), 'ip_address' => sanitize_text_field($sub['ip']),
-        'submitted_at' => sanitize_text_field($sub['created_at'])
+        'submitted_at' => sanitize_text_field($sub['created_at']),
+        'worker_flag' => sanitize_text_field(wr26_value_from_keys($raw, array('worker', 'is_worker', 'worker_registration', 'non_paying_worker'), '')),
+        'attendees' => $attendees
     );
 }
 
@@ -234,10 +326,10 @@ function wr26_admin_header($title,$active){ echo '<div class="wrap"><h1>'.esc_ht
 function wr26_page_dashboard(){ wr26_admin_header('WR26 Dashboard','dashboard'); echo '<p>Use other tabs for full management. Queue and failed items are managed via AJAX actions.</p>'; }
 function wr26_page_generic(){ wr26_admin_header('WR26',''); echo '<div id="wr26-app"></div>'; }
 function wr26_page_settings(){
-    if(isset($_POST['wr26_save_settings'])&&check_admin_referer('wr26_save_settings')){ foreach(array('wr26_gas_url','wr26_form_id','wr26_capacity','wr26_waitlist_enabled','wr26_edit_page_url','wr26_event_name','wr26_event_dates','wr26_event_location') as $k){ if(isset($_POST[$k])) update_option($k,sanitize_text_field($_POST[$k])); } if($_POST['wr26_registered_count']!=='') update_option('wr26_registered_count',intval($_POST['wr26_registered_count'])); echo '<div class="updated"><p>Saved.</p></div>'; }
+    if(isset($_POST['wr26_save_settings'])&&check_admin_referer('wr26_save_settings')){ foreach(array('wr26_gas_url','wr26_form_id','wr26_capacity','wr26_waitlist_enabled','wr26_edit_page_url','wr26_event_name','wr26_event_dates','wr26_event_location','wr26_payment_default','wr26_worker_registration_url') as $k){ if(isset($_POST[$k])) update_option($k,sanitize_text_field($_POST[$k])); } if($_POST['wr26_registered_count']!=='') update_option('wr26_registered_count',intval($_POST['wr26_registered_count'])); echo '<div class="updated"><p>Saved.</p></div>'; }
     wr26_admin_header('WR26 Settings','settings');
     echo '<form method="post">'; wp_nonce_field('wr26_save_settings');
-    foreach(array('wr26_gas_url'=>'GAS URL','wr26_form_id'=>'Fluent Form ID','wr26_capacity'=>'Capacity','wr26_waitlist_enabled'=>'Waitlist Enabled','wr26_edit_page_url'=>'Edit Registration Page URL','wr26_event_name'=>'Event Name','wr26_event_dates'=>'Event Dates','wr26_event_location'=>'Event Location','wr26_registered_count'=>'Registered Count Override') as $k=>$label){ echo '<p><label>'.esc_html($label).'<br><input class="regular-text" name="'.esc_attr($k).'" value="'.esc_attr(get_option($k,'')).'"></label></p>'; }
+    foreach(array('wr26_gas_url'=>'GAS URL','wr26_form_id'=>'Fluent Form ID','wr26_capacity'=>'Capacity','wr26_waitlist_enabled'=>'Waitlist Enabled','wr26_edit_page_url'=>'Edit Registration Page URL','wr26_event_name'=>'Event Name','wr26_event_dates'=>'Event Dates','wr26_event_location'=>'Event Location','wr26_payment_default'=>'Default Payment Method','wr26_worker_registration_url'=>'Worker Registration URL','wr26_registered_count'=>'Registered Count Override') as $k=>$label){ echo '<p><label>'.esc_html($label).'<br><input class="regular-text" name="'.esc_attr($k).'" value="'.esc_attr(get_option($k,'')).'"></label></p>'; }
     echo '<p>GAS Secret: <code>'.esc_html(get_option('wr26_gas_secret','')).'</code></p><p><button class="button button-primary" name="wr26_save_settings" value="1">Save</button></p></form>';
 }
 

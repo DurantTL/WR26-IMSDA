@@ -7,3 +7,30 @@ function updateRegistration(id,fields){try{var s=getSS().getSheetByName('Registr
 function getAllRegistrations(filters){var s=getSS().getSheetByName('Registrations');var rows=s.getDataRange().getValues().slice(1).map(rowToObject);return rows.filter(function(r){if(filters&&filters.status&&r.status!==filters.status)return false;var q=(filters&&filters.search?String(filters.search).toLowerCase():'');if(q && [r.firstName,r.lastName,r.email,r.church].join(' ').toLowerCase().indexOf(q)===-1)return false;return true;});}
 function searchRegistrations(q){q=String(q||'').toLowerCase();return getAllRegistrations({}).filter(function(r){return [r.firstName,r.lastName,r.email,r.church].join(' ').toLowerCase().indexOf(q)>-1;}).slice(0,20);}
 function getChurchRosters(){var groups={};getAllRegistrations({status:'active'}).forEach(function(r){var c=r.church||'Unspecified';if(!groups[c])groups[c]=[];groups[c].push(r);});return Object.keys(groups).sort().map(function(c){return {name:c,members:groups[c]};});}
+function writeAttendeesForRegistration(reg,attendees){
+  try{
+    var sh=getSS().getSheetByName('Attendees');
+    if(!sh)return {success:true,warning:'Attendees tab missing; attendee rows skipped.'};
+    (attendees||[]).forEach(function(a){
+      sh.appendRow([a.attendee_id,reg.registrationId,a.first_name,a.last_name,a.phone,a.email,a.church,a.attendee_type,a.meal_preference,a.dietary_needs,a.childcare_needed,a.seminar_preferences&&Object.keys(a.seminar_preferences).length?'yes':'no','']);
+    });
+    return {success:true};
+  }catch(e){return {success:true,warning:'Attendees write warning: '+e.message};}
+}
+function flattenSeminarPreferences(pref){
+  var out=[];if(!pref)return out;
+  Object.keys(pref).forEach(function(slot){var v=pref[slot];if(Array.isArray(v)){v.forEach(function(item,idx){out.push({slot:slot,rank:idx+1,title:item});});}else if(v&&typeof v==='object'){Object.keys(v).forEach(function(k){out.push({slot:slot+'_'+k,rank:1,title:v[k]});});}else if(String(v||'').trim()){out.push({slot:slot,rank:1,title:v});}});
+  return out;
+}
+function writeSeminarPreferencesForRegistration(reg,attendees){
+  try{
+    var sh=getSS().getSheetByName('SeminarPreferences');
+    if(!sh)return {success:true,warning:'SeminarPreferences tab missing; preferences skipped.'};
+    (attendees||[]).forEach(function(a){
+      flattenSeminarPreferences(a.seminar_preferences).forEach(function(p){
+        sh.appendRow(['P-'+Date.now()+'-'+Math.floor(Math.random()*10000),reg.registrationId,a.attendee_id,(a.first_name+' '+a.last_name).trim(),p.slot,p.rank,p.title,'','','pending_review','']);
+      });
+    });
+    return {success:true};
+  }catch(e){return {success:true,warning:'Seminar preference write warning: '+e.message};}
+}
