@@ -35,6 +35,8 @@
 
 After creating the housing-free sheet, add at least one row of test data to **Registrations** before testing the plugin to confirm column alignment.
 
+> **Schema alignment warning**: If you previously ran `wr26EnsureSheetSetup()` before this schema alignment fix, run `wr26SetupCheck()` and verify **Waitlist** and **PromoCodes** column order before live submissions.
+
 ## 4) Config rows
 Set keys:
 - `SECRET`
