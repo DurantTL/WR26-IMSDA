@@ -254,7 +254,13 @@ When creating the Web App deployment, set **Execute as: Me** and **Access: Anyon
 - Confirm SeminarPreferences rows are written correctly.
 - Confirm confirmation email wording includes payment/edit guidance and childcare messaging.
 - Confirm Check-In **Record Payment** sets status to `paid_onsite`.
-- The WR26 admin management pages currently require a UI implementation or server-rendered fallback. Settings works, but Registrations/Waitlist/Check-In/Rosters/Promo pages are scaffolds unless UI code is added.
+- WR26 admin pages now include a lightweight fallback UI (no build step). It is suitable for staging/live event operations, but not a polished final UX.
+- Registrations tab supports `getRegistrations` with search/status filter and refresh.
+- Waitlist tab supports `getWaitlist`, `promoteWaitlist`, and `removeWaitlist`.
+- Check-In tab supports `getCheckInStats`, `searchRegistrations`, `checkinById`, and `recordPayment`.
+- Church Rosters tab supports `getChurchRosters` grouped by church with payment/check-in status.
+- Promo tab supports `getPromoCodes`, `savePromoCode` (fixed/percent), and `deletePromoCode`.
+- Dashboard supports queue/failure visibility plus `runQueue`, `retryFailed`, and `dismissFailed`.
 
 ### Manual runtime/data-integrity regression checklist
 - Submit the same Fluent Forms entry twice (or retry queue): no duplicate registration row.
@@ -264,6 +270,13 @@ When creating the Web App deployment, set **Execute as: Me** and **Access: Anyon
 - Admin edit API action works (`adminEditRegistration`).
 - Duplicate GAS response does not increment WordPress registered/waitlist count.
 - Full-capacity register attempt fails clearly (or routes safely via existing waitlist logic).
+- Registrations page loads and filters correctly.
+- Waitlist promote/remove actions work and refresh list.
+- Check-In search/check-in actions work.
+- Check-In Record Payment updates pending balances.
+- Promo create/deactivate actions work.
+- Church Rosters load and group correctly.
+- Queue dashboard buttons work (run/retry/dismiss).
 
 ## 22) Implementation checklist
 - Confirm Fluent Forms attendee repeater field names.
