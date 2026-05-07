@@ -232,24 +232,72 @@ function wr26_parse_ff_entry($entry_id) {
 }
 
 
-function wr26_sanitize_admin_fields($value, $key_hint = '') {
-    if (is_array($value)) {
-        $safe = array();
-        foreach ($value as $key => $child) {
-            $clean_key = is_string($key) ? sanitize_key($key) : intval($key);
-            $safe[$clean_key] = wr26_sanitize_admin_fields($child, is_string($key) ? $key : $key_hint);
-        }
-        return $safe;
+function wr26_allowed_admin_field_keys() {
+    return array(
+        'firstName',
+        'lastName',
+        'email',
+        'phone',
+        'church',
+        'arrivalDate',
+        'departureDate',
+        'dietaryNeeds',
+        'emergencyContactName',
+        'emergencyContactPhone',
+        'specialNeeds',
+        'promoCode',
+        'discountAmount',
+        'originalAmount',
+        'finalAmount',
+        'paymentMethod',
+        'paymentStatus',
+        'squarePaymentId',
+        'status',
+        'transferNotes',
+        'adminNotes'
+    );
+}
+
+function wr26_sanitize_admin_field_value($key, $value) {
+    if (is_object($value) || is_array($value)) {
+        return '';
     }
-    if (is_object($value)) {
-        return array();
-    }
+
     $scalar = is_scalar($value) ? (string) $value : '';
-    $key_hint = strtolower((string) $key_hint);
-    if (preg_match('/(note|reason|refund|special|dietary|needs|message)/', $key_hint)) {
+
+    if ($key === 'email') {
+        return sanitize_email($scalar);
+    }
+
+    if (in_array($key, array('discountAmount', 'originalAmount', 'finalAmount'), true)) {
+        $normalized = str_replace(array('$', ',', ' '), '', $scalar);
+        return is_numeric($normalized) ? floatval($normalized) : 0.0;
+    }
+
+    if (in_array($key, array('dietaryNeeds', 'specialNeeds', 'transferNotes', 'adminNotes'), true)) {
         return sanitize_textarea_field($scalar);
     }
+
     return sanitize_text_field($scalar);
+}
+
+function wr26_sanitize_admin_fields($value) {
+    if (!is_array($value)) {
+        return array();
+    }
+
+    $safe = array();
+    $allowed = array_flip(wr26_allowed_admin_field_keys());
+
+    // GAS expects camelCase field keys, so do not sanitize keys with sanitize_key() here.
+    foreach ($value as $key => $child) {
+        if (!is_string($key) || !isset($allowed[$key])) {
+            continue;
+        }
+        $safe[$key] = wr26_sanitize_admin_field_value($key, $child);
+    }
+
+    return $safe;
 }
 
 function wr26_build_and_send($entry_id, $action) {
