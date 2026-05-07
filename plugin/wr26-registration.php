@@ -231,6 +231,27 @@ function wr26_parse_ff_entry($entry_id) {
     );
 }
 
+
+function wr26_sanitize_admin_fields($value, $key_hint = '') {
+    if (is_array($value)) {
+        $safe = array();
+        foreach ($value as $key => $child) {
+            $clean_key = is_string($key) ? sanitize_key($key) : intval($key);
+            $safe[$clean_key] = wr26_sanitize_admin_fields($child, is_string($key) ? $key : $key_hint);
+        }
+        return $safe;
+    }
+    if (is_object($value)) {
+        return array();
+    }
+    $scalar = is_scalar($value) ? (string) $value : '';
+    $key_hint = strtolower((string) $key_hint);
+    if (preg_match('/(note|reason|refund|special|dietary|needs|message)/', $key_hint)) {
+        return sanitize_textarea_field($scalar);
+    }
+    return sanitize_text_field($scalar);
+}
+
 function wr26_build_and_send($entry_id, $action) {
     $url = esc_url_raw(get_option('wr26_gas_url', ''));
     if (!$url) return 'Missing GAS URL';
@@ -243,7 +264,20 @@ function wr26_build_and_send($entry_id, $action) {
     $r = wp_remote_post($url, array('timeout' => 45, 'headers' => array('Content-Type' => 'application/json'), 'body' => wp_json_encode($payload)));
     if (is_wp_error($r)) return $r->get_error_message();
     $body = json_decode(wp_remote_retrieve_body($r), true);
-    if (empty($body['success'])) return !empty($body['message']) ? $body['message'] : 'Unknown GAS error';
+    if (empty($body['success'])) {
+        if ($action === 'register' && !empty($body['capacityFull'])) {
+            $waitlist_payload = array_merge($payload, array('action' => 'waitlist'));
+            $waitlist_response = wp_remote_post($url, array('timeout' => 45, 'headers' => array('Content-Type' => 'application/json'), 'body' => wp_json_encode($waitlist_payload)));
+            if (is_wp_error($waitlist_response)) return $waitlist_response->get_error_message();
+            $waitlist_body = json_decode(wp_remote_retrieve_body($waitlist_response), true);
+            if (empty($waitlist_body['success'])) return !empty($waitlist_body['message']) ? $waitlist_body['message'] : 'Waitlist reroute failed';
+            if (empty($waitlist_body['duplicate'])) update_option('wr26_waitlist_count', intval(get_option('wr26_waitlist_count', 0)) + 1, false);
+            error_log('WR26 entry '.intval($entry_id).' rerouted to waitlist due to full capacity.');
+            return true;
+        }
+        if (!empty($body['capacityCheckFailed'])) return !empty($body['message']) ? $body['message'] : 'Capacity check failed';
+        return !empty($body['message']) ? $body['message'] : 'Unknown GAS error';
+    }
     if ($action === 'register' && empty($body['duplicate'])) update_option('wr26_registered_count', intval(get_option('wr26_registered_count', 0)) + 1, false);
     if ($action === 'waitlist' && empty($body['duplicate'])) update_option('wr26_waitlist_count', intval(get_option('wr26_waitlist_count', 0)) + 1, false);
     return true;
@@ -289,7 +323,11 @@ add_action('fluentform/payment_paid', function($payment, $submission, $status) {
     $pending_key = 'wr26_pending_pay_'.$entry_id;
     $action = get_option($pending_key, '');
     if (!$action) return;
-    $action = intval(get_option('wr26_registered_count', 0)) < intval(get_option('wr26_capacity', 350)) ? 'register' : 'waitlist';
+    if (!in_array($action, array('register', 'waitlist'), true)) {
+        delete_option($pending_key);
+        error_log('WR26 payment_paid skipped for entry '.intval($entry_id).': invalid pending action '.print_r($action, true));
+        return;
+    }
     wr26_queue_entry($entry_id, $action);
     delete_option($pending_key);
 }, 10, 3);
@@ -337,7 +375,7 @@ add_action('wp_ajax_wr26_admin_action', function(){
     }
     $map=array('getRegistrations','adminEditRegistration','transferRegistration','getWaitlist','promoteWaitlist','removeWaitlist','checkinByToken','checkinById','searchRegistrations','getChurchRosters','getCheckInStats','getPromoCodes','savePromoCode','deletePromoCode','recordPayment');
     if(!in_array($a,$map,true)) wp_send_json_error(array('message'=>'Invalid action'));
-    $payload=array('action'=>$a,'registrationId'=>sanitize_text_field($_POST['registration_id']??''),'waitlistId'=>sanitize_text_field($_POST['waitlist_id']??''),'token'=>sanitize_text_field($_POST['token']??''),'q'=>sanitize_text_field($_POST['q']??''),'status'=>sanitize_text_field($_POST['status']??''),'code'=>sanitize_text_field($_POST['code']??''),'fields'=>$_POST['fields']??array(),'adminUser'=>wp_get_current_user()->user_email,'newFirstName'=>sanitize_text_field($_POST['new_first_name']??''),'newLastName'=>sanitize_text_field($_POST['new_last_name']??''),'newEmail'=>sanitize_email($_POST['new_email']??''),'newPhone'=>sanitize_text_field($_POST['new_phone']??''),'newChurch'=>sanitize_text_field($_POST['new_church']??''),'reason'=>sanitize_textarea_field($_POST['reason']??''),'refundNotes'=>sanitize_textarea_field($_POST['refund_notes']??''),'adminNotes'=>sanitize_textarea_field($_POST['admin_notes']??''),'promo'=>array_map('sanitize_text_field',$_POST['promo']??array()));
+    $payload=array('action'=>$a,'registrationId'=>sanitize_text_field($_POST['registration_id']??''),'waitlistId'=>sanitize_text_field($_POST['waitlist_id']??''),'token'=>sanitize_text_field($_POST['token']??''),'q'=>sanitize_text_field($_POST['q']??''),'status'=>sanitize_text_field($_POST['status']??''),'code'=>sanitize_text_field($_POST['code']??''),'fields'=>wr26_sanitize_admin_fields($_POST['fields']??array()),'adminUser'=>wp_get_current_user()->user_email,'newFirstName'=>sanitize_text_field($_POST['new_first_name']??''),'newLastName'=>sanitize_text_field($_POST['new_last_name']??''),'newEmail'=>sanitize_email($_POST['new_email']??''),'newPhone'=>sanitize_text_field($_POST['new_phone']??''),'newChurch'=>sanitize_text_field($_POST['new_church']??''),'reason'=>sanitize_textarea_field($_POST['reason']??''),'refundNotes'=>sanitize_textarea_field($_POST['refund_notes']??''),'adminNotes'=>sanitize_textarea_field($_POST['admin_notes']??''),'promo'=>array_map('sanitize_text_field',$_POST['promo']??array()));
     wp_send_json(wr26_gas_request($payload));
 });
 

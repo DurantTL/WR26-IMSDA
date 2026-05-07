@@ -281,3 +281,14 @@ When creating the Web App deployment, set **Execute as: Me** and **Access: Anyon
 - Test Pay Later flow.
 - Test pending Square/payment flow.
 - Test check-in payment collection.
+
+## Remaining pre-go-live checks
+
+- Confirm Fluent Forms payment metadata amount format is interpreted correctly (cents vs dollars).
+- Confirm multi-attendee Pay Later totals calculate as attendee count × current price when payload amount is absent.
+- Confirm Square/card paid users keep the original pending action captured at submission time.
+- Confirm `capacityFull` registration responses reroute to waitlist and do not dead-letter.
+- Confirm `Config.SECRET` is populated before deployment.
+- Confirm promo Max Uses cannot be exceeded under rapid concurrent submissions.
+- Confirm transfer rejects blank new registrant required fields.
+- Confirm confirmation emails safely render names/churches containing `&`, `<`, and `>`.
