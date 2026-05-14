@@ -5,6 +5,7 @@ class IMSDA_Reg_Event_Registry {
     public static function get_all() { $events = get_option('imsda_reg_events', []); return is_array($events) ? $events : []; }
     public static function get($slug) { $events = self::get_all(); $slug = sanitize_key($slug); return isset($events[$slug]) ? (object)$events[$slug] : null; }
     public static function generate_secret() { return wp_generate_password(32, false, false); }
+    public static function generate_checkin_token() { return wp_generate_password(32, false, false); }
     public static function default_field_map() { return ["first_name"=>["first_name"],"last_name"=>["last_name"],"email"=>["email"],"phone"=>["phone"],"church"=>["church","home_church","church_name"],"arrival_date"=>["arrival_date","check_in"],"departure_date"=>["departure_date","check_out"],"dietary_needs"=>["dietary_needs","dietary"],"emergency_contact_name"=>["emergency_contact_name","emergency_name"],"emergency_contact_phone"=>["emergency_contact_phone","emergency_phone"],"special_needs"=>["special_needs","special_requests","notes"],"promo_code"=>["promo_code","discount_code","coupon_code","coupon"],"payment_method"=>["payment_method","payment","pay_method"],"attendee_count"=>["attendee_count"]]; }
     public static function save($slug, $data) {
         $slug = sanitize_title($slug ?: ($data['slug'] ?? ''));
@@ -14,6 +15,8 @@ class IMSDA_Reg_Event_Registry {
             'slug'=>$slug,'name'=>sanitize_text_field($data['name'] ?? ''),'dates'=>sanitize_text_field($data['dates'] ?? ''),'location'=>sanitize_text_field($data['location'] ?? ''),
             'status'=>in_array(($data['status'] ?? 'inactive'),['active','inactive','closed'],true)?$data['status']:'inactive','gas_url'=>esc_url_raw($data['gas_url'] ?? ''),
             'gas_secret'=>sanitize_text_field($existing['gas_secret'] ?? ($data['gas_secret'] ?? self::generate_secret())),'form_id'=>intval($data['form_id'] ?? 0),
+            'checkin_token'=>sanitize_text_field($data['checkin_token'] ?? ($existing['checkin_token'] ?? '')),
+            'checkin_pin'=>preg_match('/^\d{4,6}$/', sanitize_text_field($data['checkin_pin'] ?? ($existing['checkin_pin'] ?? ''))) ? sanitize_text_field($data['checkin_pin'] ?? ($existing['checkin_pin'] ?? '')) : '',
             'payment_default'=>sanitize_key($data['payment_default'] ?? 'pay_later'),'capacity'=>intval($data['capacity'] ?? 0),'waitlist_enabled'=>!empty($data['waitlist_enabled']),
             'early_bird_price'=>floatval($data['early_bird_price'] ?? 0),'early_bird_end_date'=>sanitize_text_field($data['early_bird_end_date'] ?? ''),'regular_price'=>floatval($data['regular_price'] ?? 0),
             'regular_end_date'=>sanitize_text_field($data['regular_end_date'] ?? ''),'edit_page_url'=>esc_url_raw($data['edit_page_url'] ?? ''),
