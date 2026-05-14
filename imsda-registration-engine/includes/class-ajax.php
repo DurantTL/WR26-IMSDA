@@ -91,6 +91,13 @@ class IMSDA_Reg_Ajax {
             ];
             wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload));
         }
+        if($a==='getChurchRosters'){
+            $payload = [
+                'action' => 'getChurchRosters',
+                'event_slug' => $slug,
+            ];
+            wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload));
+        }
         $pass=['checkinByToken','checkinById','searchRegistrations','getChurchRosters','getCheckInStats','getPromoCodes','savePromoCode','deletePromoCode'];
         if(in_array($a,$pass,true)){ $payload=$_POST; $payload['action']=$a; unset($payload['nonce']); wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload)); }
         wp_send_json_error(['message'=>'Unknown action']);

@@ -267,7 +267,58 @@ $(document).on('click','#imsda-copy-url',function(){navigator.clipboard.writeTex
 .on('click','#imsda-generate-token,#imsda-regenerate-token',function(){if(this.id==='imsda-regenerate-token'&&!confirm('Regenerate check-in token? Anyone currently using the PWA will need the new token to continue.')) return;ajax('generateCheckinToken',{},function(){location.reload();});})
 .on('click','#imsda-set-pin',function(){const pin=$('#imsda-checkin-pin-input').val();ajax('setCheckinPin',{pin:pin},function(r){if(r&&r.success){location.reload();}else{alert((r&&r.data&&r.data.message)?r.data.message:'PIN error');}});});
 searchAndDisplay();loadStats();loadRecent();setInterval(()=>{if($(".ims-tab[data-name='stats']").hasClass('active')) loadStats();},60000);setInterval(()=>{if($(".ims-tab[data-name='recent']").hasClass('active')) loadRecent();},30000);
-if(page==='imsda-reg-rosters') renderGeneric('getChurchRosters',['Church','Name','Arrival','Departure','Payment','Checked In'],r=>`<tr><td>${r.church||''}</td><td>${r.name||''}</td><td>${r.arrival||''}</td><td>${r.departure||''}</td><td>${r.paymentStatus||''}</td><td>${r.checkedIn?'Yes':'No'}</td></tr>`);
+if(page==='imsda-reg-rosters'){
+const selectedEvent=(events&&slug&&events[slug])?events[slug]:null;
+if(!selectedEvent){ app.html('<h1>Church Rosters</h1><p>Please select an event.</p>'); return; }
+app.html(`<style>@media print {#wpcontent > *:not(#wpbody) { display: none; } .wrap > h1, .wrap > .nav-tab-wrapper, #imsda-event-switcher-wrap, #imsda-roster-load, #imsda-roster-print, #imsda-roster-filter, .notice { display: none !important; } .imsda-roster-card { border: 1px solid #999 !important; margin-bottom: 24px !important; page-break-inside: avoid !important; } body { font-size: 11px; } table { font-size: 10px; }}</style><h1>Church Rosters</h1><div id="imsda-roster-notice"></div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px;"><button class="button button-primary" id="imsda-roster-load">↺ Load Rosters</button><button class="button" id="imsda-roster-print">🖨 Print</button><input type="text" id="imsda-roster-filter" placeholder="Filter by church name…" style="min-width:200px"></div><div id="imsda-roster-summary" style="color:#646970;font-size:.9em;margin-bottom:12px;"></div><div id="imsda-rosters-wrap">Click Load Rosters to view church-by-church attendance.</div>`);
+if(!selectedEvent.feature_church_rosters){
+const safeName=String(selectedEvent.name||slug).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+$('#imsda-roster-notice').html(`<div class="notice notice-warning inline"><p>Church Rosters are not enabled for this event. Enable in Events → ${safeName} → Features.</p></div>`);
+return;
+}
+let allRosters=[];
+const rsEsc=s=>String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const fmtMoney=v=>{const n=parseFloat(v||0); return isNaN(n)?'$0.00':`$${n.toFixed(2)}`;};
+const payColor=s=>({paid:'#008a20',paid_onsite:'#008a20',pending_check:'#dba617',pending_pay_later:'#dba617',unpaid:'#d63638',refunded:'#646970'}[String(s||'').toLowerCase()]||'#646970');
+const statusLabel=s=>{const k=String(s||'').toLowerCase(); if(k==='paid') return 'Paid'; if(k==='paid_onsite') return 'Paid Onsite'; if(k==='pending_check') return 'Pending Check'; if(k==='pending_pay_later') return 'Pending Pay Later'; if(k==='unpaid') return 'Unpaid'; if(k==='refunded') return 'Refunded'; return s||'—';};
+function updateSummary(rosters){
+const churches=Array.isArray(rosters)?rosters.length:0;
+const total=(Array.isArray(rosters)?rosters:[]).reduce((sum,r)=>sum+(Array.isArray(r.members)?r.members.length:0),0);
+$('#imsda-roster-summary').text(`${churches} churches | ${total} total registrations`);
+}
+function renderRosters(rosters){
+const q=String($('#imsda-roster-filter').val()||'').toLowerCase().trim();
+const source=Array.isArray(rosters)?rosters:[];
+const filtered=q?source.filter(r=>String(r&&r.name||'').toLowerCase().indexOf(q)!==-1):source;
+if(!filtered.length&&q){ $('#imsda-rosters-wrap').html(`<p>No churches match '${rsEsc(q)}'.</p>`); return; }
+if(!filtered.length){ $('#imsda-rosters-wrap').html('<p>No church roster data found.</p>'); return; }
+const html=filtered.map(church=>{const name=rsEsc(church&&church.name||'Unnamed Church');const members=Array.isArray(church&&church.members)?church.members:[];const checked=members.filter(m=>!!m.checkedIn).length;const hasCheckin=checked>0;const pct=members.length?Math.round((checked/members.length)*100):0;const header=`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;"><div><span style="font-size:1.1em;font-weight:600">${name}</span> <span style="color:#646970">(${members.length} registered)</span></div>${hasCheckin?`<div style="display:flex;align-items:center;gap:8px;color:#1d2327;"><span>${checked} / ${members.length} checked in</span><span style="display:inline-block;width:100px;height:6px;background:#dde1e7;border-radius:999px;overflow:hidden;vertical-align:middle;"><i style="display:block;height:6px;width:${pct}%;background:#00a32a;"></i></span></div>`:''}</div>`;if(!members.length){return `<div class="imsda-roster-card" style="background:#fff;border:1px solid #ccd0d4;border-radius:4px;padding:14px 18px;margin-bottom:20px;page-break-inside:avoid;">${header}<p style="margin-top:10px;">No active registrations.</p></div>`;}const rows=members.map(m=>{const fullName=rsEsc(`${m.firstName||''} ${m.lastName||''}`.trim());const phone=rsEsc(m.phone||'');const ps=rsEsc(m.paymentStatus||'');const amount=parseFloat(m.finalAmount||0);const arrival=rsEsc(m.arrivalDate||'—');const departure=rsEsc(m.departureDate||'—');const checkTime=m.checkedIn?`✅ ${rsEsc(m.checkInTime||'')}`:'—';return `<tr><td><strong>${fullName||'—'}</strong></td><td><small style="color:#646970;">${phone||'—'}</small></td><td><span style="color:${payColor(ps)};font-weight:600;">${rsEsc(statusLabel(ps))}</span></td><td>${amount>0?rsEsc(fmtMoney(amount)):'—'}</td><td>${arrival} | ${departure}</td><td>${checkTime}</td></tr>`;}).join('');return `<div class="imsda-roster-card" style="background:#fff;border:1px solid #ccd0d4;border-radius:4px;padding:14px 18px;margin-bottom:20px;page-break-inside:avoid;">${header}<table class="widefat striped" style="margin-top:10px;"><thead><tr><th>Name</th><th>Phone</th><th>Payment Status</th><th>Amount</th><th>Arrival | Departure</th><th>Checked In</th></tr></thead><tbody>${rows}</tbody></table></div>`;}).join('');
+$('#imsda-rosters-wrap').html(html);
+}
+function filterRosters(){
+const q=String($('#imsda-roster-filter').val()||'').toLowerCase().trim();
+const filtered=q?allRosters.filter(r=>String(r&&r.name||'').toLowerCase().indexOf(q)!==-1):allRosters;
+renderRosters(filtered);
+}
+function normalizeRosters(data){
+if(Array.isArray(data)) return data;
+if(data&&typeof data==='object'){ return Object.keys(data).sort((a,b)=>a.localeCompare(b)).map(k=>({name:k,members:Array.isArray(data[k])?data[k]:[]})); }
+return [];
+}
+function loadRosters(){
+$('#imsda-rosters-wrap').html('<p>Loading…</p>');
+$.post(ajaxurl,{action:'imsda_reg_admin_action',nonce:nonce,imsda_action:'getChurchRosters',event_slug:slug}).done(function(resp){
+if(!(resp&&resp.success)){ $('#imsda-rosters-wrap').html(`<p style="color:#d63638;">${rsEsc(resp?.data?.message||'Failed to load rosters.')}</p>`); return; }
+const payload=(resp.data&&typeof resp.data==='object'&&Object.prototype.hasOwnProperty.call(resp.data,'rosters'))?resp.data.rosters:resp.data;
+allRosters=normalizeRosters(payload);
+renderRosters(allRosters);
+updateSummary(allRosters);
+}).fail(function(){$('#imsda-rosters-wrap').html('<p style="color:#d63638;">Failed to load rosters.</p>');});
+}
+$('#imsda-roster-load').on('click',loadRosters);
+$('#imsda-roster-print').on('click',function(){window.print();});
+$('#imsda-roster-filter').on('input',filterRosters);
+}
 if(page==='imsda-reg-promo') renderGeneric('getPromoCodes',['Code','Description','Discount','Min Purchase','Uses','Expiry','Active','Delete'],r=>`<tr><td>${r.code||''}</td><td>${r.description||''}</td><td>${r.discount||''}</td><td>${r.minPurchase||''}</td><td>${r.uses||''}</td><td>${r.expiry||''}</td><td>${r.active?'Yes':'No'}</td><td><button class='button dp' data-code='${r.code}'>Delete</button></td></tr>`);
 });
 </script>
