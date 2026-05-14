@@ -11,12 +11,15 @@ class IMSDA_Reg_Event_Registry {
         $slug = sanitize_title($slug ?: ($data['slug'] ?? ''));
         if (!$slug || !preg_match('/^[a-z0-9-]+$/', $slug)) return new WP_Error('bad_slug', 'Invalid slug');
         $events = self::get_all(); $existing = $events[$slug] ?? [];
+        $secret = sanitize_text_field($data['gas_secret'] ?? '');
+        if ($secret === '') $secret = sanitize_text_field($existing['gas_secret'] ?? self::generate_secret());
+        $checkin_pin = sanitize_text_field($data['checkin_pin'] ?? ($existing['checkin_pin'] ?? ''));
         $item = array_merge($existing, [
             'slug'=>$slug,'name'=>sanitize_text_field($data['name'] ?? ''),'dates'=>sanitize_text_field($data['dates'] ?? ''),'location'=>sanitize_text_field($data['location'] ?? ''),
             'status'=>in_array(($data['status'] ?? 'inactive'),['active','inactive','closed'],true)?$data['status']:'inactive','gas_url'=>esc_url_raw($data['gas_url'] ?? ''),
-            'gas_secret'=>sanitize_text_field($existing['gas_secret'] ?? ($data['gas_secret'] ?? self::generate_secret())),'form_id'=>intval($data['form_id'] ?? 0),
+            'gas_secret'=>$secret,'form_id'=>intval($data['form_id'] ?? 0),
             'checkin_token'=>sanitize_text_field($data['checkin_token'] ?? ($existing['checkin_token'] ?? '')),
-            'checkin_pin'=>preg_match('/^\d{4,6}$/', sanitize_text_field($data['checkin_pin'] ?? ($existing['checkin_pin'] ?? ''))) ? sanitize_text_field($data['checkin_pin'] ?? ($existing['checkin_pin'] ?? '')) : '',
+            'checkin_pin'=>preg_match('/^\d{4,6}$/', $checkin_pin) ? $checkin_pin : '',
             'payment_default'=>sanitize_key($data['payment_default'] ?? 'pay_later'),'capacity'=>intval($data['capacity'] ?? 0),'waitlist_enabled'=>!empty($data['waitlist_enabled']),
             'early_bird_price'=>floatval($data['early_bird_price'] ?? 0),'early_bird_end_date'=>sanitize_text_field($data['early_bird_end_date'] ?? ''),'regular_price'=>floatval($data['regular_price'] ?? 0),
             'regular_end_date'=>sanitize_text_field($data['regular_end_date'] ?? ''),'edit_page_url'=>esc_url_raw($data['edit_page_url'] ?? ''),
@@ -27,6 +30,14 @@ class IMSDA_Reg_Event_Registry {
         ]);
         if (!$item['name'] || !$item['gas_url'] || !$item['form_id']) return new WP_Error('missing_fields', 'Missing required fields');
         $events[$slug] = $item; update_option('imsda_reg_events', $events, false); return true;
+    }
+    public static function update($slug, $fields){
+        $all = self::get_all();
+        if (!isset($all[$slug])) return new WP_Error('not_found', 'Event not found: ' . $slug);
+        foreach ((array)$fields as $key => $value) $all[$slug][$key] = $value;
+        $all[$slug]['updated_at'] = current_time('mysql');
+        update_option('imsda_reg_events', $all, false);
+        return true;
     }
     public static function delete($slug) {
         global $wpdb; $events = self::get_all(); unset($events[$slug]); update_option('imsda_reg_events', $events, false);

@@ -30,7 +30,8 @@ class IMSDA_Reg_Ajax {
             $event = IMSDA_Reg_Event_Registry::get($slug);
             if(!$event) wp_send_json_error(['message'=>'Not found']);
             $new_secret = IMSDA_Reg_Event_Registry::generate_secret();
-            IMSDA_Reg_Event_Registry::save($slug, ['gas_secret'=>$new_secret]);
+            $result = IMSDA_Reg_Event_Registry::update($slug, ['gas_secret'=>$new_secret]);
+            if (is_wp_error($result)) wp_send_json_error(['message'=>$result->get_error_message()]);
             wp_send_json_success(['secret'=>$new_secret]);
         }
         if($a==='exportEvent'){
@@ -54,18 +55,20 @@ class IMSDA_Reg_Ajax {
         if($a==='resetCounter'){
             $type = sanitize_text_field($_POST['type'] ?? '');
             if(!in_array($type, ['registered','waitlist'], true)) wp_send_json_error(['message'=>'Invalid counter type']);
-            IMSDA_Reg_Event_Registry::reset_counter($slug,$type);
+            IMSDA_Reg_Event_Registry::update($slug, [$type . '_count' => 0]);
             wp_send_json_success();
         }
         if($a==='generateCheckinToken'){
             $token = IMSDA_Reg_Event_Registry::generate_checkin_token();
-            IMSDA_Reg_Event_Registry::save($slug, ['checkin_token'=>$token]);
+            $result = IMSDA_Reg_Event_Registry::update($slug, ['checkin_token'=>$token]);
+            if (is_wp_error($result)) wp_send_json_error(['message'=>$result->get_error_message()]);
             wp_send_json_success(['token'=>$token]);
         }
         if($a==='setCheckinPin'){
             $pin = sanitize_text_field($_POST['pin'] ?? '');
             if(!preg_match('/^\d{4,6}$/', $pin)) wp_send_json_error(['message'=>'PIN must be 4-6 digits']);
-            IMSDA_Reg_Event_Registry::save($slug, ['checkin_pin'=>$pin]);
+            $result = IMSDA_Reg_Event_Registry::update($slug, ['checkin_pin'=>$pin]);
+            if (is_wp_error($result)) wp_send_json_error(['message'=>$result->get_error_message()]);
             wp_send_json_success();
         }
 
@@ -128,11 +131,11 @@ class IMSDA_Reg_Ajax {
                 'event_slug' => $slug,
                 'code' => strtoupper(sanitize_text_field(wp_unslash($_POST['code'] ?? ''))),
                 'description' => sanitize_text_field(wp_unslash($_POST['description'] ?? '')),
-                'discount_type' => $discount_type,
-                'discount_amount' => floatval($_POST['discount_amount'] ?? 0),
-                'max_uses' => intval($_POST['max_uses'] ?? 0),
-                'min_purchase' => floatval($_POST['min_purchase'] ?? 0),
-                'expiry_date' => sanitize_text_field(wp_unslash($_POST['expiry_date'] ?? '')),
+                'discountType' => $discount_type,
+                'discountAmount' => floatval($_POST['discount_amount'] ?? 0),
+                'maxUses' => intval($_POST['max_uses'] ?? 0),
+                'minPurchase' => floatval($_POST['min_purchase'] ?? 0),
+                'expiryDate' => sanitize_text_field(wp_unslash($_POST['expiry_date'] ?? '')),
                 'active' => $active,
             ];
             wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload));
@@ -146,7 +149,7 @@ class IMSDA_Reg_Ajax {
             wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload));
         }
         $pass=['checkinByToken','checkinById','searchRegistrations','getChurchRosters','getCheckInStats'];
-        if(in_array($a,$pass,true)){ $payload=$_POST; $payload['action']=$a; unset($payload['nonce']); wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload)); }
+        if(in_array($a,$pass,true)){ $payload=$_POST; $payload['action']=$a; if(isset($payload['registration_id'])){ $payload['registrationId']=sanitize_text_field(wp_unslash($payload['registration_id'])); unset($payload['registration_id']); } unset($payload['nonce']); wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload)); }
         wp_send_json_error(['message'=>'Unknown action']);
     }
 }
