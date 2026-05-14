@@ -34,8 +34,16 @@ register_deactivation_hook(__FILE__, function () {
     wp_clear_scheduled_hook('imsda_reg_process_queue');
 });
 
-add_filter('cron_schedules', function ($schedules) {
-    $schedules['imsda_reg_every_5_minutes'] = ['interval' => 300, 'display' => 'Every 5 Minutes (IMSDA Reg)'];
+add_filter('cron_schedules', function($schedules) {
+    for ($i = 1; $i <= 60; $i++) {
+        $key = 'imsda_reg_every_' . $i . '_minutes';
+        if (!isset($schedules[$key])) {
+            $schedules[$key] = [
+                'interval' => $i * 60,
+                'display'  => 'Every ' . $i . ' Minute(s) (IMSDA Reg)',
+            ];
+        }
+    }
     return $schedules;
 });
 

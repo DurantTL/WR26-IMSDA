@@ -146,9 +146,77 @@ class IMSDA_Reg_Admin {
         $(".imsda-dismiss-failed").on("click",function(){if(!confirm("Remove this failed submission from the list? The registration was not sent to Google Sheets."))return;var $btn=$(this),index=$btn.data("index");doAction("dismissFailed",{index:index},function(){$btn.closest("tr").remove();},function(msg){alert("❌ "+msg);});});});</script>';
     }
 
-    private static function settings_page(){ if(isset($_POST['imsda_reg_save_settings']) && check_admin_referer('imsda_reg_save_settings')){ $s=['admin_email'=>sanitize_email($_POST['admin_email']??''),'queue_max_attempts'=>max(1,intval($_POST['queue_max_attempts']??5))]; update_option('imsda_reg_global_settings',$s,false); if(!empty($_POST['clear_queue'])) update_option('imsda_reg_dispatch_queue',[],false); if(!empty($_POST['clear_failed'])) update_option('imsda_reg_failed_submissions',[],false); echo '<div class="updated"><p>Settings saved.</p></div>'; }
-        $s=get_option('imsda_reg_global_settings',[]); $next=wp_next_scheduled('imsda_reg_process_queue');
-        echo '<form method="post">'; wp_nonce_field('imsda_reg_save_settings'); echo '<table class="form-table"><tr><th>Admin Notification Email</th><td><input type="email" name="admin_email" value="'.esc_attr($s['admin_email']??'').'"></td></tr><tr><th>Queue Max Attempts</th><td><input type="number" min="1" name="queue_max_attempts" value="'.intval($s['queue_max_attempts']??5).'"></td></tr><tr><th>Cron next run</th><td><input readonly value="'.esc_attr($next?wp_date('Y-m-d H:i:s',$next):'Not scheduled').'" class="regular-text"></td></tr></table><div style="border:2px solid #b32d2e;padding:12px;margin:12px 0;"><h3 style="color:#b32d2e">Danger Zone</h3><label><input type="checkbox" name="clear_queue" value="1"> Clear Entire Queue</label><br><label><input type="checkbox" name="clear_failed" value="1"> Clear All Failed Submissions</label></div><p><button class="button button-primary" name="imsda_reg_save_settings" value="1">Save Settings</button></p></form>';
+    private static function settings_page(){
+        $saved = false;
+        if (isset($_POST['imsda_reg_save_settings']) && check_admin_referer('imsda_reg_save_settings')) {
+            $settings = get_option('imsda_reg_global_settings', []);
+            $settings['admin_email'] = sanitize_email($_POST['admin_email'] ?? '');
+            $settings['max_attempts'] = max(1, min(10, intval($_POST['max_attempts'] ?? 5)));
+            $settings['queue_interval'] = max(1, min(60, intval($_POST['queue_interval'] ?? 5)));
+            update_option('imsda_reg_global_settings', $settings);
+
+            wp_clear_scheduled_hook('imsda_reg_process_queue');
+            wp_schedule_event(time(), 'imsda_reg_every_' . $settings['queue_interval'] . '_minutes', 'imsda_reg_process_queue');
+
+            $saved = true;
+        }
+
+        $settings = get_option('imsda_reg_global_settings', []);
+        $admin_email = $settings['admin_email'] ?? get_option('admin_email');
+        $max_attempts = $settings['max_attempts'] ?? 5;
+        $queue_interval = $settings['queue_interval'] ?? 5;
+        $next = wp_next_scheduled('imsda_reg_process_queue');
+        $last_run = get_option('imsda_reg_dispatch_last_run', 'Never');
+        $events = IMSDA_Reg_Event_Registry::get_all();
+        $queue = IMSDA_Reg_Queue::get_queue();
+        $failed = IMSDA_Reg_Queue::get_failed();
+        $queue_count = count($queue);
+        $failed_count = count($failed);
+
+        echo '<h1>Settings</h1>';
+        if ($saved) {
+            echo '<div class="notice notice-success is-dismissible"><p>✅ Settings saved.</p></div>';
+        }
+
+        echo '<form method="post">';
+        wp_nonce_field('imsda_reg_save_settings');
+        echo '<h2>Queue Settings</h2>';
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr><th scope="row"><label for="imsda-admin-email">Admin Notification Email</label></th><td><input id="imsda-admin-email" type="email" name="admin_email" value="' . esc_attr($admin_email) . '" class="regular-text" /><p class="description">Receives an email when a submission fails after max attempts. Falls back to WordPress admin email if blank.</p></td></tr>';
+        echo '<tr><th scope="row"><label for="imsda-max-attempts">Max Retry Attempts</label></th><td><input id="imsda-max-attempts" type="number" name="max_attempts" value="' . intval($max_attempts) . '" min="1" max="10" class="small-text" /><p class="description">Number of times the queue will retry a failed submission before moving it to failed submissions. Default: 5.</p></td></tr>';
+        echo '<tr><th scope="row"><label for="imsda-queue-interval">Queue Interval (minutes)</label></th><td><input id="imsda-queue-interval" type="number" name="queue_interval" value="' . intval($queue_interval) . '" min="1" max="60" class="small-text" /><p class="description">How often the dispatch queue runs. Default: 5 minutes. Lower values mean faster dispatch but more server load.</p></td></tr>';
+        $next_text = 'Not scheduled — queue will run on next page load or cron trigger.';
+        if ($next) {
+            $next_text = wp_date('M j, Y g:i:s a', $next) . ' (' . human_time_diff(time(), $next) . ')';
+        }
+        echo '<tr><th scope="row">Next Queue Run</th><td>' . esc_html($next_text) . '</td></tr>';
+        echo '<tr><th scope="row">Last Queue Run</th><td>' . esc_html((string) $last_run) . '</td></tr>';
+        echo '</table>';
+
+        echo '<h2>Plugin Info</h2>';
+        echo '<table class="form-table" role="presentation">';
+        echo '<tr><th scope="row">Version</th><td>' . esc_html((string) IMSDA_REG_VERSION) . '</td></tr>';
+        echo '<tr><th scope="row">Active Events</th><td>' . intval(count($events)) . '</td></tr>';
+        echo '<tr><th scope="row">Queue Items</th><td>' . intval($queue_count) . '</td></tr>';
+        echo '<tr><th scope="row">Failed Submissions</th><td>' . intval($failed_count) . '</td></tr>';
+        echo '</table>';
+
+        echo '<p class="submit"><input type="submit" name="imsda_reg_save_settings" class="button button-primary" value="Save Settings" /></p>';
+        echo '</form>';
+
+        echo '<div style="border:1px solid #d63638;border-radius:4px;padding:20px;margin-top:30px;">';
+        echo '<h2 style="color:#d63638;margin-top:0">⚠ Danger Zone</h2>';
+        echo '<p style="color:#646970;margin-bottom:16px">These actions are irreversible. Use with caution.</p>';
+
+        echo '<table class="widefat" style="max-width:980px"><tbody>';
+        echo '<tr><td><strong>Clear Dispatch Queue</strong><p style="margin:6px 0 0;color:#646970">Remove all pending items from the dispatch queue. Submissions will not be sent to Google Apps Script. Use only if queue is stuck and you are resubmitting manually.</p></td><td style="width:180px"><button type="button" class="button" id="imsda-clear-queue">Clear Queue</button></td></tr>';
+        echo '<tr><td><strong>Clear Failed Submissions</strong><p style="margin:6px 0 0;color:#646970">Remove all failed submissions from the log. This does not resend them — it only clears the list.</p></td><td><button type="button" class="button" id="imsda-clear-failed">Clear Failed</button></td></tr>';
+        echo '<tr><td><strong>Flush Rewrite Rules</strong><p style="margin:6px 0 0;color:#646970">If the check-in PWA URL (/imsda-checkin/) returns a 404, use this to rebuild WordPress rewrite rules.</p></td><td><button type="button" class="button" id="imsda-flush-rules">Flush Rewrite Rules</button><span id="imsda-flush-result" style="margin-left:8px;color:#00a32a"></span></td></tr>';
+        echo '</tbody></table>';
+        echo '</div>';
+
+        $nonce = self::nonce();
+        echo '<script>jQuery(function($){var nonce=' . wp_json_encode($nonce) . ';var queueCount=' . intval($queue_count) . ';var failedCount=' . intval($failed_count) . ';function runAdminAction(action,onSuccess){$.post(ajaxurl,{action:"imsda_reg_admin_action",nonce:nonce,imsda_action:action}).done(function(resp){if(resp&&resp.success){onSuccess&&onSuccess(resp);}else{alert("❌ "+((resp&&resp.data&&resp.data.message)?resp.data.message:"Request failed"));}}).fail(function(){alert("❌ Request failed");});}$("#imsda-clear-queue").on("click",function(){if(!confirm("Clear the entire dispatch queue? "+queueCount+" item(s) will be permanently removed and not sent to Google Apps Script.")){return;}runAdminAction("clearQueue",function(){location.reload();});});$("#imsda-clear-failed").on("click",function(){if(!confirm("Clear all "+failedCount+" failed submission(s)? This cannot be undone.")){return;}runAdminAction("clearFailed",function(){location.reload();});});$("#imsda-flush-rules").on("click",function(){runAdminAction("flushRules",function(){ $("#imsda-flush-result").text("✅ Rewrite rules flushed."); });});});</script>';
     }
 
     private static function assets(){ ?>
