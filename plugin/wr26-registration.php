@@ -219,6 +219,7 @@ function wr26_parse_ff_entry($entry_id) {
         'departure_date'         => sanitize_text_field($raw['departure_date'] ?? ''),
         'emergency_contact_name' => sanitize_text_field($raw['emergency_contact_name'] ?? ''),
         'emergency_contact_phone'=> sanitize_text_field($raw['emergency_contact_phone'] ?? ''),
+        'dietary_needs'          => sanitize_textarea_field($raw['a1_dietary_needs'] ?? ''),
         'special_needs'          => sanitize_textarea_field($raw['special_needs'] ?? ''),
         'attendee_notes'         => sanitize_textarea_field($raw['attendee_notes'] ?? ''),
         'promo_code'             => $promo,
