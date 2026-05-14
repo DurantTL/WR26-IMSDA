@@ -1,0 +1,269 @@
+When creating Fluent Forms JSON from a PDF, do not invent the Fluent Forms export structure from scratch.
+
+Use a real working Fluent Forms export from this site as the base shell. The JSON must preserve the same root structure and formatting that Fluent Forms exports.
+
+Core structure rules:
+- Root must be an array: [ { ... } ]
+- Preserve type: "form"
+- Preserve form_fields
+- Preserve form_fields.fields
+- Preserve form_fields.submitButton
+- Preserve has_payment
+- Preserve conditions
+- Preserve created_by, created_at, updated_at style
+- Preserve form_meta
+- Preserve metas, if included in the working export
+- Do not remove form_meta or metas. Missing/incorrect metas can cause the form to import and appear in the editor but render blank in preview/public view.
+- Do not move submitButton outside form_fields.
+- Do not rename form_fields to fields.
+- Do not use a lightweight/custom JSON shell.
+
+Workflow:
+1. Read the uploaded PDF visually.
+2. Build a field map first.
+3. Identify:
+   - Form title
+   - Form number
+   - Sections
+   - Field labels
+   - Text inputs
+   - Email fields
+   - Phone fields
+   - Dropdowns
+   - Radio buttons
+   - Checkboxes
+   - Textareas
+   - Number fields
+   - Date fields
+   - Signature or acknowledgment areas
+   - Required vs optional fields
+   - Repeated areas, “Other” fields, and conditional sections
+4. Clone a working Fluent Forms export shell from this same site.
+5. Replace only what needs to change:
+   - title
+   - form_fields.fields
+   - form_fields.submitButton.settings.button_ui.text
+   - has_payment only if payment is needed
+   - formSettings confirmation message
+   - notifications
+   - _pdf_feeds
+   - optional custom CSS/JS/settings only if copied from a real export pattern
+
+Important import/render rule:
+- Fluent Forms may import a bad JSON and show it in the editor, but preview/public view can still be blank if the export structure or meta structure is wrong.
+- Always keep the original working export shell structure.
+
+Field schema rules:
+
+Simple text:
+- element: "input_text"
+- editor_options.template: "inputText"
+
+Email:
+- element: "input_email"
+- editor_options.template: "inputText"
+- include email validation
+
+Phone:
+- element: "phone"
+- editor_options.template: "inputText"
+
+Textarea:
+- element: "textarea"
+- editor_options.template: "inputTextarea"
+- include rows, cols, and maxlength in attributes
+
+Dropdown/select:
+- element: "select"
+- editor_options.element: "select"
+- editor_options.template: "select"
+- use settings.advanced_options
+- do not use generic options
+
+Number:
+- element: "input_number"
+- editor_options.template: "inputText"
+- include numeric, min, max, and digits validation
+- include calculation_settings
+
+Radio/checkbox:
+- element: "input_radio" or "input_checkbox"
+- editor_options.template: "inputCheckable"
+
+Section break:
+- element: "section_break"
+- editor_options.template: "sectionBreak"
+- include settings.label, settings.description, settings.align, conditional_logics, and visible
+
+Custom HTML:
+- element: "custom_html"
+- editor_options.template: "customHTML"
+- store HTML in settings.html_codes, not attributes.value
+
+Repeater field:
+- element: "repeater_field"
+- editor_options.template: "fieldsRepeatSettings"
+- use attributes.name
+- use attributes.data-type: "repeater_field"
+- use a nested fields array
+- include settings.max_repeat_field
+- only use this if Fluent Forms Pro/repeater support is available
+- if repeater support is uncertain, use optional fixed fields or a textarea fallback
+
+Every generated field must have:
+- index
+- element
+- attributes
+- settings
+- validation_rules
+- conditional_logics
+- editor_options
+- unique uniqElKey
+- settings.visible: true
+- proper container_class
+- proper admin_field_label
+- proper label_placement
+
+Never use guessed template names:
+- Do not use inputSelect
+- Do not use inputNumber
+- Do not use textArea
+- Do not use fields at root level
+- Do not use wrapper_class instead of container_class
+- Do not use options instead of advanced_options for dropdowns
+
+Validation rules:
+- Required fields must include:
+  - value
+  - message
+  - global_message
+  - global
+
+- Optional fields should still include required validation with value false if the base export uses that pattern.
+
+- Number fields must include:
+  - required
+  - numeric
+  - min
+  - max
+  - digits
+  - calculation_settings
+
+- Email fields must include:
+  - required as needed
+  - email validation
+
+PDF Feed rules:
+- PDF setup lives inside each form under PDF Feeds.
+- In the JSON export, PDF feeds are stored as a form meta item with:
+  - meta_key: "_pdf_feeds"
+
+A working PDF feed structure includes:
+- name
+- template_key
+- settings.header
+- settings.body
+- settings.footer
+- settings.shortcode
+- settings.allow_download
+- appearance.paper_size
+- appearance.orientation
+- appearance.font
+- appearance.font_family
+- appearance.font_size
+- appearance.font_color
+- appearance.accent_color
+- appearance.heading_color
+- appearance.language_direction
+- appearance.watermark_img_behind
+
+Use this PDF feed pattern:
+- meta_key: "_pdf_feeds"
+- value should be a JSON-encoded string, not a raw nested object, matching the structure from the real working export.
+- Header, body, and footer HTML can be embedded directly into that value.
+- Escape HTML properly inside the JSON string.
+
+PDF Feed ID:
+- The PDF feed meta item has its own id.
+- In the working example, the PDF feed meta id was 1574.
+- The PDF feed shortcode used that same id:
+  - {pdf.download_link.1574}
+- The notification PDF attachment used:
+  - "pdf_attachments":["1574"]
+
+Notification/PDF attachment rules:
+- Notifications are stored in form_meta/metas with:
+  - meta_key: "notifications"
+- PDF attachments are added in the notification settings using:
+  - pdf_attachments
+- pdf_attachments must reference the PDF feed meta id.
+- Example:
+  - PDF feed meta id: 1574
+  - Notification uses: "pdf_attachments":["1574"]
+- If the PDF feed ID changes after import, the PDF attachment may need to be re-selected manually in the notification settings.
+
+Important notification rule for non-payment forms:
+- If has_payment is "0", do not set the notification trigger to payment_success.
+- For regular non-payment forms, use a normal form submission trigger or omit the payment_success trigger if that is the safer working pattern.
+- If emails do not send after import, check the notification trigger first.
+
+PDF merge tag rules:
+- Use exact field names from the generated JSON.
+- Do not guess merge tags.
+- Example:
+  - If the field name is applicant_name, the PDF merge tag must be {inputs.applicant_name}
+  - Do not use {inputs.name} unless the actual field name is name.
+- Match every PDF template merge tag to the actual attributes.name value in the form field.
+- For repeat fields, {inputs.repeater_field_name} may work, but if it renders poorly, use {all_data} temporarily or inspect an actual submission/export to determine the correct repeater output format.
+
+PDF template style:
+- Header should include form title, form number, and important notes.
+- Body should use clean sections that mirror the original PDF.
+- Footer should include return address/email/contact info when shown on the original form.
+- Keep PDF HTML mostly inline CSS because PDF renderers often ignore external styles.
+- Use tables for two-column layouts because they render more reliably in PDFs.
+- Use simple fonts like Arial, Helvetica, default, or dejavusans.
+
+Form design/simplification rules:
+- Make the online form easier to complete than the paper form when appropriate.
+- Use dropdowns for simple Yes/No questions.
+- Use date fields for birthdate/application date.
+- Use number fields for fees or counts.
+- Use section breaks to organize the form.
+- Use custom HTML for instructions, pledges, laws, waivers, or long read-only text.
+- For signature lines on paper forms, use text fields or signature fields only if the site supports signature fields.
+- For forms with many repeated lines, prefer a repeater_field if available.
+- If repeater support is uncertain, use a textarea or a smaller set of optional fixed fields.
+
+Payment rules:
+- If the PDF only records fees but does not collect online payment, keep has_payment as "0".
+- Do not create payment fields unless the user specifically asks for online payment collection.
+- Fee fields can be normal input_number fields.
+
+Final validation before giving the JSON:
+- Root is [ { ... } ]
+- type is "form"
+- form_fields.fields is not empty
+- submitButton exists inside form_fields
+- has_payment matches whether the form actually uses payment
+- form_meta exists
+- metas exists if the working export includes it
+- Every field has a unique uniqElKey
+- Every field has correct editor_options.template
+- Every field has settings.visible: true where appropriate
+- Dropdowns use advanced_options
+- Textareas use inputTextarea
+- Numbers use inputText template with numeric validation
+- Custom HTML uses settings.html_codes
+- PDF feed is stored as meta_key "_pdf_feeds"
+- PDF feed value is JSON-encoded as in the real export
+- PDF merge tags match actual field names
+- Notification recipient, reply-to, subject, trigger, and PDF attachment are checked
+- Non-payment forms should not rely on payment_success notification trigger
+- Import should be tested as a fresh import
+
+Final output should include:
+1. Importable Fluent Forms JSON file.
+2. A short checklist of manual follow-up items.
+3. Separate copy/paste PDF Header, Body, and Footer HTML, even if embedded in the JSON.
+4. A note that the PDF attachment may need to be re-selected after import if Fluent Forms changes the PDF feed ID.
