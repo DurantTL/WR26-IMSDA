@@ -16,6 +16,8 @@ class IMSDA_Reg_Ajax {
         if($a==='exportEvent'){ wp_send_json_success(['json'=>IMSDA_Reg_Event_Registry::export_event($slug)]); }
         if($a==='importEvent'){ $json=''; if(!empty($_FILES['event_file']['tmp_name'])) $json=file_get_contents($_FILES['event_file']['tmp_name']); if(!$json) $json=wp_unslash($_POST['event_json']??''); $r=IMSDA_Reg_Event_Registry::import_event($json); $r['success']?wp_send_json_success($r):wp_send_json_error($r); }
         if($a==='resetCounter'){ wp_send_json_success(IMSDA_Reg_Event_Registry::reset_counter($slug,sanitize_key($_POST['type']??''))); }
+
+        if($a==='testConnection'){ $slug=sanitize_text_field($_POST['event_slug'] ?? ''); $result = IMSDA_Reg_Dispatcher::gas_request($slug,['action'=>'getAvailability']); if(!empty($result['success'])){ wp_send_json_success(['message'=>'Connected']); } else { wp_send_json_error(['message'=>$result['message'] ?? 'Connection failed']); } }
         $pass=['getRegistrations','adminEditRegistration','transferRegistration','getWaitlist','promoteWaitlist','removeWaitlist','checkinByToken','checkinById','searchRegistrations','getChurchRosters','getCheckInStats','getPromoCodes','savePromoCode','deletePromoCode','recordPayment'];
         if(in_array($a,$pass,true)){ $payload=$_POST; $payload['action']=$a; unset($payload['nonce']); wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload)); }
         wp_send_json_error(['message'=>'Unknown action']);
