@@ -8,7 +8,7 @@ class IMSDA_Reg_Ajax {
     private static function public_call($action){ $slug=sanitize_key($_POST['event_slug']??''); $payload=['action'=>$action]; if(isset($_POST['token'])) $payload['token']=sanitize_text_field(wp_unslash($_POST['token'])); if(isset($_POST['edit_token'])) $payload['edit_token']=sanitize_text_field(wp_unslash($_POST['edit_token'])); foreach(['first_name','last_name','phone','church','dietary_needs','emergency_contact_name','emergency_contact_phone','special_needs'] as $f){ if(isset($_POST[$f])) $payload[$f]=sanitize_text_field(wp_unslash($_POST[$f])); }
         wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload)); }
     public static function admin_action(){ if(!current_user_can('manage_options')) wp_send_json_error(['message'=>'Unauthorized']); if(!wp_verify_nonce($_POST['nonce']??'','imsda_reg_admin_nonce')) wp_send_json_error(['message'=>'Bad nonce']); $slug=sanitize_key($_POST['event_slug']??''); $a=sanitize_key($_POST['imsda_action']??'');
-        if($a==='runQueue'){ IMSDA_Reg_Queue::process(); wp_send_json_success(); }
+        if($a==='runQueue'){ IMSDA_Reg_Queue::process(); wp_send_json_success(['message'=>'Queue processed']); }
         if($a==='dismissFailed'){ wp_send_json_success(IMSDA_Reg_Queue::dismiss_failed(intval($_POST['index']??-1))); }
         if($a==='retryFailed'){ wp_send_json_success(IMSDA_Reg_Queue::retry_failed(intval($_POST['index']??-1))); }
         if($a==='saveEvent'){ $data=$_POST; if(isset($data['field_map']) && is_string($data['field_map'])) $data['field_map']=json_decode(wp_unslash($data['field_map']),true); $res=IMSDA_Reg_Event_Registry::save($slug?:($data['slug']??''),$data); is_wp_error($res)?wp_send_json_error(['message'=>$res->get_error_message()]):wp_send_json_success(); }

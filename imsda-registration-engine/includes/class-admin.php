@@ -6,6 +6,12 @@ class IMSDA_Reg_Admin {
     public static function select_event(){ if(isset($_POST['imsda_selected_event'])) update_user_meta(get_current_user_id(),'imsda_reg_selected_event',sanitize_key($_POST['imsda_selected_event'])); }
     private static function selected_slug(){ return sanitize_key(get_user_meta(get_current_user_id(),'imsda_reg_selected_event',true)); }
     private static function nonce(){ return wp_create_nonce('imsda_reg_admin_nonce'); }
+    private static function format_dashboard_time($mysql_datetime) {
+        if (!$mysql_datetime) return 'Never';
+        $ts = strtotime($mysql_datetime);
+        if (!$ts) return $mysql_datetime;
+        return date('M j g:ia', $ts);
+    }
     private static function event_switcher(){ $events=IMSDA_Reg_Event_Registry::get_all(); if(!$events){ echo '<div class="notice notice-warning"><p>No events configured. Go to Events to add your first event.</p></div>'; return; } echo '<form method="post" style="margin:8px 0 16px;"><select name="imsda_selected_event">'; foreach($events as $slug=>$e){ echo '<option value="'.esc_attr($slug).'" '.selected(self::selected_slug(),$slug,false).'>'.esc_html($e['name']).' ('.esc_html($slug).')</option>'; } echo '</select> <button class="button">Switch</button></form>'; }
 
     public static function dashboard(){ self::render_shell('imsda-reg-dashboard'); }
@@ -16,9 +22,104 @@ class IMSDA_Reg_Admin {
         echo '<div class="wrap"><h1>IMSDA Registration Engine</h1>';
         if(!in_array($page,['imsda-reg-dashboard','imsda-reg-events','imsda-reg-settings'],true)) self::event_switcher();
         if($page==='imsda-reg-settings'){ self::settings_page(); echo '</div>'; return; }
+        if($page==='imsda-reg-dashboard'){ self::dashboard_page(); echo '</div>'; return; }
         echo '<div id="imsda-admin-app" data-page="'.esc_attr($page).'" data-selected="'.esc_attr($selected).'" data-nonce="'.esc_attr(self::nonce()).'" data-events="'.esc_attr(wp_json_encode($events)).'"></div>';
         self::assets();
         echo '</div>';
+    }
+
+    private static function dashboard_page(){
+        $events = IMSDA_Reg_Event_Registry::get_all();
+        $queue  = IMSDA_Reg_Queue::get_queue();
+        $failed = IMSDA_Reg_Queue::get_failed();
+        $last_run = get_option('imsda_reg_dispatch_last_run', '');
+        $events_url = admin_url('admin.php?page=imsda-reg-events');
+        $nonce = self::nonce();
+        echo '<h1>IMSDA Registration — Dashboard</h1>';
+        if(empty($events)){
+            echo '<div class="notice notice-warning"><p>No events configured yet. <a href="'.esc_url($events_url).'">Add your first event →</a></p></div>';
+        }
+        echo '<style>
+            .imsda-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:10px 0 16px;}
+            .imsda-stat-card{background:#fff;border:1px solid #ccd0d4;border-radius:4px;padding:12px}
+            .imsda-stat-label{display:block;font-size:12px;color:#646970}
+            .imsda-stat-value{display:block;font-size:24px;font-weight:600}
+            .imsda-events-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+            .imsda-event-card{background:#fff;border:1px solid #ccd0d4;border-radius:4px;padding:18px}
+            .imsda-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+            .imsda-status{display:inline-block;padding:3px 9px;border-radius:999px;font-size:.78em;font-weight:600}
+            .imsda-meta{color:#646970;font-size:.85em;margin:8px 0 10px}
+            .imsda-progress-track{height:10px;border-radius:4px;background:#dde1e7;overflow:hidden}
+            .imsda-progress-fill{height:10px;border-radius:4px}
+            .imsda-quick-links{font-size:12px;margin-top:10px}
+        </style>';
+        echo '<h2>Dispatch Queue</h2>';
+        echo '<div class="imsda-stat-grid">';
+        echo '<div class="imsda-stat-card"><span class="imsda-stat-label">Items in Queue</span><span class="imsda-stat-value" style="color:#2271b1">'.intval(count($queue)).'</span></div>';
+        echo '<div class="imsda-stat-card"><span class="imsda-stat-label">Failed</span><span class="imsda-stat-value" style="color:'.(count($failed)>0?'#d63638':'#646970').'">'.intval(count($failed)).'</span></div>';
+        echo '<div class="imsda-stat-card"><span class="imsda-stat-label">Last Run</span><span class="imsda-stat-value" style="font-size:18px;color:#646970">'.esc_html(self::format_dashboard_time($last_run)).'</span></div>';
+        echo '</div>';
+        echo '<p><button class="button button-primary" id="imsda-run-queue">Run Queue Now</button> <span class="spinner" id="imsda-run-queue-spinner" style="float:none;"></span> <span id="imsda-run-queue-msg"></span></p>';
+        if(empty($queue)){ echo '<p style="color:#00a32a">✅ Queue is empty.</p>'; }
+        else {
+            echo '<table class="widefat striped"><thead><tr><th>Event</th><th>Entry ID</th><th>Action</th><th>Queued At</th><th>Attempts</th></tr></thead><tbody>';
+            foreach($queue as $item){
+                echo '<tr><td><code>'.esc_html($item['event_slug'] ?? '').'</code></td><td>'.intval($item['entry_id'] ?? 0).'</td><td>'.esc_html($item['action'] ?? '').'</td><td>'.esc_html(self::format_dashboard_time($item['queued_at'] ?? '')).'</td><td>'.intval($item['attempts'] ?? 0).'</td></tr>';
+            }
+            echo '</tbody></table>';
+        }
+        echo '<h3>Failed Submissions</h3>';
+        if(empty($failed)){ echo '<p style="color:#00a32a">✅ No failed submissions.</p>'; }
+        else {
+            echo '<div class="notice notice-warning inline"><p>⚠ These submissions did not reach Google Apps Script after 5 attempts. Retry after confirming your GAS URL and secret are correct.</p></div>';
+            echo '<table class="widefat striped"><thead><tr><th>Event</th><th>Entry ID</th><th>Action</th><th>Error</th><th>Failed At</th><th>Actions</th></tr></thead><tbody>';
+            foreach($failed as $idx=>$item){
+                $error = (string)($item['error'] ?? '');
+                $short = mb_strlen($error) > 60 ? mb_substr($error,0,60).'…' : $error;
+                echo '<tr data-index="'.intval($idx).'"><td><code>'.esc_html($item['event_slug'] ?? '').'</code></td><td>'.intval($item['entry_id'] ?? 0).'</td><td>'.esc_html($item['action'] ?? '').'</td><td title="'.esc_attr($error).'">'.esc_html($short).'</td><td>'.esc_html(self::format_dashboard_time($item['failed_at'] ?? '')).'</td><td><button class="button imsda-retry-failed" data-index="'.intval($idx).'">↺ Retry</button> <button class="button imsda-dismiss-failed" data-index="'.intval($idx).'">✕ Dismiss</button></td></tr>';
+            }
+            echo '</tbody></table>';
+        }
+        if(!empty($events)){
+            echo '<h2>Events</h2><div class="imsda-events-grid">';
+            foreach($events as $slug=>$event){
+                $status = sanitize_key($event['status'] ?? 'inactive');
+                $status_styles = ['active'=>'background:#d1e7dd;color:#0a3622','inactive'=>'background:#e2e3e5;color:#41464b','closed'=>'background:#f8d7da;color:#842029'];
+                $status_style = $status_styles[$status] ?? $status_styles['inactive'];
+                $registered = IMSDA_Reg_Event_Registry::get_counter($slug,'registered');
+                $capacity = intval($event['capacity'] ?? 0);
+                $meta = [];
+                if(!empty($event['dates'])) $meta[] = $event['dates'];
+                if(!empty($event['location'])) $meta[] = $event['location'];
+                $event_queue_count = 0; foreach($queue as $q){ if(($q['event_slug'] ?? '') === $slug) $event_queue_count++; }
+                echo '<div class="imsda-event-card">';
+                echo '<div class="imsda-top"><strong style="font-size:1.05em">'.esc_html($event['name'] ?? $slug).'</strong><span class="imsda-status" style="'.esc_attr($status_style).'">'.esc_html($status).'</span></div>';
+                if(!empty($meta)) echo '<div class="imsda-meta">'.esc_html(implode(' | ', $meta)).'</div>';
+                if($capacity===0){ echo '<p style="margin:10px 0">Registered: '.intval($registered).' / Unlimited</p>'; }
+                else {
+                    $pct = min(100, round(($registered / max(1,$capacity)) * 100));
+                    $fill = $pct < 70 ? '#00a32a' : ($pct < 90 ? '#d97706' : '#d63638');
+                    echo '<p style="text-align:right;margin:10px 0 6px;">Registered: '.intval($registered).' / '.intval($capacity).' ('.intval($pct).'%)</p>';
+                    echo '<div class="imsda-progress-track"><div class="imsda-progress-fill" style="width:'.intval($pct).'%;background:'.esc_attr($fill).'"></div></div>';
+                }
+                if(!empty($event['feature_waitlist'])){
+                    $waitlisted = IMSDA_Reg_Event_Registry::get_counter($slug,'waitlist');
+                    echo '<p style="margin:8px 0;color:'.($waitlisted>0?'#d97706':'#646970').'">Waitlisted: '.intval($waitlisted).'</p>';
+                }
+                if($event_queue_count>0) echo '<p style="margin:8px 0;color:#2271b1">📬 '.intval($event_queue_count).' item(s) pending in queue</p>';
+                if($status==='active'){
+                    $reg_url = admin_url('admin.php?page=imsda-reg-registrations&event_slug='.$slug);
+                    $check_url = admin_url('admin.php?page=imsda-reg-checkin&event_slug='.$slug);
+                    echo '<div class="imsda-quick-links"><a href="'.esc_url($reg_url).'">→ Registrations</a> &nbsp; <a href="'.esc_url($check_url).'">→ Check-In</a></div>';
+                }
+                echo '</div>';
+            }
+            echo '</div>';
+        }
+        echo '<script>jQuery(function($){var nonce='.wp_json_encode($nonce).'; function doAction(a,data,ok,fail){$.post(ajaxurl,$.extend({action:"imsda_reg_admin_action",nonce:nonce,imsda_action:a},data||{})).done(function(r){if(r&&r.success){ok&&ok(r);}else{fail&&fail((r&&r.data&&r.data.message)?r.data.message:"Request failed");}}).fail(function(){fail&&fail("Request failed");});}
+        $("#imsda-run-queue").on("click",function(){var $b=$(this),$s=$("#imsda-run-queue-spinner"),$m=$("#imsda-run-queue-msg");$b.prop("disabled",true);$s.addClass("is-active");$m.text("");doAction("runQueue",{},function(){$m.css("color","#00a32a").text("✅ Queue processed.");setTimeout(function(){location.reload();},1500);},function(msg){$b.prop("disabled",false);$s.removeClass("is-active");$m.css("color","#d63638").text("❌ "+msg);});});
+        $(".imsda-retry-failed").on("click",function(){var $btn=$(this),index=$btn.data("index");doAction("retryFailed",{index:index},function(){$btn.closest("tr").remove();},function(msg){alert("❌ "+msg);});});
+        $(".imsda-dismiss-failed").on("click",function(){if(!confirm("Remove this failed submission from the list? The registration was not sent to Google Sheets."))return;var $btn=$(this),index=$btn.data("index");doAction("dismissFailed",{index:index},function(){$btn.closest("tr").remove();},function(msg){alert("❌ "+msg);});});});</script>';
     }
 
     private static function settings_page(){ if(isset($_POST['imsda_reg_save_settings']) && check_admin_referer('imsda_reg_save_settings')){ $s=['admin_email'=>sanitize_email($_POST['admin_email']??''),'queue_max_attempts'=>max(1,intval($_POST['queue_max_attempts']??5))]; update_option('imsda_reg_global_settings',$s,false); if(!empty($_POST['clear_queue'])) update_option('imsda_reg_dispatch_queue',[],false); if(!empty($_POST['clear_failed'])) update_option('imsda_reg_failed_submissions',[],false); echo '<div class="updated"><p>Settings saved.</p></div>'; }
