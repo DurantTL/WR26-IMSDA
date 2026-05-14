@@ -19,9 +19,37 @@ function writeAttendeesForRegistration(reg,attendees){
     return {success:true};
   }catch(e){return {success:true,warning:'Attendees write warning: '+e.message};}
 }
-function flattenSeminarPreferences(pref){
-  var out=[];if(!pref)return out;
-  Object.keys(pref).forEach(function(slot){var v=pref[slot];if(Array.isArray(v)){v.forEach(function(item,idx){out.push({slot:slot,rank:idx+1,title:item});});}else if(v&&typeof v==='object'){Object.keys(v).forEach(function(k){out.push({slot:slot+'_'+k,rank:1,title:v[k]});});}else if(String(v||'').trim()){out.push({slot:slot,rank:1,title:v});}});
+function flattenSeminarPreferences(pref) {
+  var out = [];
+  if (!pref) return out;
+
+  Object.keys(pref).forEach(function(slot) {
+    var v = pref[slot];
+
+    if (Array.isArray(v)) {
+      // Legacy array: [pref1, pref2]
+      v.forEach(function(item, idx) {
+        if (String(item || '').trim()) {
+          out.push({ slot: slot, rank: idx + 1, title: item });
+        }
+      });
+
+    } else if (v && typeof v === 'object') {
+      // New format: { pref_1: "value", pref_2: "value" }
+      Object.keys(v).sort().forEach(function(k) {
+        var title = String(v[k] || '').trim();
+        if (!title) return;
+        var rankMatch = k.match(/(\d+)$/);
+        var rank = rankMatch ? parseInt(rankMatch[1], 10) : 1;
+        out.push({ slot: slot, rank: rank, title: title });
+      });
+
+    } else if (String(v || '').trim()) {
+      // Legacy scalar
+      out.push({ slot: slot, rank: 1, title: v });
+    }
+  });
+
   return out;
 }
 function writeSeminarPreferencesForRegistration(reg,attendees){
