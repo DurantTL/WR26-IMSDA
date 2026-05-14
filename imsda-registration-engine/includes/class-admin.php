@@ -189,7 +189,70 @@ function renderGeneric(action,cols,rowFn,actions=''){app.html(`<p><input id='s'>
 if(page==='imsda-reg-events') renderEvents();
 if(page==='imsda-reg-registrations') renderGeneric('getRegistrations',['ID','Name','Church','Payment','Status','Checked In','Actions'],r=>`<tr><td>${r.id}</td><td>${r.firstName||''} ${r.lastName||''}<br><small>${r.email||''}</small></td><td>${r.church||''}</td><td>${payCell(r)}</td><td>${r.status||''}</td><td>${r.checkedIn?'Yes':'No'}</td><td><button class='button e' data-id='${r.id}'>Edit</button> <button class='button t' data-id='${r.id}'>Transfer</button> ${( ['pending_check','pending_pay_later','unpaid'].includes(r.paymentStatus)?`<button class='button p' data-id='${r.id}' data-bal='${r.finalAmount||0}'>Record Payment</button>`:'')}</td></tr>`);
 app.on('click','.p',function(){window.imsda_open_payment_modal($(this).data('id'),$(this).data('bal'));});
-if(page==='imsda-reg-waitlist') renderGeneric('getWaitlist',['Position','Name','Email','Church','Date Added','Status','Actions'],r=>`<tr><td>${r.position||''}</td><td>${r.name||''}</td><td>${r.email||''}</td><td>${r.church||''}</td><td>${r.dateAdded||''}</td><td>${r.status||''}</td><td><button class='button promote' data-id='${r.id}'>Promote</button> <button class='button remove' data-id='${r.id}'>Remove</button></td></tr>`);
+if(page==='imsda-reg-waitlist'){
+const selectedEvent=(events&&slug&&events[slug])?events[slug]:null;
+if(!selectedEvent){ app.html('<h1>Waitlist</h1><p>Please select an event.</p>'); return; }
+if(!selectedEvent.feature_waitlist){
+app.html(`<h1>Waitlist</h1><div class="notice notice-warning inline"><p>Waitlist is not enabled for this event. Enable it in Events → ${String(selectedEvent.name||slug).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))} → Features.</p></div>`);
+return;
+}
+app.html(`<h1>Waitlist</h1><div id="imsda-wl-notice"></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;"><button class="button" id="imsda-wl-refresh">↺ Refresh</button><label for="imsda-wl-status" class="screen-reader-text">Status</label><select id="imsda-wl-status"><option value="waiting" selected>Waiting (active)</option><option value="promoted">Promoted</option><option value="removed">Removed</option><option value="">All</option></select><span id="imsda-wl-count" style="color:#646970;font-size:.9em"></span></div><div id="imsda-wl-stats" style="margin-bottom:10px;"></div><div id="imsda-wl-wrap"><p>Loading…</p></div>`);
+const wlEsc=s=>String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const wlStatus=s=>String(s||'waiting').toLowerCase();
+const wlDate=v=>{if(!v)return'—';const d=new Date(v);if(!isNaN(d.getTime()))return d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).replace(',', '');return wlEsc(v);};
+const wlGetName=r=>{const fn=r.firstName||r.first_name||'';const ln=r.lastName||r.last_name||'';const full=(fn+' '+ln).trim();return full||r.name||'Unknown';};
+const wlGetId=r=>r.waitlistId||r.waitlist_id||r.id||'';
+const wlGetAdded=r=>r.addedAt||r.dateAdded||r.createdAt||r.created_at||'';
+const wlGetRows=r=>Array.isArray(r.data?.rows)?r.data.rows:(Array.isArray(r.data)?r.data:(Array.isArray(r.rows)?r.rows:[]));
+let waitlistRows=[];
+const wlPill=(label,count,bg,fg)=>`<span style="display:inline-block;margin-right:8px;padding:4px 10px;border-radius:999px;background:${bg};color:${fg};font-weight:600;">${label}: ${count}</span>`;
+function renderWaitlist(){
+const filter=$('#imsda-wl-status').val();
+const filtered=filter?waitlistRows.filter(r=>wlStatus(r.status)===filter):waitlistRows.slice();
+const waitingCount=waitlistRows.filter(r=>wlStatus(r.status)==='waiting').length;
+const promotedCount=waitlistRows.filter(r=>wlStatus(r.status)==='promoted').length;
+const removedCount=waitlistRows.filter(r=>wlStatus(r.status)==='removed').length;
+$('#imsda-wl-stats').html(wlPill('Waiting',waitingCount,waitingCount>0?'#fff4e5':'#f0f0f1',waitingCount>0?'#996800':'#50575e')+wlPill('Promoted',promotedCount,'#edfaef','#008a20')+wlPill('Removed',removedCount,'#f0f0f1','#50575e'));
+$('#imsda-wl-count').text(`${filtered.length} result${filtered.length===1?'':'s'}`);
+if(!filtered.length){ $('#imsda-wl-wrap').html('<p>No waitlist entries found for this filter.</p>'); return; }
+let waitingPos=0;
+const rowsHtml=filtered.map(r=>{const st=wlStatus(r.status);const isWaiting=st==='waiting';if(isWaiting) waitingPos++;const name=wlGetName(r);const email=r.email||'';const phone=r.phone||'—';const church=r.church||'—';const id=wlGetId(r);const pos=isWaiting?waitingPos:'—';const statusLabel=st==='promoted'?'<span style="color:#008a20;font-weight:600">Promoted</span>':(st==='removed'?'<span style="color:#646970;font-weight:600">Removed</span>':'<span style="color:#996800;font-weight:600">Waiting</span>');const actions=isWaiting?`<button class="button imsda-wl-promote" data-id="${wlEsc(id)}" data-name="${wlEsc(name)}">✅ Promote</button> <button class="button imsda-wl-remove" data-id="${wlEsc(id)}" data-name="${wlEsc(name)}">✕ Remove</button> <span class="imsda-wl-inline-err" style="color:#d63638;margin-left:6px;"></span>`:'—';return `<tr data-waitlist-id="${wlEsc(id)}"><td>${pos}</td><td><strong>${wlEsc(name)}</strong><br><small style="color:#646970">${wlEsc(email)}</small></td><td>${wlEsc(phone)}</td><td>${wlEsc(church)}</td><td>${wlDate(wlGetAdded(r))}</td><td>${statusLabel}</td><td>${actions}</td></tr>`;}).join('');
+$('#imsda-wl-wrap').html(`<div style="overflow-x:auto"><table class="widefat striped" style="min-width:720px;"><thead><tr><th>Position</th><th>Name / Email</th><th>Phone</th><th>Church</th><th>Added</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`);
+}
+function loadWaitlist(){
+$('#imsda-wl-wrap').html('<p>Loading…</p>');
+$.post(ajaxurl,{action:'imsda_reg_admin_action',nonce:nonce,imsda_action:'getWaitlist',event_slug:slug,status:$('#imsda-wl-status').val()}).done(function(resp){
+if(!(resp&&resp.success)){ $('#imsda-wl-wrap').html(`<p style="color:#d63638;">${wlEsc(resp?.data?.message||'Failed to load waitlist.')}</p>`); return; }
+waitlistRows=wlGetRows(resp);
+renderWaitlist();
+}).fail(function(){ $('#imsda-wl-wrap').html('<p style="color:#d63638;">Failed to load waitlist.</p>');});
+}
+$('#imsda-wl-refresh').on('click',loadWaitlist);
+$('#imsda-wl-status').on('change',function(){renderWaitlist();});
+app.on('click','.imsda-wl-promote',function(){
+const $btn=$(this),$row=$btn.closest('tr'),id=$btn.data('id'),name=$btn.data('name')||'Registrant',$err=$row.find('.imsda-wl-inline-err');
+if(!confirm(`Promote ${name} from the waitlist to a confirmed registration? A confirmation email will be sent to them.`)) return;
+$err.text(''); const originalText=$btn.text(); $btn.prop('disabled',true).text('Promoting…');
+$.post(ajaxurl,{action:'imsda_reg_admin_action',nonce:nonce,imsda_action:'promoteWaitlist',event_slug:slug,waitlist_id:id}).done(function(resp){
+if(resp&&resp.success){
+const newId=resp?.data?.newRegistrationId||resp?.data?.new_registration_id||'';
+$('#imsda-wl-notice').html(`<div class="notice notice-success inline"><p>✅ ${wlEsc(name)} promoted. Confirmation email sent.${newId?` New registration ID: ${wlEsc(newId)}`:''}</p></div>`);
+setTimeout(function(){$('#imsda-wl-notice').empty();},5000);
+loadWaitlist();
+}else{$btn.prop('disabled',false).text(originalText);$err.text(resp?.data?.message||'Promotion failed.');}
+}).fail(function(){$btn.prop('disabled',false).text(originalText);$err.text('Promotion failed.');});
+});
+app.on('click','.imsda-wl-remove',function(){
+const $btn=$(this),$row=$btn.closest('tr'),id=$btn.data('id'),name=$btn.data('name')||'Registrant',$err=$row.find('.imsda-wl-inline-err');
+if(!confirm(`Remove ${name} from the waitlist? They will be notified by email if configured. This cannot be undone.`)) return;
+$err.text(''); $btn.prop('disabled',true);
+$.post(ajaxurl,{action:'imsda_reg_admin_action',nonce:nonce,imsda_action:'removeWaitlist',event_slug:slug,waitlist_id:id}).done(function(resp){
+if(resp&&resp.success){ $row.remove(); waitlistRows=waitlistRows.filter(x=>String(wlGetId(x))!==String(id)); renderWaitlist(); }
+else {$btn.prop('disabled',false);$err.text(resp?.data?.message||'Remove failed.');}
+}).fail(function(){$btn.prop('disabled',false);$err.text('Remove failed.');});
+});
+loadWaitlist();
+}
 if(page==='imsda-reg-checkin') app.html(`<h2 class='nav-tab-wrapper ims-tabs'><a href='#' class='nav-tab nav-tab-active' data-tab='manual'>Manual Check-In</a><a href='#' class='nav-tab' data-tab='stats'>Stats</a><a href='#' class='nav-tab' data-tab='recent'>Recent Check-Ins</a></h2>
 <div class='ims-tab active' data-name='manual'><p><input id='imsda-ci-search' class='regular-text' placeholder='Search name, email, or church…'> <button class='button' id='imsda-ci-run'>Search</button></p><div id='imsda-ci-results'></div></div>
 <div class='ims-tab' data-name='stats'><p><button class='button' id='imsda-ci-refresh-stats'>Refresh Stats</button> <span id='imsda-ci-last'></span></p><div id='imsda-ci-stats'></div><div id='imsda-ci-church'></div></div>
