@@ -56,6 +56,8 @@ function wr26_value_from_keys($source, $keys, $default = '') {
 function wr26_normalize_payment_method($method) {
     $payment_method = strtolower(sanitize_text_field($method));
     if (!$payment_method) return 'pay_later';
+    if ($payment_method === 'offline') return 'pay_later';
+    if ($payment_method === 'square') return 'square';
     if (strpos($payment_method, 'pay later') !== false || strpos($payment_method, 'later') !== false) return 'pay_later';
     if (strpos($payment_method, 'square') !== false || strpos($payment_method, 'card') !== false || strpos($payment_method, 'credit') !== false) return 'square';
     if (strpos($payment_method, 'check') !== false) return 'check';
@@ -86,41 +88,6 @@ function wr26_extract_amount($raw, $entry_id, $wpdb) {
     return 0.0;
 }
 
-function wr26_has_meaningful_attendee_data($candidate) {
-    $checks = array(
-        wr26_value_from_keys($candidate, array('first_name', 'attendee_first_name', 'firstName'), ''),
-        wr26_value_from_keys($candidate, array('last_name', 'attendee_last_name', 'lastName'), ''),
-        wr26_value_from_keys($candidate, array('email', 'attendee_email'), ''),
-        wr26_value_from_keys($candidate, array('phone', 'attendee_phone'), ''),
-        wr26_value_from_keys($candidate, array('meal_preference', 'attendee_meal_preference'), ''),
-        wr26_value_from_keys($candidate, array('dietary_needs', 'attendee_dietary_needs'), ''),
-        wr26_value_from_keys($candidate, array('childcare_needed', 'attendee_childcare_needed'), '')
-    );
-    foreach ($checks as $value) {
-        if (is_array($value) && !empty($value)) return true;
-        if (trim((string) $value) !== '') return true;
-    }
-    $seminars = wr26_build_seminar_preferences($candidate);
-    return !empty($seminars);
-}
-
-function wr26_build_seminar_preferences($attendee) {
-    $preferences = array();
-    $direct = wr26_value_from_keys($attendee, array('seminar_preferences', 'session_preferences'), array());
-    if (!empty($direct)) {
-        $preferences['raw'] = $direct;
-    }
-    foreach (array('friday_session', 'saturday_session_1', 'saturday_session_2', 'sunday_session') as $slot) {
-        $value = wr26_value_from_keys($attendee, array($slot), '');
-        if ($value !== '') $preferences[$slot] = $value;
-    }
-    foreach ($attendee as $key => $value) {
-        if (preg_match('/^session_\d+_preference_\d+$/', (string) $key)) {
-            $preferences[$key] = $value;
-        }
-    }
-    return $preferences;
-}
 
 function wr26_activate() {
     foreach (wr26_default_options() as $k => $v) {
@@ -163,71 +130,106 @@ function wr26_parse_ff_entry($entry_id) {
     if (!$sub) return array();
     $raw = json_decode($sub['response'], true);
     $raw = is_array($raw) ? $raw : array();
-    $first = $raw['first_name'] ?? '';
-    $last = $raw['last_name'] ?? '';
-    foreach ($raw as $v) {
-        if (is_array($v)) {
-            if (!$first && !empty($v['first_name'])) $first = $v['first_name'];
-            if (!$last && !empty($v['last_name'])) $last = $v['last_name'];
-        }
-    }
+
     $payment_method = wr26_normalize_payment_method($raw['payment_method'] ?? $raw['payment'] ?? $raw['pay_method'] ?? get_option('wr26_payment_default', 'pay_later'));
     $promo = strtoupper(sanitize_text_field($raw['promo_code'] ?? $raw['discount_code'] ?? $raw['coupon_code'] ?? $raw['coupon'] ?? ''));
     $amount = wr26_extract_amount($raw, $entry_id, $wpdb);
+
+    $church_raw = sanitize_text_field($raw['church'] ?? '');
+    $church_other = sanitize_text_field($raw['church_other'] ?? '');
+    $church = ($church_raw === 'Other' && $church_other !== '') ? $church_other : $church_raw;
+
     $attendees = array();
-    foreach (array('attendees', 'attendee', 'guests', 'registrants', 'people') as $container_key) {
-        if (!empty($raw[$container_key]) && is_array($raw[$container_key])) {
-            foreach ($raw[$container_key] as $idx => $candidate) {
-                if (!is_array($candidate)) continue;
-                $first_name = sanitize_text_field(wr26_value_from_keys($candidate, array('first_name', 'attendee_first_name', 'firstName'), ''));
-                $last_name = sanitize_text_field(wr26_value_from_keys($candidate, array('last_name', 'attendee_last_name', 'lastName'), ''));
-                if (!wr26_has_meaningful_attendee_data($candidate)) continue;
-                $attendees[] = array(
-                    'attendee_id' => 'A-'.intval($entry_id).'-'.($idx + 1),
-                    'first_name' => $first_name,
-                    'last_name' => $last_name,
-                    'phone' => sanitize_text_field(wr26_value_from_keys($candidate, array('phone', 'attendee_phone'), '')),
-                    'email' => sanitize_email(wr26_value_from_keys($candidate, array('email', 'attendee_email'), '')),
-                    'church' => sanitize_text_field(wr26_value_from_keys($candidate, array('church', 'attendee_church'), '')),
-                    'attendee_type' => sanitize_text_field(wr26_value_from_keys($candidate, array('adult_child', 'attendee_type', 'type', 'age_group'), '')),
-                    'meal_preference' => sanitize_text_field(wr26_value_from_keys($candidate, array('meal_preference', 'attendee_meal_preference'), '')),
-                    'dietary_needs' => sanitize_textarea_field(wr26_value_from_keys($candidate, array('dietary_needs', 'attendee_dietary_needs'), '')),
-                    'childcare_needed' => sanitize_text_field(wr26_value_from_keys($candidate, array('childcare_needed', 'attendee_childcare_needed'), '')),
-                    'seminar_preferences' => wr26_build_seminar_preferences($candidate)
-                );
-            }
-        }
-    }
-    if (empty($attendees)) {
+
+    // Attendee 1 — primary registrant + a1_ fields
+    $attendees[] = array(
+        'attendee_id'        => 'A-' . intval($entry_id) . '-1',
+        'first_name'         => sanitize_text_field($raw['first_name'] ?? ''),
+        'last_name'          => sanitize_text_field($raw['last_name'] ?? ''),
+        'phone'              => sanitize_text_field($raw['phone'] ?? ''),
+        'email'              => sanitize_email($raw['email'] ?? ''),
+        'church'             => $church,
+        'attendee_type'      => 'adult',
+        'meal_preference'    => sanitize_text_field($raw['a1_meal_preference'] ?? ''),
+        'dietary_needs'      => sanitize_textarea_field($raw['a1_dietary_needs'] ?? ''),
+        'childcare_needed'   => sanitize_text_field($raw['a1_childcare_needed'] ?? ''),
+        'seminar_preferences' => array(
+            'session_1' => array(
+                'pref_1' => sanitize_text_field($raw['a1_session1_pref1'] ?? ''),
+                'pref_2' => sanitize_text_field($raw['a1_session1_pref2'] ?? '')
+            ),
+            'session_2' => array(
+                'pref_1' => sanitize_text_field($raw['a1_session2_pref1'] ?? ''),
+                'pref_2' => sanitize_text_field($raw['a1_session2_pref2'] ?? '')
+            ),
+            'session_3' => array(
+                'pref_1' => sanitize_text_field($raw['a1_session3_pref1'] ?? ''),
+                'pref_2' => sanitize_text_field($raw['a1_session3_pref2'] ?? '')
+            ),
+            'session_4' => array(
+                'pref_1' => sanitize_text_field($raw['a1_session4'] ?? '')
+            )
+        )
+    );
+
+    // Attendees 2–5 — flat a{n}_ fields
+    $attendee_count = min(5, max(1, intval($raw['attendee_count'] ?? 1)));
+    for ($n = 2; $n <= $attendee_count; $n++) {
+        if (empty($raw["a{$n}_first_name"])) continue;
         $attendees[] = array(
-            'attendee_id' => 'A-'.intval($entry_id).'-1',
-            'first_name' => sanitize_text_field($first),
-            'last_name' => sanitize_text_field($last),
-            'phone' => sanitize_text_field($raw['phone'] ?? ''),
-            'email' => sanitize_email($raw['email'] ?? ''),
-            'church' => sanitize_text_field($raw['church'] ?? ''),
-            'attendee_type' => sanitize_text_field(wr26_value_from_keys($raw, array('adult_child', 'attendee_type', 'type', 'age_group'), '')),
-            'meal_preference' => sanitize_text_field(wr26_value_from_keys($raw, array('meal_preference', 'attendee_meal_preference'), '')),
-            'dietary_needs' => sanitize_textarea_field($raw['dietary_needs'] ?? ''),
-            'childcare_needed' => sanitize_text_field(wr26_value_from_keys($raw, array('childcare_needed', 'attendee_childcare_needed'), '')),
-            'seminar_preferences' => wr26_build_seminar_preferences($raw)
+            'attendee_id'        => 'A-' . intval($entry_id) . '-' . $n,
+            'first_name'         => sanitize_text_field($raw["a{$n}_first_name"]),
+            'last_name'          => sanitize_text_field($raw["a{$n}_last_name"]),
+            'phone'              => sanitize_text_field($raw["a{$n}_phone"]),
+            'email'              => '',
+            'church'             => '',
+            'attendee_type'      => sanitize_text_field($raw["a{$n}_attendee_type"]),
+            'meal_preference'    => sanitize_text_field($raw["a{$n}_meal_preference"]),
+            'dietary_needs'      => sanitize_textarea_field($raw["a{$n}_dietary_needs"] ?? ''),
+            'childcare_needed'   => sanitize_text_field($raw["a{$n}_childcare_needed"] ?? ''),
+            'seminar_preferences' => array(
+                'session_1' => array(
+                    'pref_1' => sanitize_text_field($raw["a{$n}_session1_pref1"] ?? ''),
+                    'pref_2' => sanitize_text_field($raw["a{$n}_session1_pref2"] ?? '')
+                ),
+                'session_2' => array(
+                    'pref_1' => sanitize_text_field($raw["a{$n}_session2_pref1"] ?? ''),
+                    'pref_2' => sanitize_text_field($raw["a{$n}_session2_pref2"] ?? '')
+                ),
+                'session_3' => array(
+                    'pref_1' => sanitize_text_field($raw["a{$n}_session3_pref1"] ?? ''),
+                    'pref_2' => sanitize_text_field($raw["a{$n}_session3_pref2"] ?? '')
+                ),
+                'session_4' => array(
+                    'pref_1' => sanitize_text_field($raw["a{$n}_session4"] ?? '')
+                )
+            )
         );
     }
 
     return array(
-        'entry_id' => intval($sub['id']), 'form_id' => intval($sub['form_id']),
-        'first_name' => sanitize_text_field($first), 'last_name' => sanitize_text_field($last),
-        'email' => sanitize_email($raw['email'] ?? ''), 'phone' => sanitize_text_field($raw['phone'] ?? ''),
-        'church' => sanitize_text_field($raw['church'] ?? ''),
-        'arrival_date' => sanitize_text_field($raw['arrival_date'] ?? ''), 'departure_date' => sanitize_text_field($raw['departure_date'] ?? ''),
-        'dietary_needs' => sanitize_textarea_field($raw['dietary_needs'] ?? ''),
+        'entry_id'               => intval($sub['id']),
+        'form_id'                => intval($sub['form_id']),
+        'first_name'             => sanitize_text_field($raw['first_name'] ?? ''),
+        'last_name'              => sanitize_text_field($raw['last_name'] ?? ''),
+        'email'                  => sanitize_email($raw['email'] ?? ''),
+        'phone'                  => sanitize_text_field($raw['phone'] ?? ''),
+        'church'                 => $church,
+        'arrival_date'           => sanitize_text_field($raw['arrival_date'] ?? ''),
+        'departure_date'         => sanitize_text_field($raw['departure_date'] ?? ''),
         'emergency_contact_name' => sanitize_text_field($raw['emergency_contact_name'] ?? ''),
-        'emergency_contact_phone' => sanitize_text_field($raw['emergency_contact_phone'] ?? ''),
-        'special_needs' => sanitize_textarea_field($raw['special_needs'] ?? ''), 'promo_code' => $promo,
-        'payment_method' => $payment_method, 'amount' => floatval($amount), 'ip_address' => sanitize_text_field($sub['ip']),
-        'submitted_at' => sanitize_text_field($sub['created_at']),
-        'worker_flag' => sanitize_text_field(wr26_value_from_keys($raw, array('worker', 'is_worker', 'worker_registration', 'non_paying_worker'), '')),
-        'attendees' => $attendees
+        'emergency_contact_phone'=> sanitize_text_field($raw['emergency_contact_phone'] ?? ''),
+        'dietary_needs'          => sanitize_textarea_field($raw['a1_dietary_needs'] ?? ''),
+        'special_needs'          => sanitize_textarea_field($raw['special_needs'] ?? ''),
+        'attendee_notes'         => sanitize_textarea_field($raw['attendee_notes'] ?? ''),
+        'promo_code'             => $promo,
+        'payment_method'         => $payment_method,
+        'amount'                 => floatval($amount),
+        'ip_address'             => sanitize_text_field($sub['ip']),
+        'submitted_at'           => sanitize_text_field($sub['created_at']),
+        'worker_flag'            => sanitize_text_field($raw['worker_registration'] ?? ''),
+        'attendee_count'         => count($attendees),
+        'attendees'              => $attendees
     );
 }
 

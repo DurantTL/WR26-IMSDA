@@ -106,31 +106,45 @@ Implementation note:
 - Keep seminar preference data in a dedicated **SeminarPreferences** tab instead of overloading **Registrations**.
 
 ## 8) Fluent Forms parser field names
-Existing/common field names:
-- Name: nested `first_name`, `last_name` (supports Name widget array)
-- Email: `email`
-- Phone: `phone`
-- Church: `church`
-- Arrival/Departure: `arrival_date`, `departure_date`
-- Dietary: `dietary_needs`
-- Emergency: `emergency_contact_name`, `emergency_contact_phone`
-- Special needs: `special_needs`
-- Promo: `promo_code`, `discount_code`, `coupon_code`, `coupon`
-- Payment method: `payment_method`, `payment`, `pay_method`
 
-Likely attendee repeater/nested fields (example naming):
-- `attendees`
-- `attendee_first_name`
-- `attendee_last_name`
-- `attendee_phone`
-- `attendee_meal_preference`
-- `attendee_dietary_needs`
-- `attendee_childcare_needed`
-- `attendee_session_preferences`
+PRIMARY REGISTRANT (top-level flat fields):
+- `first_name`, `last_name`, `email`, `phone`
+- `church` (uses `church_other` value when `church` = "Other")
+- `church_other`
+- `arrival_date` (values: `2026-10-09`, `2026-10-10`)
+- `departure_date` (value: `2026-10-11`)
+- `emergency_contact_name`, `emergency_contact_phone`
+- `special_needs`, `attendee_notes`
+- `attendee_count` (1–5)
+- `payment_method` (`offline` = pay_later | `square`)
+- `promo_code`
+- `worker_registration` (`no` | `yes`)
+- `acknowledgment` (`yes`)
 
-Important:
-- Exact Fluent Forms keys must match your actual form configuration.
-- If field names differ, update parser mappings before go-live.
+ATTENDEE 1 (primary registrant's preferences):
+- `a1_meal_preference`, `a1_dietary_needs`, `a1_childcare_needed`
+- `a1_session1_pref1`, `a1_session1_pref2`
+- `a1_session2_pref1`, `a1_session2_pref2`
+- `a1_session3_pref1`, `a1_session3_pref2`
+- `a1_session4`
+
+ATTENDEES 2–5 (replace N with 2, 3, 4, or 5):
+- `aN_first_name`, `aN_last_name`, `aN_phone`, `aN_attendee_type`
+- `aN_meal_preference`, `aN_dietary_needs`, `aN_childcare_needed`
+- `aN_session1_pref1`, `aN_session1_pref2`
+- `aN_session2_pref1`, `aN_session2_pref2`
+- `aN_session3_pref1`, `aN_session3_pref2`
+- `aN_session4`
+
+Seminar option values (update labels in form only — these values never change):
+- Session 1 (Friday 4PM): `fri_opt_1`, `fri_opt_2`
+- Session 2 (Sat 2PM): `sat_2pm_opt_1`, `sat_2pm_opt_2`, `sat_2pm_opt_3`
+- Session 3 (Sat 3:30PM): `sat_330_opt_1`, `sat_330_opt_2`
+- Session 4 (Sunday 8:15AM): `sun_opt_1`
+
+Payment method values from FF payment gateway:
+- `offline` → normalized to `pay_later` in plugin
+- `square` → normalized to `square` in plugin
 
 ## 9) Payment flow (Pay Later default)
 Default expectation:
