@@ -65,7 +65,33 @@ class IMSDA_Reg_Ajax {
             $payload=['action'=>'getRecentCheckIns','event_slug'=>$slug,'limit'=>50];
             wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload));
         }
-        $pass=['getWaitlist','promoteWaitlist','removeWaitlist','checkinByToken','checkinById','searchRegistrations','getChurchRosters','getCheckInStats','getPromoCodes','savePromoCode','deletePromoCode'];
+        if($a==='getWaitlist'){
+            $payload = [
+                'action' => 'getWaitlist',
+                'event_slug' => $slug,
+                'status' => sanitize_text_field(wp_unslash($_POST['status'] ?? '')),
+            ];
+            wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload));
+        }
+        if($a==='promoteWaitlist'){
+            $payload = [
+                'action' => 'promoteWaitlist',
+                'event_slug' => $slug,
+                'waitlistId' => sanitize_text_field(wp_unslash($_POST['waitlist_id'] ?? '')),
+                'adminUser' => wp_get_current_user()->user_login,
+            ];
+            wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload));
+        }
+        if($a==='removeWaitlist'){
+            $payload = [
+                'action' => 'removeWaitlist',
+                'event_slug' => $slug,
+                'waitlistId' => sanitize_text_field(wp_unslash($_POST['waitlist_id'] ?? '')),
+                'adminUser' => wp_get_current_user()->user_login,
+            ];
+            wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload));
+        }
+        $pass=['checkinByToken','checkinById','searchRegistrations','getChurchRosters','getCheckInStats','getPromoCodes','savePromoCode','deletePromoCode'];
         if(in_array($a,$pass,true)){ $payload=$_POST; $payload['action']=$a; unset($payload['nonce']); wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload)); }
         wp_send_json_error(['message'=>'Unknown action']);
     }
