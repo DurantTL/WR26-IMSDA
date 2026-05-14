@@ -47,3 +47,9 @@ For each legacy plugin: copy settings → add event profile → test end-to-end 
 - Verify form ID mapping.
 - Check Dashboard queue/failed lists.
 - Run queue manually from admin AJAX action.
+
+## 13) Check-in PWA URL + rewrite rules
+- The plugin serves the standalone check-in PWA at `/imsda-checkin/`.
+- The web app manifest is served at `/imsda-checkin-manifest.json`.
+- Upload PWA icons to `/imsda-checkin-icon-192.png` and `/imsda-checkin-icon-512.png` (install still works without custom icons, browser default icon is used).
+- After activating or updating the plugin, if `/imsda-checkin/` returns 404, go to **Settings → Permalinks** and click **Save** to flush rewrite rules.

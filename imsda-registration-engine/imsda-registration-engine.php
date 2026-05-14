@@ -28,6 +28,7 @@ register_activation_hook(__FILE__, function () {
     if (!wp_next_scheduled('imsda_reg_process_queue')) {
         wp_schedule_event(time() + 60, 'imsda_reg_every_5_minutes', 'imsda_reg_process_queue');
     }
+    flush_rewrite_rules();
 });
 register_deactivation_hook(__FILE__, function () {
     wp_clear_scheduled_hook('imsda_reg_process_queue');
@@ -84,3 +85,36 @@ add_action('fluentform/payment_paid', function($payment, $submission, $status) {
     }
   }
 }, 10, 3);
+
+
+add_action('init', function () {
+    add_rewrite_rule('^imsda-checkin/?$', 'index.php?imsda_checkin=1', 'top');
+    add_rewrite_rule('^imsda-checkin-manifest\.json$', 'index.php?imsda_checkin_manifest=1', 'top');
+});
+
+add_filter('query_vars', function ($vars) {
+    $vars[] = 'imsda_checkin';
+    $vars[] = 'imsda_checkin_manifest';
+    return $vars;
+});
+
+add_action('template_redirect', function () {
+    if (get_query_var('imsda_checkin')) {
+        $file = plugin_dir_path(__FILE__) . 'pwa/imsda-checkin.html';
+        if (file_exists($file)) {
+            header('Content-Type: text/html; charset=utf-8');
+            header('Cache-Control: no-store');
+            readfile($file);
+            exit;
+        }
+    }
+    if (get_query_var('imsda_checkin_manifest')) {
+        $file = plugin_dir_path(__FILE__) . 'pwa/manifest.json';
+        if (file_exists($file)) {
+            header('Content-Type: application/manifest+json; charset=utf-8');
+            header('Cache-Control: no-store');
+            readfile($file);
+            exit;
+        }
+    }
+});
