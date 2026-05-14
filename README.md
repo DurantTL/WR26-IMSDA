@@ -25,8 +25,8 @@
 
 ## 3) Google Sheet setup (tabs + exact headers)
 - **Registrations**: Registration ID, Timestamp, First Name, Last Name, Email, Phone, Church, Arrival Date, Departure Date, Dietary Needs, Emergency Contact Name, Emergency Contact Phone, Special Needs, Promo Code, Discount Amount, Original Amount, Final Amount, Payment Method, Payment Status, Square Payment ID, FF Entry ID, Status, Transfer Notes, Checked In, Check-In Time, Check-In By, QR Token, Edit Token, Admin Notes.
-- **Attendees** (recommended for attendee-level tracking): Attendee ID, Registration ID, First Name, Last Name, Phone, Email, Church, Adult/Child, Meal Preference, Dietary Needs, Childcare Needed, Seminar Preferences Complete, Notes.
-- **SeminarPreferences** (recommended for seminar assignment workflow): Preference ID, Registration ID, Attendee ID, Attendee Name, Session Slot, Preference Rank, Seminar Title, Seminar ID, Assigned Seminar, Assignment Status, Notes.
+- **Attendees** (required for multi-attendee tracking): Attendee ID, Registration ID, First Name, Last Name, Phone, Email, Church, Adult/Child, Meal Preference, Dietary Needs, Childcare Needed, Seminar Preferences Complete, Notes.
+- **SeminarPreferences** (required for seminar assignment workflow): Preference ID, Registration ID, Attendee ID, Attendee Name, Session Slot, Preference Rank, Seminar Title, Seminar ID, Assigned Seminar, Assignment Status, Notes.
 - **Waitlist**: Waitlist ID, Timestamp, First Name, Last Name, Email, Phone, Church, FF Entry ID, Status, Position, Promoted At, Notes.
 - **PromoCodes**: Code, Description, Discount Type, Discount Amount, Max Uses, Current Uses, Expiry Date, Active, Min Purchase.
 - **TransferLog**: Transfer ID, Timestamp, Original Reg ID, New Reg ID, Original Name, New Name, Original Email, New Email, Reason, Refund Notes, Admin Notes, Transferred By.
@@ -38,7 +38,7 @@ After creating the housing-free sheet, add at least one row of test data to **Re
 > **Schema alignment warning**: If you previously ran `wr26EnsureSheetSetup()` before this schema alignment fix, run `wr26SetupCheck()` and verify **Waitlist** and **PromoCodes** column order before live submissions.
 
 ## 4) Config rows
-Set keys:
+Set keys (these are the exact row keys `getConfig()` reads from the Config sheet — verified against `Config.gs`):
 - `SECRET`
 - `ADMIN_EMAIL`
 - `NOTIFICATION_EMAIL`
@@ -52,16 +52,19 @@ Set keys:
 - `EARLY_BIRD_END_DATE=2026-08-14`
 - `REGULAR_END_DATE=2026-09-17`
 - `OPEN_CAMP_MEETING_DATE=2026-06-03`
+- `EDIT_PAGE_URL`
 - `PAYMENT_DEFAULT=pay_later`
 - `WORKER_REGISTRATION_URL`
-- `CHILDCARE_ENABLED`
-- `CHILDCARE_MINIMUM_CHILDREN`
+- `CHILDCARE_ENABLED=true`
+- `CHILDCARE_MINIMUM_CHILDREN=0`
 - `CHILDCARE_MESSAGE`
-- `SQUARE_FEE_ENABLED`
-- `SQUARE_FEE_PERCENT`
-- `SQUARE_FEE_FIXED`
+- `SQUARE_FEE_ENABLED=false`
+- `SQUARE_FEE_PERCENT=0`
+- `SQUARE_FEE_FIXED=0`
 - `SEMINAR_FULL_BEHAVIOR=allow_with_review`
-- `SEMINAR_CAPACITY_DEFAULT`
+- `SEMINAR_CAPACITY_DEFAULT=0`
+- `CHECKIN_PIN` — 4–6 digit PIN for the check-in PWA login screen
+- `CHECKIN_TOKEN` — random token that authenticates the check-in PWA; must match the token configured in the WP plugin
 
 ## 5) WordPress setup
 - Activate plugin.
@@ -199,12 +202,12 @@ Recommended Config keys:
   - `WORKER_REGISTRATION_URL`
 
 ## 13) Shortcodes
-- `[wr_edit_registration]`
+- `[wr_edit_registration]` — **⚠ PLACEHOLDER ONLY.** The current implementation (`wr26-registration.php` line 498) returns a static `<div>` with the text "Edit form loads via AJAX using token." No edit form is rendered. The AJAX endpoints (`wr26_get_reg_by_token`, `wr26_save_edit`) are wired and functional, but the shortcode does not yet call them. Do not direct registrants to a page with this shortcode until it is replaced with a real form.
 
 ## 14) Edit registration page setup
-Create WP page, place `[wr_edit_registration]`, copy full URL into WR26 Settings → Edit Registration Page URL.
+Create a WP page for future use. Copy its full URL into WR26 → Settings → Edit Registration Page URL. The URL is passed to GAS and included in confirmation email edit links. The page must be publicly accessible — do not put it behind a login wall.
 
-The edit registration page must be publicly accessible (do not require login). If the page is behind a membership wall or login redirect, token links in confirmation emails will send attendees to a login screen instead of their registration form.
+When the `[wr_edit_registration]` shortcode is fully implemented, place it on this page. Until then, confirm the URL is correct in settings so email links point to the right page even if the form is not yet functional.
 
 ## 15) Promo code walkthrough
 WR26 Promo tab → New Promo Code → define code/type/amount/max uses/min purchase/expiry/active → Save.
@@ -243,18 +246,20 @@ From the Registrations tab:
 Stats tab shows a live Payments Pending count so you can track outstanding balances throughout the event.
 
 ## 20) Deployment notes
-`clasp push` then create new deployment URL; update WP `wr26_gas_url` after every redeploy URL change.
+`clasp push` then create new deployment URL. Update WP **WR26 → Settings → GAS URL** after every redeploy URL change.
 
 When creating the Web App deployment, set **Execute as: Me** and **Access: Anyone, even anonymous**. If Execute as is set to **User accessing the web app**, all requests will fail with a permissions error.
 
 `gas/.clasp.json` in this repo should contain a placeholder script ID only. Replace it locally with your real Apps Script `scriptId` before running `clasp push`, and do not commit private IDs.
 
 ## 21) Troubleshooting
-- Unauthorized: ensure WP secret equals Config SECRET.
-- No sync: run queue manually from dashboard action.
-- Wrong form: verify `wr26_form_id`.
-- Missing edit links: verify Edit Registration Page URL in WP settings.
+- Unauthorized: ensure WP secret equals Config `SECRET`.
+- No sync: run queue manually from the WR26 Dashboard.
+- Wrong form: verify `wr26_form_id` in WR26 → Settings.
+- Missing edit links: verify Edit Registration Page URL in WR26 → Settings.
+- **"Last Dispatch Run" always shows "Never"** in the WR26 Dashboard: this is a known bug (reads wrong option key). The queue IS running; verify via Settings → last queue run timestamp.
 - Square payment delay: the `fluentform/payment_paid` hook only fires after Square's webhook confirms the charge, which can take 15–45 seconds after the registrant submits. The entry will not appear in the queue until that hook fires. This is expected behavior, not a bug.
+- Promo codes do not save / list is empty: this is a known bug — see AUDIT-REPORT.md Section 2.8 and 2.9.
 
 ## Before deployment
 - Run `wr26EnsureSheetSetup()`.
@@ -319,3 +324,43 @@ When creating the Web App deployment, set **Execute as: Me** and **Access: Anyon
 - Confirm promo Max Uses cannot be exceeded under rapid concurrent submissions.
 - Confirm transfer rejects blank new registrant required fields.
 - Confirm confirmation emails safely render names/churches containing `&`, `<`, and `>`.
+
+---
+
+## IMSDA Registration Engine migration
+
+Status of migrating WR26 from `plugin/wr26-registration.php` to `imsda-registration-engine/`.
+
+### What already works with the engine
+
+- Form submission capture and queue dispatch work correctly.
+- Sessions 1 and 2 seminar preferences are parsed and forwarded.
+- Capacity check and waitlist routing work.
+- Square/Pay Later payment hold-and-release works.
+- The standalone check-in PWA is fully functional.
+- All GAS backend functions (register, waitlist, check-in, transfer, promo code validation) operate correctly when called with correct payloads.
+- Event import/export works.
+
+### What is broken or missing in the engine (as of 2026-05-14 audit)
+
+All of the following must be fixed before the engine can replace the legacy plugin:
+
+1. **Admin page data rendering** — 7 admin views (Registrations, Waitlist, Check-In stats/search/recent, Church Rosters, Promo Codes) never display data because the engine JS reads wrong response keys from GAS. See AUDIT-REPORT.md Sections 2.2–2.8.
+
+2. **`save()` partial-update bug** — Regenerate Secret, Set Check-In PIN, and Generate Check-In Token AJAX actions silently fail; data is not persisted. See AUDIT-REPORT.md Section 4.1.
+
+3. **`savePromoCode` key mismatch** — Creating or updating a promo code always fails with "Missing required fields" because the engine sends `discount_type`/`discount_amount` but GAS reads `discountType`/`discountAmount`. See AUDIT-REPORT.md Section 2.9.
+
+4. **`checkinById` key mismatch** — Admin manual check-in by registration ID always fails because the engine sends `registration_id` but GAS reads `registrationId`. See AUDIT-REPORT.md Section 2.10.
+
+5. **Edit and Transfer click handlers absent** — Buttons exist in the Registrations table but clicking them does nothing. See AUDIT-REPORT.md Section 1.2.
+
+6. **Sessions 3 and 4 not parsed** — The WR26 form has 4 seminar session slots. The engine parser only handles sessions 1 and 2; sessions 3 and 4 are silently discarded. See AUDIT-REPORT.md Section 2.11.
+
+7. **`worker_registration` field name** — The parser reads `$raw['worker_flag']` but the form field is named `worker_registration`. See AUDIT-REPORT.md Section 2.12.
+
+### What to do first
+
+Fix items 1 and 2 above first — they block all admin visibility and make the engine unusable for day-to-day operations. Item 1 requires updating 7 JS data-read paths to use the correct GAS response keys. Item 2 requires refactoring `save()` to support partial updates or adding a separate `update_partial()` method.
+
+Once those are fixed, fix item 3 (promo code creation) and item 4 (manual check-in). Then implement items 5–7 before going live with the engine as the sole WR26 plugin.
