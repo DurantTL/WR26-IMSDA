@@ -1,0 +1,11 @@
+<?php
+if (!defined('ABSPATH')) { exit; }
+class IMSDA_Reg_Queue {
+    public static function enqueue($event_slug,$entry_id,$action){$q=self::get_queue(); foreach($q as $i){if($i['event_slug']===$event_slug && intval($i['entry_id'])===intval($entry_id)) return true;} $q[]=['event_slug'=>sanitize_key($event_slug),'entry_id'=>intval($entry_id),'action'=>sanitize_key($action),'queued_at'=>current_time('mysql'),'attempts'=>0]; update_option('imsda_reg_dispatch_queue',$q,false); if(!wp_next_scheduled('imsda_reg_process_queue')) wp_schedule_event(time()+60,'imsda_reg_every_5_minutes','imsda_reg_process_queue'); error_log('IMSDA queue enqueue: '.$event_slug.' #'.$entry_id.' '.$action); return true; }
+    public static function process(){ $queue=self::get_queue(); $failed=self::get_failed(); $next=[]; foreach($queue as $item){ $result=IMSDA_Reg_Dispatcher::send($item); if($result===true) continue; $item['attempts']=intval($item['attempts']??0)+1; $item['error']=$result; if($item['attempts']>=IMSDA_REG_MAX_ATTEMPTS){ $item['failed_at']=current_time('mysql'); $failed[]=$item; wp_mail(get_option('admin_email'),'IMSDA failed submission','Failed queue item: '.wp_json_encode($item)); } else $next[]=$item; } update_option('imsda_reg_dispatch_queue',$next,false); update_option('imsda_reg_failed_submissions',$failed,false); update_option('imsda_reg_dispatch_last_run',current_time('mysql'),false); }
+    public static function get_queue(){ $q=get_option('imsda_reg_dispatch_queue',[]); return is_array($q)?$q:[]; }
+    public static function get_failed(){ $q=get_option('imsda_reg_failed_submissions',[]); return is_array($q)?$q:[]; }
+    public static function retry_failed($index){ $f=self::get_failed(); if(!isset($f[$index])) return false; $i=$f[$index]; unset($f[$index]); $i['attempts']=0; update_option('imsda_reg_failed_submissions',array_values($f),false); return self::enqueue($i['event_slug'],$i['entry_id'],$i['action']); }
+    public static function dismiss_failed($index){ $f=self::get_failed(); if(!isset($f[$index])) return false; unset($f[$index]); update_option('imsda_reg_failed_submissions',array_values($f),false); return true; }
+    public static function clear_queue_for_event($slug){ $q=array_values(array_filter(self::get_queue(),fn($i)=>$i['event_slug']!==$slug)); update_option('imsda_reg_dispatch_queue',$q,false); }
+}
