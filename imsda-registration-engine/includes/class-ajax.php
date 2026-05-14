@@ -98,7 +98,41 @@ class IMSDA_Reg_Ajax {
             ];
             wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload));
         }
-        $pass=['checkinByToken','checkinById','searchRegistrations','getChurchRosters','getCheckInStats','getPromoCodes','savePromoCode','deletePromoCode'];
+        if($a==='getPromoCodes'){
+            $payload = [
+                'action' => 'getPromoCodes',
+                'event_slug' => $slug,
+            ];
+            wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload));
+        }
+        if($a==='savePromoCode'){
+            $discount_type = sanitize_text_field(wp_unslash($_POST['discount_type'] ?? ''));
+            if(!in_array($discount_type, ['percent','fixed'], true)) $discount_type = 'percent';
+            $active = sanitize_text_field(wp_unslash($_POST['active'] ?? 'true'));
+            if(!in_array($active, ['true','false'], true)) $active = 'true';
+            $payload = [
+                'action' => 'savePromoCode',
+                'event_slug' => $slug,
+                'code' => strtoupper(sanitize_text_field(wp_unslash($_POST['code'] ?? ''))),
+                'description' => sanitize_text_field(wp_unslash($_POST['description'] ?? '')),
+                'discount_type' => $discount_type,
+                'discount_amount' => floatval($_POST['discount_amount'] ?? 0),
+                'max_uses' => intval($_POST['max_uses'] ?? 0),
+                'min_purchase' => floatval($_POST['min_purchase'] ?? 0),
+                'expiry_date' => sanitize_text_field(wp_unslash($_POST['expiry_date'] ?? '')),
+                'active' => $active,
+            ];
+            wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload));
+        }
+        if($a==='deletePromoCode'){
+            $payload = [
+                'action' => 'deletePromoCode',
+                'event_slug' => $slug,
+                'code' => strtoupper(sanitize_text_field(wp_unslash($_POST['code'] ?? ''))),
+            ];
+            wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload));
+        }
+        $pass=['checkinByToken','checkinById','searchRegistrations','getChurchRosters','getCheckInStats'];
         if(in_array($a,$pass,true)){ $payload=$_POST; $payload['action']=$a; unset($payload['nonce']); wp_send_json(IMSDA_Reg_Dispatcher::gas_request($slug,$payload)); }
         wp_send_json_error(['message'=>'Unknown action']);
     }
