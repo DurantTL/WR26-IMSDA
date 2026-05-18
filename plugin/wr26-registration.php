@@ -495,13 +495,239 @@ function wr26_page_settings(){
     echo '<p>GAS Secret: <code>'.esc_html(get_option('wr26_gas_secret','')).'</code></p><p><button class="button button-primary" name="wr26_save_settings" value="1">Save</button></p></form>';
 }
 
-add_shortcode('wr_edit_registration', function(){
-    wp_enqueue_script('jquery');
-    $token = sanitize_text_field($_GET['token'] ?? '');
-    if (!$token) {
-        return '<p style="color:#d63638">No registration token found. Please use the link from your confirmation email.</p>';
+add_shortcode('wr_edit_registration', function() {
+  $token = sanitize_text_field($_GET['token'] ?? '');
+
+  if (empty($token)) {
+    return '<p style="color:#d63638;font-size:1em">'
+      . 'No registration token found. '
+      . 'Please use the link from your confirmation email.'
+      . '</p>';
+  }
+
+  wp_enqueue_script('jquery');
+
+  $ajax_url = esc_js(admin_url('admin-ajax.php'));
+  $token_js  = esc_js($token);
+
+  return '
+<div id="wr26-edit-wrap" style="max-width:640px;'
+  . 'margin:0 auto;font-family:sans-serif">
+
+  <div id="wr26-edit-loading"
+    style="padding:20px;color:#646970">
+    Loading your registration&#8230;
+  </div>
+
+  <form id="wr26-edit-form" style="display:none">
+
+    <div style="margin-bottom:20px">
+      <strong>Name:</strong>
+      <span id="wr26-edit-name"></span>
+    </div>
+
+    <p style="color:#646970;font-style:italic;'
+  . 'font-size:.9em;margin-bottom:20px">
+      Email, payment details, and arrival dates cannot be
+      changed here. To update those, please contact us.
+    </p>
+
+    <table style="width:100%;border-collapse:collapse;'
+  . 'margin-bottom:20px">
+
+      <tr><td style="padding:8px 0;width:220px;'
+  . 'font-weight:600;vertical-align:top;'
+  . 'padding-right:16px">First Name</td>
+        <td style="padding:8px 0">
+          <input type="text" name="first_name"
+            style="width:100%;padding:8px;'
+  . 'border:1px solid #ccd0d4;border-radius:3px;'
+  . 'font-size:1em">
+        </td></tr>
+
+      <tr><td style="padding:8px 0;font-weight:600;'
+  . 'vertical-align:top;padding-right:16px">
+        Last Name</td>
+        <td style="padding:8px 0">
+          <input type="text" name="last_name"
+            style="width:100%;padding:8px;'
+  . 'border:1px solid #ccd0d4;border-radius:3px;'
+  . 'font-size:1em">
+        </td></tr>
+
+      <tr><td style="padding:8px 0;font-weight:600;'
+  . 'vertical-align:top;padding-right:16px">
+        Phone</td>
+        <td style="padding:8px 0">
+          <input type="tel" name="phone"
+            style="width:100%;padding:8px;'
+  . 'border:1px solid #ccd0d4;border-radius:3px;'
+  . 'font-size:1em">
+        </td></tr>
+
+      <tr><td style="padding:8px 0;font-weight:600;'
+  . 'vertical-align:top;padding-right:16px">
+        Church</td>
+        <td style="padding:8px 0">
+          <input type="text" name="church"
+            style="width:100%;padding:8px;'
+  . 'border:1px solid #ccd0d4;border-radius:3px;'
+  . 'font-size:1em">
+        </td></tr>
+
+      <tr><td style="padding:8px 0;font-weight:600;'
+  . 'vertical-align:top;padding-right:16px">
+        Dietary Needs</td>
+        <td style="padding:8px 0">
+          <textarea name="dietary_needs" rows="2"
+            style="width:100%;padding:8px;'
+  . 'border:1px solid #ccd0d4;border-radius:3px;'
+  . 'font-size:1em"></textarea>
+        </td></tr>
+
+      <tr><td style="padding:8px 0;font-weight:600;'
+  . 'vertical-align:top;padding-right:16px">
+        Emergency Contact Name</td>
+        <td style="padding:8px 0">
+          <input type="text" name="emergency_contact_name"
+            style="width:100%;padding:8px;'
+  . 'border:1px solid #ccd0d4;border-radius:3px;'
+  . 'font-size:1em">
+        </td></tr>
+
+      <tr><td style="padding:8px 0;font-weight:600;'
+  . 'vertical-align:top;padding-right:16px">
+        Emergency Contact Phone</td>
+        <td style="padding:8px 0">
+          <input type="tel" name="emergency_contact_phone"
+            style="width:100%;padding:8px;'
+  . 'border:1px solid #ccd0d4;border-radius:3px;'
+  . 'font-size:1em">
+        </td></tr>
+
+      <tr><td style="padding:8px 0;font-weight:600;'
+  . 'vertical-align:top;padding-right:16px">
+        Special Needs</td>
+        <td style="padding:8px 0">
+          <textarea name="special_needs" rows="2"
+            style="width:100%;padding:8px;'
+  . 'border:1px solid #ccd0d4;border-radius:3px;'
+  . 'font-size:1em"></textarea>
+        </td></tr>
+
+    </table>
+
+    <p>
+      <button type="button" id="wr26-edit-save"
+        style="background:#1a7efb;color:#fff;border:none;'
+  . 'padding:10px 28px;border-radius:4px;font-size:1em;'
+  . 'cursor:pointer;font-weight:600">
+        Save Changes
+      </button>
+      <span id="wr26-edit-status"
+        style="margin-left:12px;font-size:.95em"></span>
+    </p>
+
+  </form>
+
+  <div id="wr26-edit-success"
+    style="display:none;background:#d1e7dd;'
+  . 'border-radius:4px;padding:20px;color:#0a3622;'
+  . 'font-size:1.05em;margin-top:16px">
+    ✅ Your registration has been updated successfully.
+    You will receive a confirmation email shortly.
+  </div>
+
+</div>
+
+<script>
+jQuery(function($) {
+  var ajaxUrl = "' . $ajax_url . '";
+  var token   = "' . $token_js . '";
+
+  $.post(ajaxUrl, {
+    action: "wr26_get_reg_by_token",
+    token: token
+  }, function(r) {
+    if (!r || !r.success || !r.registration) {
+      $("#wr26-edit-loading").html(
+        "<p style=\"color:#d63638\">"
+        + "Could not load your registration. "
+        + "Please check your link and try again."
+        + "</p>"
+      );
+      return;
     }
-    $ajax_url = esc_js(admin_url('admin-ajax.php'));
-    $token_js = esc_js($token);
-    return '<div id="wr26-edit-wrap" style="max-width:640px"><div id="wr26-edit-loading" style="padding:16px;color:#646970">Loading your registration…</div><form id="wr26-edit-form" style="display:none"><p><strong>Name:</strong> <span id="wr26-edit-name"></span></p><p style="color:#646970;font-style:italic;font-size:.9em">Email, payment details, and arrival dates cannot be changed here. To update those, please contact us directly.</p><table style="width:100%;border-collapse:collapse;margin-bottom:16px"><tr><td style="padding:6px 0;width:200px;font-weight:600">First Name</td><td><input type="text" name="first_name" style="width:100%;padding:6px;border:1px solid #ccd0d4;border-radius:3px"></td></tr><tr><td style="padding:6px 0;font-weight:600">Last Name</td><td><input type="text" name="last_name" style="width:100%;padding:6px;border:1px solid #ccd0d4;border-radius:3px"></td></tr><tr><td style="padding:6px 0;font-weight:600">Phone</td><td><input type="tel" name="phone" style="width:100%;padding:6px;border:1px solid #ccd0d4;border-radius:3px"></td></tr><tr><td style="padding:6px 0;font-weight:600">Church</td><td><input type="text" name="church" style="width:100%;padding:6px;border:1px solid #ccd0d4;border-radius:3px"></td></tr><tr><td style="padding:6px 0;font-weight:600">Dietary Needs</td><td><textarea name="dietary_needs" rows="2" style="width:100%;padding:6px;border:1px solid #ccd0d4;border-radius:3px"></textarea></td></tr><tr><td style="padding:6px 0;font-weight:600">Emergency Contact Name</td><td><input type="text" name="emergency_contact_name" style="width:100%;padding:6px;border:1px solid #ccd0d4;border-radius:3px"></td></tr><tr><td style="padding:6px 0;font-weight:600">Emergency Contact Phone</td><td><input type="tel" name="emergency_contact_phone" style="width:100%;padding:6px;border:1px solid #ccd0d4;border-radius:3px"></td></tr><tr><td style="padding:6px 0;font-weight:600">Special Needs</td><td><textarea name="special_needs" rows="2" style="width:100%;padding:6px;border:1px solid #ccd0d4;border-radius:3px"></textarea></td></tr></table><p><button type="button" id="wr26-edit-save" style="background:#1a7efb;color:#fff;border:none;padding:10px 24px;border-radius:4px;font-size:1em;cursor:pointer">Save Changes</button> <span id="wr26-edit-status" style="margin-left:12px;color:#d63638"></span></p></form><div id="wr26-edit-success" style="display:none;background:#d1e7dd;border-radius:4px;padding:16px;color:#0a3622;font-size:1.05em">✅ Your registration has been updated successfully. You will receive a confirmation email shortly.</div></div><script>jQuery(function($){var ajaxUrl="' . $ajax_url . '";var token="' . $token_js . '";$.post(ajaxUrl,{action:"wr26_get_reg_by_token",token:token},function(r){if(!r||!r.success){$("#wr26-edit-loading").html("<p style=\"color:#d63638\">Could not load your registration. Please check your link and try again.</p>");return;}var reg=r.registration||{};$("#wr26-edit-loading").hide();$("#wr26-edit-name").text((reg.firstName||"")+" "+(reg.lastName||""));$("[name=\"first_name\"]").val(reg.firstName||"");$("[name=\"last_name\"]").val(reg.lastName||"");$("[name=\"phone\"]").val(reg.phone||"");$("[name=\"church\"]").val(reg.church||"");$("[name=\"dietary_needs\"]").val(reg.dietaryNeeds||"");$("[name=\"emergency_contact_name\"]").val(reg.emergencyContactName||"");$("[name=\"emergency_contact_phone\"]").val(reg.emergencyContactPhone||"");$("[name=\"special_needs\"]").val(reg.specialNeeds||"");$("#wr26-edit-form").show();});$("#wr26-edit-save").on("click",function(){$("#wr26-edit-status").text("Saving…").css("color","#646970");$.post(ajaxUrl,{action:"wr26_save_edit",edit_token:token,first_name:$("[name=\"first_name\"]").val(),last_name:$("[name=\"last_name\"]").val(),phone:$("[name=\"phone\"]").val(),church:$("[name=\"church\"]").val(),dietary_needs:$("[name=\"dietary_needs\"]").val(),emergency_contact_name:$("[name=\"emergency_contact_name\"]").val(),emergency_contact_phone:$("[name=\"emergency_contact_phone\"]").val(),special_needs:$("[name=\"special_needs\"]").val()},function(r){if(r&&r.success){$("#wr26-edit-form").hide();$("#wr26-edit-success").show();$("html,body").animate({scrollTop:$("#wr26-edit-success").offset().top-80},400);}else{$("#wr26-edit-status").text("❌ "+(r&&r.message?r.message:"Save failed.")).css("color","#d63638");}});});});</script>';
+    var reg = r.registration;
+    $("#wr26-edit-name").text(
+      (reg.firstName || "") + " " + (reg.lastName || "")
+    );
+    $("[name=\"first_name\"]").val(reg.firstName || "");
+    $("[name=\"last_name\"]").val(reg.lastName || "");
+    $("[name=\"phone\"]").val(reg.phone || "");
+    $("[name=\"church\"]").val(reg.church || "");
+    $("[name=\"dietary_needs\"]")
+      .val(reg.dietaryNeeds || "");
+    $("[name=\"emergency_contact_name\"]")
+      .val(reg.emergencyContactName || "");
+    $("[name=\"emergency_contact_phone\"]")
+      .val(reg.emergencyContactPhone || "");
+    $("[name=\"special_needs\"]")
+      .val(reg.specialNeeds || "");
+    $("#wr26-edit-loading").hide();
+    $("#wr26-edit-form").show();
+  }).fail(function() {
+    $("#wr26-edit-loading").html(
+      "<p style=\"color:#d63638\">"
+      + "Connection error. Please try again."
+      + "</p>"
+    );
+  });
+
+  $("#wr26-edit-save").on("click", function() {
+    var $btn = $(this);
+    $btn.prop("disabled", true)
+      .text("Saving\u2026");
+    $("#wr26-edit-status")
+      .text("")
+      .css("color", "#646970");
+    $.post(ajaxUrl, {
+      action: "wr26_save_edit",
+      edit_token: token,
+      first_name: $("[name=\"first_name\"]").val(),
+      last_name: $("[name=\"last_name\"]").val(),
+      phone: $("[name=\"phone\"]").val(),
+      church: $("[name=\"church\"]").val(),
+      dietary_needs: $("[name=\"dietary_needs\"]").val(),
+      emergency_contact_name:
+        $("[name=\"emergency_contact_name\"]").val(),
+      emergency_contact_phone:
+        $("[name=\"emergency_contact_phone\"]").val(),
+      special_needs: $("[name=\"special_needs\"]").val()
+    }, function(r) {
+      if (r && r.success) {
+        $("#wr26-edit-form").hide();
+        $("#wr26-edit-success").show();
+        $("html,body").animate(
+          { scrollTop:
+            $("#wr26-edit-success").offset().top - 80 },
+          400
+        );
+      } else {
+        $btn.prop("disabled", false)
+          .text("Save Changes");
+        $("#wr26-edit-status")
+          .text("\u274C " + (r && r.message
+            ? r.message : "Save failed. Please try again."))
+          .css("color", "#d63638");
+      }
+    }).fail(function() {
+      $btn.prop("disabled", false).text("Save Changes");
+      $("#wr26-edit-status")
+        .text("\u274C Connection error. Please try again.")
+        .css("color", "#d63638");
+    });
+  });
+});
+</script>';
 });
