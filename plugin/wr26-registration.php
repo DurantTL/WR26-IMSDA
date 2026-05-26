@@ -139,69 +139,42 @@ function wr26_parse_ff_entry($entry_id) {
     $church_other = sanitize_text_field($raw['church_other'] ?? '');
     $church = ($church_raw === 'Other' && $church_other !== '') ? $church_other : $church_raw;
 
-    $attendees = array();
-
-    // Attendee 1 — primary registrant + a1_ fields
-    $attendees[] = array(
-        'attendee_id'        => 'A-' . intval($entry_id) . '-1',
-        'first_name'         => sanitize_text_field($raw['first_name'] ?? ''),
-        'last_name'          => sanitize_text_field($raw['last_name'] ?? ''),
-        'phone'              => sanitize_text_field($raw['phone'] ?? ''),
-        'email'              => sanitize_email($raw['email'] ?? ''),
-        'church'             => $church,
-        'attendee_type'      => 'adult',
-        'meal_preference'    => sanitize_text_field($raw['a1_meal_preference'] ?? ''),
-        'dietary_needs'      => sanitize_textarea_field($raw['a1_dietary_needs'] ?? ''),
-        'childcare_needed'   => sanitize_text_field($raw['a1_childcare_needed'] ?? ''),
-        'seminar_preferences' => array(
-            'session_1' => array(
-                'pref_1' => sanitize_text_field($raw['a1_session1_pref1'] ?? ''),
-                'pref_2' => sanitize_text_field($raw['a1_session1_pref2'] ?? '')
-            ),
-            'session_2' => array(
-                'pref_1' => sanitize_text_field($raw['a1_session2_pref1'] ?? ''),
-                'pref_2' => sanitize_text_field($raw['a1_session2_pref2'] ?? '')
-            ),
-            'session_3' => array(
-                'pref_1' => sanitize_text_field($raw['a1_session3_pref1'] ?? ''),
-                'pref_2' => sanitize_text_field($raw['a1_session3_pref2'] ?? '')
-            ),
-            'session_4' => array(
-                'pref_1' => sanitize_text_field($raw['a1_session4'] ?? '')
-            )
-        )
-    );
-
-    // Attendees 2–5 — flat a{n}_ fields
+    // All attendees read uniformly from a{N}_* fields (N = 1..attendee_count).
+    // a1_first_name/last_name/phone/attendee_type were added in the May 2026 form
+    // restructure; they are always visible and required. a2_-a5_ equivalents are
+    // hidden by Fluent Forms conditional logic when attendee_count < N and submit
+    // as empty strings — the empty-first-name guard handles those slots.
     $attendee_count = min(5, max(1, intval($raw['attendee_count'] ?? 1)));
-    for ($n = 2; $n <= $attendee_count; $n++) {
-        if (empty($raw["a{$n}_first_name"])) continue;
+    $attendees = array();
+    for ($n = 1; $n <= $attendee_count; $n++) {
+        $prefix = "a{$n}_";
+        if ($n > 1 && empty($raw["{$prefix}first_name"])) continue;
         $attendees[] = array(
-            'attendee_id'        => 'A-' . intval($entry_id) . '-' . $n,
-            'first_name'         => sanitize_text_field($raw["a{$n}_first_name"]),
-            'last_name'          => sanitize_text_field($raw["a{$n}_last_name"]),
-            'phone'              => sanitize_text_field($raw["a{$n}_phone"]),
-            'email'              => '',
-            'church'             => '',
-            'attendee_type'      => sanitize_text_field($raw["a{$n}_attendee_type"]),
-            'meal_preference'    => sanitize_text_field($raw["a{$n}_meal_preference"]),
-            'dietary_needs'      => sanitize_textarea_field($raw["a{$n}_dietary_needs"] ?? ''),
-            'childcare_needed'   => sanitize_text_field($raw["a{$n}_childcare_needed"] ?? ''),
+            'attendee_id'     => 'A-' . intval($entry_id) . '-' . $n,
+            'first_name'      => sanitize_text_field($raw["{$prefix}first_name"] ?? ''),
+            'last_name'       => sanitize_text_field($raw["{$prefix}last_name"] ?? ''),
+            'phone'           => sanitize_text_field($raw["{$prefix}phone"] ?? ''),
+            'email'           => $n === 1 ? sanitize_email($raw['email'] ?? '') : '',
+            'church'          => $n === 1 ? $church : '',
+            'attendee_type'   => sanitize_text_field($raw["{$prefix}attendee_type"] ?? ''),
+            'meal_preference' => sanitize_text_field($raw["{$prefix}meal_preference"] ?? ''),
+            'dietary_needs'   => sanitize_textarea_field($raw["{$prefix}dietary_needs"] ?? ''),
+            'childcare_needed'=> sanitize_text_field($raw["{$prefix}childcare_needed"] ?? ''),
             'seminar_preferences' => array(
                 'session_1' => array(
-                    'pref_1' => sanitize_text_field($raw["a{$n}_session1_pref1"] ?? ''),
-                    'pref_2' => sanitize_text_field($raw["a{$n}_session1_pref2"] ?? '')
+                    'pref_1' => sanitize_text_field($raw["{$prefix}session1_pref1"] ?? ''),
+                    'pref_2' => sanitize_text_field($raw["{$prefix}session1_pref2"] ?? '')
                 ),
                 'session_2' => array(
-                    'pref_1' => sanitize_text_field($raw["a{$n}_session2_pref1"] ?? ''),
-                    'pref_2' => sanitize_text_field($raw["a{$n}_session2_pref2"] ?? '')
+                    'pref_1' => sanitize_text_field($raw["{$prefix}session2_pref1"] ?? ''),
+                    'pref_2' => sanitize_text_field($raw["{$prefix}session2_pref2"] ?? '')
                 ),
                 'session_3' => array(
-                    'pref_1' => sanitize_text_field($raw["a{$n}_session3_pref1"] ?? ''),
-                    'pref_2' => sanitize_text_field($raw["a{$n}_session3_pref2"] ?? '')
+                    'pref_1' => sanitize_text_field($raw["{$prefix}session3_pref1"] ?? ''),
+                    'pref_2' => sanitize_text_field($raw["{$prefix}session3_pref2"] ?? '')
                 ),
                 'session_4' => array(
-                    'pref_1' => sanitize_text_field($raw["a{$n}_session4"] ?? '')
+                    'pref_1' => sanitize_text_field($raw["{$prefix}session4"] ?? '')
                 )
             )
         );
