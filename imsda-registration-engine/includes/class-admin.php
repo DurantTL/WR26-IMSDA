@@ -10,7 +10,7 @@ class IMSDA_Reg_Admin {
         if (!$mysql_datetime) return 'Never';
         $ts = strtotime($mysql_datetime);
         if (!$ts) return $mysql_datetime;
-        return date('M j g:ia', $ts);
+        return wp_date('M j g:ia', $ts);
     }
     private static function event_switcher(){ $events=IMSDA_Reg_Event_Registry::get_all(); if(!$events){ echo '<div class="notice notice-warning"><p>No events configured. Go to Events to add your first event.</p></div>'; return; } echo '<form method="post" style="margin:8px 0 16px;"><select name="imsda_selected_event">'; foreach($events as $slug=>$e){ echo '<option value="'.esc_attr($slug).'" '.selected(self::selected_slug(),$slug,false).'>'.esc_html($e['name']).' ('.esc_html($slug).')</option>'; } echo '</select> <button class="button">Switch</button></form>'; }
 
@@ -24,7 +24,8 @@ class IMSDA_Reg_Admin {
         if($page==='imsda-reg-settings'){ self::settings_page(); echo '</div>'; return; }
         if($page==='imsda-reg-dashboard'){ self::dashboard_page(); echo '</div>'; return; }
         if($page==='imsda-reg-checkin'){ self::checkin_page($selected,$events); self::assets(); echo '</div>'; return; }
-        echo '<div id="imsda-admin-app" data-page="'.esc_attr($page).'" data-selected="'.esc_attr($selected).'" data-nonce="'.esc_attr(self::nonce()).'" data-events="'.esc_attr(wp_json_encode($events)).'"></div>';
+        $events_dom = $page === 'imsda-reg-events' ? $events : array_map(function($e){ $e=(array)$e; unset($e['gas_secret']); return $e; }, $events);
+        echo '<div id="imsda-admin-app" data-page="'.esc_attr($page).'" data-selected="'.esc_attr($selected).'" data-nonce="'.esc_attr(self::nonce()).'" data-events="'.esc_attr(wp_json_encode($events_dom)).'"></div>';
         self::assets();
         echo '</div>';
     }

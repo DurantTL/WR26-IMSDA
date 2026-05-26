@@ -11,7 +11,7 @@
           "element": "custom_html",
           "attributes": [],
           "settings": {
-            "html_codes": "<div style='padding:18px;border:1px solid #d8d8d8;border-radius:8px;background:#fafafa'><h2 style='margin:0 0 8px'>Women’s Retreat 2026</h2><p style='margin:0 0 6px'><strong>Early Bird:</strong> $120 through August 14 &nbsp;|&nbsp; <strong>Regular:</strong> $140 through September 17</p><p style='margin:0 0 6px'>Open Camp Meeting begins Wednesday, June 3, 2026.<br>No boxed dinners for this event.</p><p style='margin:0;color:#8a4b00;font-weight:bold'>⚠ Pay Later is the default. Check your confirmation email for your payment link and edit-registration link.</p></div>",
+            "html_codes": "<div style='padding:18px;border:1px solid #d8d8d8;border-radius:8px;background:#fafafa'><h2 style='margin:0 0 8px'>Women\u2019s Retreat 2026</h2><p style='margin:0 0 6px'><strong>Early Bird:</strong> $120 through August 14 &nbsp;|&nbsp; <strong>Regular:</strong> $140 through September 17</p><p style='margin:0 0 6px'>Open Camp Meeting begins Wednesday, June 3, 2026.<br>No boxed dinners for this event.</p><p style='margin:0;color:#8a4b00;font-weight:bold'>\u26a0 Pay Later is the default. Check your confirmation email for your payment link and edit-registration link.</p></div>",
             "conditional_logics": [],
             "container_class": "",
             "visible": true
@@ -1094,9 +1094,9 @@
           },
           "settings": {
             "container_class": "",
-            "label": "Church — Other / Notes",
+            "label": "Church \u2014 Other / Notes",
             "label_placement": "",
-            "admin_field_label": "Church — Other / Notes",
+            "admin_field_label": "Church \u2014 Other / Notes",
             "help_message": "",
             "prefix_label": "",
             "suffix_label": "",
@@ -1390,31 +1390,31 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "1 — Just me",
+                "label": "1 \u2014 Just me",
                 "value": "1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "2 — Me + 1 other",
+                "label": "2 \u2014 Me + 1 other",
                 "value": "2",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "3 — Me + 2 others",
+                "label": "3 \u2014 Me + 2 others",
                 "value": "3",
                 "calc_value": "",
                 "id": 2
               },
               {
-                "label": "4 — Me + 3 others",
+                "label": "4 \u2014 Me + 3 others",
                 "value": "4",
                 "calc_value": "",
                 "id": 3
               },
               {
-                "label": "5 — Me + 4 others",
+                "label": "5 \u2014 Me + 4 others",
                 "value": "5",
                 "calc_value": "",
                 "id": 4
@@ -1459,7 +1459,7 @@
           "element": "custom_html",
           "attributes": [],
           "settings": {
-            "html_codes": "<div style='padding:12px;border-left:4px solid #1a7efb;background:#f6fbff;margin:8px 0'><strong>Seminar Sessions:</strong><br>Session 1 — Friday 4:00–5:00 PM: 2 options (choose 1st and 2nd preference)<br>Session 2 — Saturday 2:00–3:15 PM: 3 options<br>Session 3 — Saturday 3:30–4:45 PM: 2 options<br>Session 4 — Sunday 8:15–9:15 AM: 1 option<br><em>If a seminar is full your registration will still be accepted and placement reviewed manually.</em></div>",
+            "html_codes": "<div style='padding:12px;border-left:4px solid #1a7efb;background:#f6fbff;margin:8px 0'><strong>Seminar Sessions:</strong><br>Session 1 \u2014 Friday 4:00\u20135:00 PM: 2 options (choose 1st and 2nd preference)<br>Session 2 \u2014 Saturday 2:00\u20133:15 PM: 3 options<br>Session 3 \u2014 Saturday 3:30\u20134:45 PM: 2 options<br>Session 4 \u2014 Sunday 8:15\u20139:15 AM: 1 option<br><em>If a seminar is full your registration will still be accepted and placement reviewed manually.</em></div>",
             "conditional_logics": [],
             "container_class": "",
             "visible": true
@@ -1479,7 +1479,7 @@
             "class": ""
           },
           "settings": {
-            "label": "Attendee 1 — You",
+            "label": "Attendee 1 \u2014 You",
             "description": "Your meal preference and seminar choices.",
             "align": "left",
             "conditional_logics": [],
@@ -1690,21 +1690,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 1 — Friday 4:00–5:00 PM (1st Choice)",
-            "admin_field_label": "Session 1 — Friday 4:00–5:00 PM (1st Choice)",
+            "label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (1st Choice)",
+            "admin_field_label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
+                "label": "Friday Option A \u2014 title TBD",
                 "value": "fri_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
+                "label": "Friday Option B \u2014 title TBD",
                 "value": "fri_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -1755,21 +1755,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 1 — Friday 4:00–5:00 PM (2nd Choice)",
-            "admin_field_label": "Session 1 — Friday 4:00–5:00 PM (2nd Choice)",
+            "label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (2nd Choice)",
+            "admin_field_label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
+                "label": "Friday Option A \u2014 title TBD",
                 "value": "fri_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
+                "label": "Friday Option B \u2014 title TBD",
                 "value": "fri_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -1820,27 +1820,27 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
+            "label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (1st Choice)",
+            "admin_field_label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
+                "label": "Sat 2PM Option A \u2014 title TBD",
                 "value": "sat_2pm_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
+                "label": "Sat 2PM Option B \u2014 title TBD",
                 "value": "sat_2pm_opt_2",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
+                "label": "Sat 2PM Option C \u2014 title TBD",
                 "value": "sat_2pm_opt_3",
                 "calc_value": "",
                 "id": 2
@@ -1891,27 +1891,27 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
+            "label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (2nd Choice)",
+            "admin_field_label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
+                "label": "Sat 2PM Option A \u2014 title TBD",
                 "value": "sat_2pm_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
+                "label": "Sat 2PM Option B \u2014 title TBD",
                 "value": "sat_2pm_opt_2",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
+                "label": "Sat 2PM Option C \u2014 title TBD",
                 "value": "sat_2pm_opt_3",
                 "calc_value": "",
                 "id": 2
@@ -1962,21 +1962,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
+            "label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (1st Choice)",
+            "admin_field_label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
+                "label": "Sat 3:30PM Option A \u2014 title TBD",
                 "value": "sat_330_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
+                "label": "Sat 3:30PM Option B \u2014 title TBD",
                 "value": "sat_330_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -2027,21 +2027,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
+            "label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (2nd Choice)",
+            "admin_field_label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
+                "label": "Sat 3:30PM Option A \u2014 title TBD",
                 "value": "sat_330_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
+                "label": "Sat 3:30PM Option B \u2014 title TBD",
                 "value": "sat_330_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -2092,15 +2092,15 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 4 — Sunday 8:15–9:15 AM",
-            "admin_field_label": "Session 4 — Sunday 8:15–9:15 AM",
+            "label": "Session 4 \u2014 Sunday 8:15\u20139:15 AM",
+            "admin_field_label": "Session 4 \u2014 Sunday 8:15\u20139:15 AM",
             "help_message": "Only one option for this session.",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sunday Option A — title TBD",
+                "label": "Sunday Option A \u2014 title TBD",
                 "value": "sun_opt_1",
                 "calc_value": "",
                 "id": 0
@@ -2169,7 +2169,18 @@
             "icon_class": "ff-edit-section-break",
             "template": "sectionBreak"
           },
-          "uniqElKey": "el_WR26_27_a2_section"
+          "uniqElKey": "el_WR26_27_a2_section",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "2"
+              }
+            ]
+          }
         },
         {
           "index": 28,
@@ -2219,7 +2230,18 @@
             "icon_class": "ff-edit-text",
             "template": "inputText"
           },
-          "uniqElKey": "el_WR26_28_a2_first_name"
+          "uniqElKey": "el_WR26_28_a2_first_name",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "2"
+              }
+            ]
+          }
         },
         {
           "index": 29,
@@ -2269,7 +2291,18 @@
             "icon_class": "ff-edit-text",
             "template": "inputText"
           },
-          "uniqElKey": "el_WR26_29_a2_last_name"
+          "uniqElKey": "el_WR26_29_a2_last_name",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "2"
+              }
+            ]
+          }
         },
         {
           "index": 30,
@@ -2327,7 +2360,18 @@
             "icon_class": "el-icon-phone-outline",
             "template": "inputText"
           },
-          "uniqElKey": "el_WR26_30_a2_phone"
+          "uniqElKey": "el_WR26_30_a2_phone",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "2"
+              }
+            ]
+          }
         },
         {
           "index": 31,
@@ -2408,7 +2452,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_31_a2_attendee_type"
+          "uniqElKey": "el_WR26_31_a2_attendee_type",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "2"
+              }
+            ]
+          }
         },
         {
           "index": 32,
@@ -2501,7 +2556,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_32_a2_meal_preference"
+          "uniqElKey": "el_WR26_32_a2_meal_preference",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "2"
+              }
+            ]
+          }
         },
         {
           "index": 33,
@@ -2550,7 +2616,18 @@
             "icon_class": "ff-edit-textarea",
             "template": "inputTextarea"
           },
-          "uniqElKey": "el_WR26_33_a2_dietary_needs"
+          "uniqElKey": "el_WR26_33_a2_dietary_needs",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "2"
+              }
+            ]
+          }
         },
         {
           "index": 34,
@@ -2625,7 +2702,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_34_a2_childcare_needed"
+          "uniqElKey": "el_WR26_34_a2_childcare_needed",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "2"
+              }
+            ]
+          }
         },
         {
           "index": 35,
@@ -2638,21 +2726,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 1 — Friday 4:00–5:00 PM (1st Choice)",
-            "admin_field_label": "Session 1 — Friday 4:00–5:00 PM (1st Choice)",
+            "label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (1st Choice)",
+            "admin_field_label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
+                "label": "Friday Option A \u2014 title TBD",
                 "value": "fri_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
+                "label": "Friday Option B \u2014 title TBD",
                 "value": "fri_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -2700,7 +2788,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_35_a2_session1_pref1"
+          "uniqElKey": "el_WR26_35_a2_session1_pref1",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "2"
+              }
+            ]
+          }
         },
         {
           "index": 36,
@@ -2713,21 +2812,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 1 — Friday 4:00–5:00 PM (2nd Choice)",
-            "admin_field_label": "Session 1 — Friday 4:00–5:00 PM (2nd Choice)",
+            "label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (2nd Choice)",
+            "admin_field_label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
+                "label": "Friday Option A \u2014 title TBD",
                 "value": "fri_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
+                "label": "Friday Option B \u2014 title TBD",
                 "value": "fri_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -2775,7 +2874,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_36_a2_session1_pref2"
+          "uniqElKey": "el_WR26_36_a2_session1_pref2",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "2"
+              }
+            ]
+          }
         },
         {
           "index": 37,
@@ -2788,27 +2898,27 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
+            "label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (1st Choice)",
+            "admin_field_label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
+                "label": "Sat 2PM Option A \u2014 title TBD",
                 "value": "sat_2pm_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
+                "label": "Sat 2PM Option B \u2014 title TBD",
                 "value": "sat_2pm_opt_2",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
+                "label": "Sat 2PM Option C \u2014 title TBD",
                 "value": "sat_2pm_opt_3",
                 "calc_value": "",
                 "id": 2
@@ -2856,7 +2966,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_37_a2_session2_pref1"
+          "uniqElKey": "el_WR26_37_a2_session2_pref1",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "2"
+              }
+            ]
+          }
         },
         {
           "index": 38,
@@ -2869,27 +2990,27 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
+            "label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (2nd Choice)",
+            "admin_field_label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
+                "label": "Sat 2PM Option A \u2014 title TBD",
                 "value": "sat_2pm_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
+                "label": "Sat 2PM Option B \u2014 title TBD",
                 "value": "sat_2pm_opt_2",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
+                "label": "Sat 2PM Option C \u2014 title TBD",
                 "value": "sat_2pm_opt_3",
                 "calc_value": "",
                 "id": 2
@@ -2937,7 +3058,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_38_a2_session2_pref2"
+          "uniqElKey": "el_WR26_38_a2_session2_pref2",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "2"
+              }
+            ]
+          }
         },
         {
           "index": 39,
@@ -2950,21 +3082,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
+            "label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (1st Choice)",
+            "admin_field_label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
+                "label": "Sat 3:30PM Option A \u2014 title TBD",
                 "value": "sat_330_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
+                "label": "Sat 3:30PM Option B \u2014 title TBD",
                 "value": "sat_330_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -3012,7 +3144,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_39_a2_session3_pref1"
+          "uniqElKey": "el_WR26_39_a2_session3_pref1",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "2"
+              }
+            ]
+          }
         },
         {
           "index": 40,
@@ -3025,21 +3168,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
+            "label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (2nd Choice)",
+            "admin_field_label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
+                "label": "Sat 3:30PM Option A \u2014 title TBD",
                 "value": "sat_330_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
+                "label": "Sat 3:30PM Option B \u2014 title TBD",
                 "value": "sat_330_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -3087,7 +3230,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_40_a2_session3_pref2"
+          "uniqElKey": "el_WR26_40_a2_session3_pref2",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "2"
+              }
+            ]
+          }
         },
         {
           "index": 41,
@@ -3100,15 +3254,15 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 4 — Sunday 8:15–9:15 AM",
-            "admin_field_label": "Session 4 — Sunday 8:15–9:15 AM",
+            "label": "Session 4 \u2014 Sunday 8:15\u20139:15 AM",
+            "admin_field_label": "Session 4 \u2014 Sunday 8:15\u20139:15 AM",
             "help_message": "Only one option for this session.",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sunday Option A — title TBD",
+                "label": "Sunday Option A \u2014 title TBD",
                 "value": "sun_opt_1",
                 "calc_value": "",
                 "id": 0
@@ -3156,7 +3310,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_41_a2_session4"
+          "uniqElKey": "el_WR26_41_a2_session4",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "2"
+              }
+            ]
+          }
         },
         {
           "index": 42,
@@ -3187,7 +3352,18 @@
             "icon_class": "ff-edit-section-break",
             "template": "sectionBreak"
           },
-          "uniqElKey": "el_WR26_42_a3_section"
+          "uniqElKey": "el_WR26_42_a3_section",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "3"
+              }
+            ]
+          }
         },
         {
           "index": 43,
@@ -3237,7 +3413,18 @@
             "icon_class": "ff-edit-text",
             "template": "inputText"
           },
-          "uniqElKey": "el_WR26_43_a3_first_name"
+          "uniqElKey": "el_WR26_43_a3_first_name",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "3"
+              }
+            ]
+          }
         },
         {
           "index": 44,
@@ -3287,7 +3474,18 @@
             "icon_class": "ff-edit-text",
             "template": "inputText"
           },
-          "uniqElKey": "el_WR26_44_a3_last_name"
+          "uniqElKey": "el_WR26_44_a3_last_name",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "3"
+              }
+            ]
+          }
         },
         {
           "index": 45,
@@ -3345,7 +3543,18 @@
             "icon_class": "el-icon-phone-outline",
             "template": "inputText"
           },
-          "uniqElKey": "el_WR26_45_a3_phone"
+          "uniqElKey": "el_WR26_45_a3_phone",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "3"
+              }
+            ]
+          }
         },
         {
           "index": 46,
@@ -3426,7 +3635,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_46_a3_attendee_type"
+          "uniqElKey": "el_WR26_46_a3_attendee_type",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "3"
+              }
+            ]
+          }
         },
         {
           "index": 47,
@@ -3519,7 +3739,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_47_a3_meal_preference"
+          "uniqElKey": "el_WR26_47_a3_meal_preference",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "3"
+              }
+            ]
+          }
         },
         {
           "index": 48,
@@ -3568,7 +3799,18 @@
             "icon_class": "ff-edit-textarea",
             "template": "inputTextarea"
           },
-          "uniqElKey": "el_WR26_48_a3_dietary_needs"
+          "uniqElKey": "el_WR26_48_a3_dietary_needs",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "3"
+              }
+            ]
+          }
         },
         {
           "index": 49,
@@ -3643,7 +3885,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_49_a3_childcare_needed"
+          "uniqElKey": "el_WR26_49_a3_childcare_needed",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "3"
+              }
+            ]
+          }
         },
         {
           "index": 50,
@@ -3656,21 +3909,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 1 — Friday 4:00–5:00 PM (1st Choice)",
-            "admin_field_label": "Session 1 — Friday 4:00–5:00 PM (1st Choice)",
+            "label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (1st Choice)",
+            "admin_field_label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
+                "label": "Friday Option A \u2014 title TBD",
                 "value": "fri_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
+                "label": "Friday Option B \u2014 title TBD",
                 "value": "fri_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -3718,7 +3971,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_50_a3_session1_pref1"
+          "uniqElKey": "el_WR26_50_a3_session1_pref1",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "3"
+              }
+            ]
+          }
         },
         {
           "index": 51,
@@ -3731,21 +3995,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 1 — Friday 4:00–5:00 PM (2nd Choice)",
-            "admin_field_label": "Session 1 — Friday 4:00–5:00 PM (2nd Choice)",
+            "label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (2nd Choice)",
+            "admin_field_label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
+                "label": "Friday Option A \u2014 title TBD",
                 "value": "fri_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
+                "label": "Friday Option B \u2014 title TBD",
                 "value": "fri_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -3793,7 +4057,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_51_a3_session1_pref2"
+          "uniqElKey": "el_WR26_51_a3_session1_pref2",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "3"
+              }
+            ]
+          }
         },
         {
           "index": 52,
@@ -3806,27 +4081,27 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
+            "label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (1st Choice)",
+            "admin_field_label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
+                "label": "Sat 2PM Option A \u2014 title TBD",
                 "value": "sat_2pm_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
+                "label": "Sat 2PM Option B \u2014 title TBD",
                 "value": "sat_2pm_opt_2",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
+                "label": "Sat 2PM Option C \u2014 title TBD",
                 "value": "sat_2pm_opt_3",
                 "calc_value": "",
                 "id": 2
@@ -3874,7 +4149,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_52_a3_session2_pref1"
+          "uniqElKey": "el_WR26_52_a3_session2_pref1",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "3"
+              }
+            ]
+          }
         },
         {
           "index": 53,
@@ -3887,27 +4173,27 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
+            "label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (2nd Choice)",
+            "admin_field_label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
+                "label": "Sat 2PM Option A \u2014 title TBD",
                 "value": "sat_2pm_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
+                "label": "Sat 2PM Option B \u2014 title TBD",
                 "value": "sat_2pm_opt_2",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
+                "label": "Sat 2PM Option C \u2014 title TBD",
                 "value": "sat_2pm_opt_3",
                 "calc_value": "",
                 "id": 2
@@ -3955,7 +4241,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_53_a3_session2_pref2"
+          "uniqElKey": "el_WR26_53_a3_session2_pref2",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "3"
+              }
+            ]
+          }
         },
         {
           "index": 54,
@@ -3968,21 +4265,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
+            "label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (1st Choice)",
+            "admin_field_label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
+                "label": "Sat 3:30PM Option A \u2014 title TBD",
                 "value": "sat_330_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
+                "label": "Sat 3:30PM Option B \u2014 title TBD",
                 "value": "sat_330_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -4030,7 +4327,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_54_a3_session3_pref1"
+          "uniqElKey": "el_WR26_54_a3_session3_pref1",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "3"
+              }
+            ]
+          }
         },
         {
           "index": 55,
@@ -4043,21 +4351,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
+            "label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (2nd Choice)",
+            "admin_field_label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
+                "label": "Sat 3:30PM Option A \u2014 title TBD",
                 "value": "sat_330_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
+                "label": "Sat 3:30PM Option B \u2014 title TBD",
                 "value": "sat_330_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -4105,7 +4413,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_55_a3_session3_pref2"
+          "uniqElKey": "el_WR26_55_a3_session3_pref2",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "3"
+              }
+            ]
+          }
         },
         {
           "index": 56,
@@ -4118,15 +4437,15 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 4 — Sunday 8:15–9:15 AM",
-            "admin_field_label": "Session 4 — Sunday 8:15–9:15 AM",
+            "label": "Session 4 \u2014 Sunday 8:15\u20139:15 AM",
+            "admin_field_label": "Session 4 \u2014 Sunday 8:15\u20139:15 AM",
             "help_message": "Only one option for this session.",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sunday Option A — title TBD",
+                "label": "Sunday Option A \u2014 title TBD",
                 "value": "sun_opt_1",
                 "calc_value": "",
                 "id": 0
@@ -4174,7 +4493,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_56_a3_session4"
+          "uniqElKey": "el_WR26_56_a3_session4",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "3"
+              }
+            ]
+          }
         },
         {
           "index": 57,
@@ -4205,7 +4535,18 @@
             "icon_class": "ff-edit-section-break",
             "template": "sectionBreak"
           },
-          "uniqElKey": "el_WR26_57_a4_section"
+          "uniqElKey": "el_WR26_57_a4_section",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "4"
+              }
+            ]
+          }
         },
         {
           "index": 58,
@@ -4255,7 +4596,18 @@
             "icon_class": "ff-edit-text",
             "template": "inputText"
           },
-          "uniqElKey": "el_WR26_58_a4_first_name"
+          "uniqElKey": "el_WR26_58_a4_first_name",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "4"
+              }
+            ]
+          }
         },
         {
           "index": 59,
@@ -4305,7 +4657,18 @@
             "icon_class": "ff-edit-text",
             "template": "inputText"
           },
-          "uniqElKey": "el_WR26_59_a4_last_name"
+          "uniqElKey": "el_WR26_59_a4_last_name",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "4"
+              }
+            ]
+          }
         },
         {
           "index": 60,
@@ -4363,7 +4726,18 @@
             "icon_class": "el-icon-phone-outline",
             "template": "inputText"
           },
-          "uniqElKey": "el_WR26_60_a4_phone"
+          "uniqElKey": "el_WR26_60_a4_phone",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "4"
+              }
+            ]
+          }
         },
         {
           "index": 61,
@@ -4444,7 +4818,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_61_a4_attendee_type"
+          "uniqElKey": "el_WR26_61_a4_attendee_type",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "4"
+              }
+            ]
+          }
         },
         {
           "index": 62,
@@ -4537,7 +4922,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_62_a4_meal_preference"
+          "uniqElKey": "el_WR26_62_a4_meal_preference",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "4"
+              }
+            ]
+          }
         },
         {
           "index": 63,
@@ -4586,7 +4982,18 @@
             "icon_class": "ff-edit-textarea",
             "template": "inputTextarea"
           },
-          "uniqElKey": "el_WR26_63_a4_dietary_needs"
+          "uniqElKey": "el_WR26_63_a4_dietary_needs",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "4"
+              }
+            ]
+          }
         },
         {
           "index": 64,
@@ -4661,7 +5068,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_64_a4_childcare_needed"
+          "uniqElKey": "el_WR26_64_a4_childcare_needed",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "4"
+              }
+            ]
+          }
         },
         {
           "index": 65,
@@ -4674,21 +5092,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 1 — Friday 4:00–5:00 PM (1st Choice)",
-            "admin_field_label": "Session 1 — Friday 4:00–5:00 PM (1st Choice)",
+            "label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (1st Choice)",
+            "admin_field_label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
+                "label": "Friday Option A \u2014 title TBD",
                 "value": "fri_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
+                "label": "Friday Option B \u2014 title TBD",
                 "value": "fri_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -4736,7 +5154,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_65_a4_session1_pref1"
+          "uniqElKey": "el_WR26_65_a4_session1_pref1",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "4"
+              }
+            ]
+          }
         },
         {
           "index": 66,
@@ -4749,21 +5178,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 1 — Friday 4:00–5:00 PM (2nd Choice)",
-            "admin_field_label": "Session 1 — Friday 4:00–5:00 PM (2nd Choice)",
+            "label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (2nd Choice)",
+            "admin_field_label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
+                "label": "Friday Option A \u2014 title TBD",
                 "value": "fri_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
+                "label": "Friday Option B \u2014 title TBD",
                 "value": "fri_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -4811,7 +5240,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_66_a4_session1_pref2"
+          "uniqElKey": "el_WR26_66_a4_session1_pref2",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "4"
+              }
+            ]
+          }
         },
         {
           "index": 67,
@@ -4824,27 +5264,27 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
+            "label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (1st Choice)",
+            "admin_field_label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
+                "label": "Sat 2PM Option A \u2014 title TBD",
                 "value": "sat_2pm_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
+                "label": "Sat 2PM Option B \u2014 title TBD",
                 "value": "sat_2pm_opt_2",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
+                "label": "Sat 2PM Option C \u2014 title TBD",
                 "value": "sat_2pm_opt_3",
                 "calc_value": "",
                 "id": 2
@@ -4892,7 +5332,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_67_a4_session2_pref1"
+          "uniqElKey": "el_WR26_67_a4_session2_pref1",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "4"
+              }
+            ]
+          }
         },
         {
           "index": 68,
@@ -4905,27 +5356,27 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
+            "label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (2nd Choice)",
+            "admin_field_label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
+                "label": "Sat 2PM Option A \u2014 title TBD",
                 "value": "sat_2pm_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
+                "label": "Sat 2PM Option B \u2014 title TBD",
                 "value": "sat_2pm_opt_2",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
+                "label": "Sat 2PM Option C \u2014 title TBD",
                 "value": "sat_2pm_opt_3",
                 "calc_value": "",
                 "id": 2
@@ -4973,7 +5424,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_68_a4_session2_pref2"
+          "uniqElKey": "el_WR26_68_a4_session2_pref2",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "4"
+              }
+            ]
+          }
         },
         {
           "index": 69,
@@ -4986,21 +5448,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
+            "label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (1st Choice)",
+            "admin_field_label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
+                "label": "Sat 3:30PM Option A \u2014 title TBD",
                 "value": "sat_330_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
+                "label": "Sat 3:30PM Option B \u2014 title TBD",
                 "value": "sat_330_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -5048,7 +5510,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_69_a4_session3_pref1"
+          "uniqElKey": "el_WR26_69_a4_session3_pref1",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "4"
+              }
+            ]
+          }
         },
         {
           "index": 70,
@@ -5061,21 +5534,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
+            "label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (2nd Choice)",
+            "admin_field_label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
+                "label": "Sat 3:30PM Option A \u2014 title TBD",
                 "value": "sat_330_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
+                "label": "Sat 3:30PM Option B \u2014 title TBD",
                 "value": "sat_330_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -5123,7 +5596,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_70_a4_session3_pref2"
+          "uniqElKey": "el_WR26_70_a4_session3_pref2",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "4"
+              }
+            ]
+          }
         },
         {
           "index": 71,
@@ -5136,15 +5620,15 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 4 — Sunday 8:15–9:15 AM",
-            "admin_field_label": "Session 4 — Sunday 8:15–9:15 AM",
+            "label": "Session 4 \u2014 Sunday 8:15\u20139:15 AM",
+            "admin_field_label": "Session 4 \u2014 Sunday 8:15\u20139:15 AM",
             "help_message": "Only one option for this session.",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sunday Option A — title TBD",
+                "label": "Sunday Option A \u2014 title TBD",
                 "value": "sun_opt_1",
                 "calc_value": "",
                 "id": 0
@@ -5192,7 +5676,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_71_a4_session4"
+          "uniqElKey": "el_WR26_71_a4_session4",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "4"
+              }
+            ]
+          }
         },
         {
           "index": 72,
@@ -5223,7 +5718,18 @@
             "icon_class": "ff-edit-section-break",
             "template": "sectionBreak"
           },
-          "uniqElKey": "el_WR26_72_a5_section"
+          "uniqElKey": "el_WR26_72_a5_section",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "5"
+              }
+            ]
+          }
         },
         {
           "index": 73,
@@ -5273,7 +5779,18 @@
             "icon_class": "ff-edit-text",
             "template": "inputText"
           },
-          "uniqElKey": "el_WR26_73_a5_first_name"
+          "uniqElKey": "el_WR26_73_a5_first_name",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "5"
+              }
+            ]
+          }
         },
         {
           "index": 74,
@@ -5323,7 +5840,18 @@
             "icon_class": "ff-edit-text",
             "template": "inputText"
           },
-          "uniqElKey": "el_WR26_74_a5_last_name"
+          "uniqElKey": "el_WR26_74_a5_last_name",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "5"
+              }
+            ]
+          }
         },
         {
           "index": 75,
@@ -5381,7 +5909,18 @@
             "icon_class": "el-icon-phone-outline",
             "template": "inputText"
           },
-          "uniqElKey": "el_WR26_75_a5_phone"
+          "uniqElKey": "el_WR26_75_a5_phone",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "5"
+              }
+            ]
+          }
         },
         {
           "index": 76,
@@ -5462,7 +6001,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_76_a5_attendee_type"
+          "uniqElKey": "el_WR26_76_a5_attendee_type",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "5"
+              }
+            ]
+          }
         },
         {
           "index": 77,
@@ -5555,7 +6105,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_77_a5_meal_preference"
+          "uniqElKey": "el_WR26_77_a5_meal_preference",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "5"
+              }
+            ]
+          }
         },
         {
           "index": 78,
@@ -5604,7 +6165,18 @@
             "icon_class": "ff-edit-textarea",
             "template": "inputTextarea"
           },
-          "uniqElKey": "el_WR26_78_a5_dietary_needs"
+          "uniqElKey": "el_WR26_78_a5_dietary_needs",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "5"
+              }
+            ]
+          }
         },
         {
           "index": 79,
@@ -5679,7 +6251,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_79_a5_childcare_needed"
+          "uniqElKey": "el_WR26_79_a5_childcare_needed",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "5"
+              }
+            ]
+          }
         },
         {
           "index": 80,
@@ -5692,21 +6275,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 1 — Friday 4:00–5:00 PM (1st Choice)",
-            "admin_field_label": "Session 1 — Friday 4:00–5:00 PM (1st Choice)",
+            "label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (1st Choice)",
+            "admin_field_label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
+                "label": "Friday Option A \u2014 title TBD",
                 "value": "fri_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
+                "label": "Friday Option B \u2014 title TBD",
                 "value": "fri_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -5754,7 +6337,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_80_a5_session1_pref1"
+          "uniqElKey": "el_WR26_80_a5_session1_pref1",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "5"
+              }
+            ]
+          }
         },
         {
           "index": 81,
@@ -5767,21 +6361,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 1 — Friday 4:00–5:00 PM (2nd Choice)",
-            "admin_field_label": "Session 1 — Friday 4:00–5:00 PM (2nd Choice)",
+            "label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (2nd Choice)",
+            "admin_field_label": "Session 1 \u2014 Friday 4:00\u20135:00 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
+                "label": "Friday Option A \u2014 title TBD",
                 "value": "fri_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
+                "label": "Friday Option B \u2014 title TBD",
                 "value": "fri_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -5829,7 +6423,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_81_a5_session1_pref2"
+          "uniqElKey": "el_WR26_81_a5_session1_pref2",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "5"
+              }
+            ]
+          }
         },
         {
           "index": 82,
@@ -5842,27 +6447,27 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
+            "label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (1st Choice)",
+            "admin_field_label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
+                "label": "Sat 2PM Option A \u2014 title TBD",
                 "value": "sat_2pm_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
+                "label": "Sat 2PM Option B \u2014 title TBD",
                 "value": "sat_2pm_opt_2",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
+                "label": "Sat 2PM Option C \u2014 title TBD",
                 "value": "sat_2pm_opt_3",
                 "calc_value": "",
                 "id": 2
@@ -5910,7 +6515,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_82_a5_session2_pref1"
+          "uniqElKey": "el_WR26_82_a5_session2_pref1",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "5"
+              }
+            ]
+          }
         },
         {
           "index": 83,
@@ -5923,27 +6539,27 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
+            "label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (2nd Choice)",
+            "admin_field_label": "Session 2 \u2014 Saturday 2:00\u20133:15 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
+                "label": "Sat 2PM Option A \u2014 title TBD",
                 "value": "sat_2pm_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
+                "label": "Sat 2PM Option B \u2014 title TBD",
                 "value": "sat_2pm_opt_2",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
+                "label": "Sat 2PM Option C \u2014 title TBD",
                 "value": "sat_2pm_opt_3",
                 "calc_value": "",
                 "id": 2
@@ -5991,7 +6607,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_83_a5_session2_pref2"
+          "uniqElKey": "el_WR26_83_a5_session2_pref2",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "5"
+              }
+            ]
+          }
         },
         {
           "index": 84,
@@ -6004,21 +6631,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
+            "label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (1st Choice)",
+            "admin_field_label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
+                "label": "Sat 3:30PM Option A \u2014 title TBD",
                 "value": "sat_330_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
+                "label": "Sat 3:30PM Option B \u2014 title TBD",
                 "value": "sat_330_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -6066,7 +6693,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_84_a5_session3_pref1"
+          "uniqElKey": "el_WR26_84_a5_session3_pref1",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "5"
+              }
+            ]
+          }
         },
         {
           "index": 85,
@@ -6079,21 +6717,21 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
+            "label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (2nd Choice)",
+            "admin_field_label": "Session 3 \u2014 Saturday 3:30\u20134:45 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
+                "label": "Sat 3:30PM Option A \u2014 title TBD",
                 "value": "sat_330_opt_1",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
+                "label": "Sat 3:30PM Option B \u2014 title TBD",
                 "value": "sat_330_opt_2",
                 "calc_value": "",
                 "id": 1
@@ -6141,7 +6779,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_85_a5_session3_pref2"
+          "uniqElKey": "el_WR26_85_a5_session3_pref2",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "5"
+              }
+            ]
+          }
         },
         {
           "index": 86,
@@ -6154,15 +6803,15 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 4 — Sunday 8:15–9:15 AM",
-            "admin_field_label": "Session 4 — Sunday 8:15–9:15 AM",
+            "label": "Session 4 \u2014 Sunday 8:15\u20139:15 AM",
+            "admin_field_label": "Session 4 \u2014 Sunday 8:15\u20139:15 AM",
             "help_message": "Only one option for this session.",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sunday Option A — title TBD",
+                "label": "Sunday Option A \u2014 title TBD",
                 "value": "sun_opt_1",
                 "calc_value": "",
                 "id": 0
@@ -6210,7 +6859,18 @@
             "element": "select",
             "template": "select"
           },
-          "uniqElKey": "el_WR26_86_a5_session4"
+          "uniqElKey": "el_WR26_86_a5_session4",
+          "conditional_logics": {
+            "status": true,
+            "logics_type": "any",
+            "conditions": [
+              {
+                "field": "attendee_count",
+                "operator": ">=",
+                "value": "5"
+              }
+            ]
+          }
         },
         {
           "index": 87,
@@ -6290,7 +6950,7 @@
                 "value": "offline"
               },
               {
-                "label": "Pay Now — Credit/Debit Card (Square)",
+                "label": "Pay Now \u2014 Credit/Debit Card (Square)",
                 "value": "square"
               }
             ],
@@ -6405,7 +7065,7 @@
                 "id": 0
               },
               {
-                "label": "Yes — Workers use the separate Google Form",
+                "label": "Yes \u2014 Workers use the separate Google Form",
                 "value": "yes",
                 "calc_value": "",
                 "id": 1
@@ -6570,7 +7230,7 @@
           "color": "#ffffff",
           "button_ui": {
             "type": "default",
-            "text": "Submit Women’s Retreat Registration",
+            "text": "Submit Women\u2019s Retreat Registration",
             "img_url": ""
           },
           "normal_styles": {
@@ -6653,7 +7313,7 @@
         "id": 1566,
         "form_id": "89",
         "meta_key": "notifications",
-        "value": "{\"name\": \"WR26 Admin Notification Email\", \"sendTo\": {\"type\": \"email\", \"email\": \"registration@imsda.org\", \"field\": \"email\", \"routing\": [{\"email\": null, \"field\": null, \"operator\": \"=\", \"value\": null}]}, \"fromName\": \"\", \"fromEmail\": \"\", \"replyTo\": \"{inputs.email}\", \"bcc\": \"\", \"subject\": \"New Women’s Retreat 2026 Registration Submitted\", \"message\": \"<p>A new Women’s Retreat 2026 registration has been submitted.</p><p>{all_data}</p>\", \"conditionals\": {\"status\": false, \"type\": \"all\", \"conditions\": [{\"field\": null, \"operator\": \"=\", \"value\": null}]}, \"enabled\": true, \"email_template\": \"\", \"attachments\": [], \"media_attachments\": [], \"pdf_attachments\": [\"1574\"], \"feed_trigger_event\": \"form_submission\"}"
+        "value": "{\"name\": \"WR26 Admin Notification Email\", \"sendTo\": {\"type\": \"email\", \"email\": \"registration@imsda.org\", \"field\": \"email\", \"routing\": [{\"email\": null, \"field\": null, \"operator\": \"=\", \"value\": null}]}, \"fromName\": \"\", \"fromEmail\": \"\", \"replyTo\": \"{inputs.email}\", \"bcc\": \"\", \"subject\": \"New Women\u2019s Retreat 2026 Registration Submitted\", \"message\": \"<p>A new Women\u2019s Retreat 2026 registration has been submitted.</p><p>{all_data}</p>\", \"conditionals\": {\"status\": false, \"type\": \"all\", \"conditions\": [{\"field\": null, \"operator\": \"=\", \"value\": null}]}, \"enabled\": true, \"email_template\": \"\", \"attachments\": [], \"media_attachments\": [], \"pdf_attachments\": [\"1574\"], \"feed_trigger_event\": \"form_submission\"}"
       },
       {
         "id": 1571,
@@ -6739,7 +7399,7 @@
         "id": 1566,
         "form_id": "89",
         "meta_key": "notifications",
-        "value": "{\"name\": \"WR26 Admin Notification Email\", \"sendTo\": {\"type\": \"email\", \"email\": \"registration@imsda.org\", \"field\": \"email\", \"routing\": [{\"email\": null, \"field\": null, \"operator\": \"=\", \"value\": null}]}, \"fromName\": \"\", \"fromEmail\": \"\", \"replyTo\": \"{inputs.email}\", \"bcc\": \"\", \"subject\": \"New Women’s Retreat 2026 Registration Submitted\", \"message\": \"<p>A new Women’s Retreat 2026 registration has been submitted.</p><p>{all_data}</p>\", \"conditionals\": {\"status\": false, \"type\": \"all\", \"conditions\": [{\"field\": null, \"operator\": \"=\", \"value\": null}]}, \"enabled\": true, \"email_template\": \"\", \"attachments\": [], \"media_attachments\": [], \"pdf_attachments\": [\"1574\"], \"feed_trigger_event\": \"form_submission\"}"
+        "value": "{\"name\": \"WR26 Admin Notification Email\", \"sendTo\": {\"type\": \"email\", \"email\": \"registration@imsda.org\", \"field\": \"email\", \"routing\": [{\"email\": null, \"field\": null, \"operator\": \"=\", \"value\": null}]}, \"fromName\": \"\", \"fromEmail\": \"\", \"replyTo\": \"{inputs.email}\", \"bcc\": \"\", \"subject\": \"New Women\u2019s Retreat 2026 Registration Submitted\", \"message\": \"<p>A new Women\u2019s Retreat 2026 registration has been submitted.</p><p>{all_data}</p>\", \"conditionals\": {\"status\": false, \"type\": \"all\", \"conditions\": [{\"field\": null, \"operator\": \"=\", \"value\": null}]}, \"enabled\": true, \"email_template\": \"\", \"attachments\": [], \"media_attachments\": [], \"pdf_attachments\": [\"1574\"], \"feed_trigger_event\": \"form_submission\"}"
       },
       "9": {
         "id": 1571,
