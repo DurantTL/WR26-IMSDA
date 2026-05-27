@@ -24,6 +24,7 @@ function wr26_default_options() {
         'wr26_edit_page_url' => site_url('/wr26-edit/'),
         'wr26_dispatch_queue' => array(),
         'wr26_failed_submissions' => array(),
+        'wr26_payment_failures' => array(),
         'wr26_dispatch_last_run' => '',
         'wr26_event_name' => "Women's Retreat 2026",
         'wr26_event_dates' => 'October 9–11, 2026',
@@ -111,7 +112,7 @@ add_filter('cron_schedules', function($schedules) {
     return $schedules;
 });
 
-function wr26_queue_entry($entry_id, $action) {
+function wr26_queue_entry($entry_id, $action, $extra = array()) {
     $entry_id = intval($entry_id);
     $action = sanitize_text_field($action);
     $queue = get_option('wr26_dispatch_queue', array());
@@ -120,7 +121,11 @@ function wr26_queue_entry($entry_id, $action) {
             return;
         }
     }
-    $queue[] = array('entry_id' => $entry_id, 'action' => $action, 'queued_at' => current_time('mysql'), 'attempts' => 0);
+    $item = array('entry_id' => $entry_id, 'action' => $action, 'queued_at' => current_time('mysql'), 'attempts' => 0);
+    if (!empty($extra)) {
+        $item['extra'] = $extra;
+    }
+    $queue[] = $item;
     update_option('wr26_dispatch_queue', $queue, false);
 }
 
@@ -275,7 +280,7 @@ function wr26_sanitize_admin_fields($value) {
     return $safe;
 }
 
-function wr26_build_and_send($entry_id, $action) {
+function wr26_build_and_send($entry_id, $action, $extra = array()) {
     $url = esc_url_raw(get_option('wr26_gas_url', ''));
     if (!$url) return 'Missing GAS URL';
     $data = wr26_parse_ff_entry($entry_id);
@@ -284,6 +289,9 @@ function wr26_build_and_send($entry_id, $action) {
         'action' => sanitize_text_field($action), 'secret' => get_option('wr26_gas_secret', ''), 'site' => site_url(), 'version' => WR26_VERSION,
         'edit_page_url' => esc_url_raw(get_option('wr26_edit_page_url', site_url('/wr26-edit/')))
     ));
+    if (!empty($extra)) {
+        $payload = array_merge($payload, $extra);
+    }
     $r = wp_remote_post($url, array('timeout' => 45, 'headers' => array('Content-Type' => 'application/json'), 'body' => wp_json_encode($payload)));
     if (is_wp_error($r)) return $r->get_error_message();
     $body = json_decode(wp_remote_retrieve_body($r), true);
@@ -311,7 +319,7 @@ function wr26_process_dispatch_queue() {
     $failed = get_option('wr26_failed_submissions', array());
     $new = array();
     foreach ($queue as $item) {
-        $result = wr26_build_and_send($item['entry_id'], $item['action']);
+        $result = wr26_build_and_send($item['entry_id'], $item['action'], $item['extra'] ?? array());
         if ($result === true) continue;
         $item['attempts'] = intval($item['attempts']) + 1;
         $item['error'] = sanitize_text_field($result);
@@ -332,27 +340,76 @@ add_action('fluentform/submission_inserted', function($entry_id, $form_data, $fo
     $parsed = wr26_parse_ff_entry($entry_id);
     $pm = $parsed['payment_method'] ?? '';
     $is_online = (strpos($pm, 'square') !== false || strpos($pm, 'card') !== false || strpos($pm, 'credit') !== false);
-    $action = intval(get_option('wr26_registered_count', 0)) < intval(get_option('wr26_capacity', 350)) ? 'register' : 'waitlist';
     if ($is_online) {
-        update_option('wr26_pending_pay_'.intval($entry_id), $action, false);
+        // FF native payment handles this path — fluentform_payment_success fires after charge
         return;
     }
-    wr26_queue_entry($entry_id, $action);
+    // Pay Later / offline path — queue immediately
+    $action = intval(get_option('wr26_registered_count', 0)) < intval(get_option('wr26_capacity', 350)) ? 'register' : 'waitlist';
+    wr26_queue_entry($entry_id, $action, array('payment_status' => 'pending_offline'));
 }, 10, 3);
 
-add_action('fluentform/payment_paid', function($payment, $submission, $status) {
+// FF native Square charge succeeded — read transaction details and queue GAS dispatch
+add_action('fluentform_payment_success', function($transaction, $submission, $form) {
+    if (!is_object($submission)) return;
     $entry_id = intval($submission->id ?? 0);
     if (!$entry_id) return;
-    $pending_key = 'wr26_pending_pay_'.$entry_id;
-    $action = get_option($pending_key, '');
-    if (!$action) return;
-    if (!in_array($action, array('register', 'waitlist'), true)) {
-        delete_option($pending_key);
-        error_log('WR26 payment_paid skipped for entry '.intval($entry_id).': invalid pending action '.print_r($action, true));
-        return;
+
+    // Verify this is the WR26 form
+    $configured_form_id = intval(get_option('wr26_form_id', 0));
+    $form_id = is_object($form) ? intval($form->id ?? 0) : intval($form ?? 0);
+    if (!$form_id) {
+        global $wpdb;
+        $form_id = intval($wpdb->get_var($wpdb->prepare("SELECT form_id FROM {$wpdb->prefix}fluentform_submissions WHERE id=%d", $entry_id)));
     }
-    wr26_queue_entry($entry_id, $action);
-    delete_option($pending_key);
+    if ($configured_form_id && $form_id !== $configured_form_id) return;
+
+    $charge_id  = '';
+    $amount_paid = 0.0;
+    $coupon_used = '';
+
+    if (is_object($transaction)) {
+        $charge_id   = sanitize_text_field($transaction->charge_id ?? $transaction->transaction_hash ?? '');
+        $amount_paid = floatval(($transaction->payment_total ?? 0) / 100);
+        // Coupon may be stored as a code or an ID depending on FF Pro version
+        $coupon_used = sanitize_text_field($transaction->coupon_code ?? ($transaction->coupon_id ? (string) $transaction->coupon_id : ''));
+    }
+
+    $action = intval(get_option('wr26_registered_count', 0)) < intval(get_option('wr26_capacity', 350)) ? 'register' : 'waitlist';
+    wr26_queue_entry($entry_id, $action, array(
+        'payment_status'   => 'paid',
+        'square_charge_id' => $charge_id,
+        'amount_paid'      => $amount_paid,
+        'coupon_used'      => $coupon_used,
+    ));
+}, 10, 3);
+
+// FF native Square charge failed — log for admin visibility; FF blocks submission so no entry is created
+add_action('fluentform_payment_failed', function($transaction, $submission, $form) {
+    if (!is_object($submission)) return;
+    $entry_id = intval($submission->id ?? 0);
+
+    $form_id = is_object($form) ? intval($form->id ?? 0) : intval($form ?? 0);
+    if (!$form_id && $entry_id) {
+        global $wpdb;
+        $form_id = intval($wpdb->get_var($wpdb->prepare("SELECT form_id FROM {$wpdb->prefix}fluentform_submissions WHERE id=%d", $entry_id)));
+    }
+    $configured_form_id = intval(get_option('wr26_form_id', 0));
+    if ($configured_form_id && $form_id !== $configured_form_id) return;
+
+    $failures = get_option('wr26_payment_failures', array());
+    $failures[] = array(
+        'entry_id'  => $entry_id,
+        'form_id'   => $form_id,
+        'failed_at' => current_time('mysql'),
+        'charge_id' => sanitize_text_field(is_object($transaction) ? ($transaction->charge_id ?? $transaction->transaction_hash ?? '') : ''),
+        'error'     => sanitize_text_field(is_object($transaction) ? ($transaction->last_error ?? $transaction->status ?? '') : ''),
+    );
+    if (count($failures) > 100) {
+        $failures = array_slice($failures, -100);
+    }
+    update_option('wr26_payment_failures', $failures, false);
+    error_log('WR26 payment failed for entry ' . $entry_id . ': ' . (is_object($transaction) ? wp_json_encode($transaction) : '(no transaction)'));
 }, 10, 3);
 
 function wr26_gas_request($payload, $timeout = 30) {
@@ -396,7 +453,7 @@ add_action('wp_ajax_wr26_admin_action', function(){
             'adminUser' => wp_get_current_user()->user_login,
         )));
     }
-    $map=array('getRegistrations','adminEditRegistration','transferRegistration','getWaitlist','promoteWaitlist','removeWaitlist','checkinByToken','checkinById','searchRegistrations','getChurchRosters','getCheckInStats','getPromoCodes','savePromoCode','deletePromoCode','recordPayment');
+    $map=array('getRegistrations','adminEditRegistration','transferRegistration','getWaitlist','promoteWaitlist','removeWaitlist','checkinByToken','checkinById','searchRegistrations','getChurchRosters','getCheckInStats','getPromoCodes','savePromoCode','deletePromoCode','recordPayment','getPaymentStats','getPaymentsByStatus','getCouponStats');
     if(!in_array($a,$map,true)) wp_send_json_error(array('message'=>'Invalid action'));
     $payload=array('action'=>$a,'registrationId'=>sanitize_text_field($_POST['registration_id']??''),'waitlistId'=>sanitize_text_field($_POST['waitlist_id']??''),'token'=>sanitize_text_field($_POST['token']??''),'q'=>sanitize_text_field($_POST['q']??''),'status'=>sanitize_text_field($_POST['status']??''),'code'=>sanitize_text_field($_POST['code']??''),'fields'=>wr26_sanitize_admin_fields($_POST['fields']??array()),'adminUser'=>wp_get_current_user()->user_email,'newFirstName'=>sanitize_text_field($_POST['new_first_name']??''),'newLastName'=>sanitize_text_field($_POST['new_last_name']??''),'newEmail'=>sanitize_email($_POST['new_email']??''),'newPhone'=>sanitize_text_field($_POST['new_phone']??''),'newChurch'=>sanitize_text_field($_POST['new_church']??''),'reason'=>sanitize_textarea_field($_POST['reason']??''),'refundNotes'=>sanitize_textarea_field($_POST['refund_notes']??''),'adminNotes'=>sanitize_textarea_field($_POST['admin_notes']??''),'description'=>sanitize_text_field($_POST['description']??''),'discountType'=>sanitize_text_field($_POST['discountType']??''),'discountAmount'=>floatval($_POST['discountAmount']??0),'maxUses'=>intval($_POST['maxUses']??0),'minPurchase'=>floatval($_POST['minPurchase']??0),'expiryDate'=>sanitize_text_field($_POST['expiryDate']??''),'active'=>sanitize_text_field($_POST['active']??'true'));
     wp_send_json(wr26_gas_request($payload));
@@ -420,14 +477,23 @@ function wr26_page_dashboard(){
     $queue = get_option('wr26_dispatch_queue', array());
     $failed = get_option('wr26_failed_submissions', array());
     $last_dispatch = get_option('wr26_dispatch_last_run', '');
+    $pay_failures = get_option('wr26_payment_failures', array());
     echo '<div class="notice notice-info"><p>Lightweight fallback UI for staging/live operations.</p></div>';
     echo '<table class="widefat striped" style="max-width:900px"><tbody>';
     echo '<tr><th>Queue Count</th><td id="wr26-queue-count">'.intval(count($queue)).'</td></tr>';
     echo '<tr><th>Failed Submissions</th><td id="wr26-failed-count">'.intval(count($failed)).'</td></tr>';
+    echo '<tr><th>Payment Failures (FF declined)</th><td>'.intval(count($pay_failures)).'</td></tr>';
     echo '<tr><th>Last Dispatch Run</th><td>'.esc_html($last_dispatch ? $last_dispatch : 'Never').'</td></tr>';
     echo '<tr><th>Registered Count Override</th><td>'.esc_html((string) get_option('wr26_registered_count', '')).'</td></tr>';
     echo '<tr><th>Waitlist Count (local cache)</th><td>'.intval(get_option('wr26_waitlist_count', 0)).'</td></tr>';
     echo '</tbody></table>';
+    if (!empty($pay_failures)) {
+        echo '<h3>Recent Payment Failures</h3><table class="widefat striped" style="max-width:900px"><thead><tr><th>Entry ID</th><th>Failed At</th><th>Charge ID</th><th>Error</th></tr></thead><tbody>';
+        foreach (array_reverse(array_slice($pay_failures, -10)) as $pf) {
+            echo '<tr><td>'.intval($pf['entry_id']).'</td><td>'.esc_html($pf['failed_at']).'</td><td>'.esc_html($pf['charge_id']).'</td><td>'.esc_html($pf['error']).'</td></tr>';
+        }
+        echo '</tbody></table>';
+    }
     echo '<p><button class="button button-primary" id="wr26-run-queue">Run Queue</button> <button class="button" id="wr26-retry-first">Retry first failed item</button> <button class="button" id="wr26-dismiss-first">Dismiss first failed item</button></p><p id="wr26-dashboard-msg"></p>';
     echo <<<'JS'
 <script>jQuery(function($){function post(a,extra){return $.post(wr26.ajax_url,$.extend({action:"wr26_admin_action",nonce:wr26.nonce,wr26_action:a},extra||{}));} function msg(t,b){$("#wr26-dashboard-msg").text(t).css("color",b?"#b32d2e":"#1d2327");}
