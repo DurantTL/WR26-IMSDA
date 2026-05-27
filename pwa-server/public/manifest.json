@@ -1,9 +1,9 @@
 {
-  "name": "WR26 Registration Manager",
-  "short_name": "WR26",
+  "name": "IMSDA Registration",
+  "short_name": "IMSDA Reg",
   "start_url": "/app/",
   "display": "standalone",
-  "background_color": "#f5f3ff",
-  "theme_color": "#7c3aed",
+  "background_color": "#edf3fa",
+  "theme_color": "#2c6fb6",
   "icons": []
 }
