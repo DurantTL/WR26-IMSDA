@@ -41,13 +41,13 @@ function setSync(sync) {
   }
   const d = new Date(sync.lastSyncAt);
   const label = Number.isNaN(d.getTime()) ? sync.lastSyncAt : d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  $('sync-status').textContent = `Cached ${label} • ${sync.registrationsCached || 0} regs • ${sync.attendeesCached || 0} attendees`;
+  $('sync-status').textContent = `Cached ${label} • ${sync.registrationsCached || 0} regs`;
 }
 
 function showAuth(message = '') {
   currentUser = null;
   $('auth').classList.add('visible');
-  $('user-display').textContent = 'Not signed in';
+  $('user-display').textContent = 'Staff sign-in required';
   if (message) {
     $('login-error').textContent = message;
     $('login-error').hidden = false;
@@ -96,28 +96,41 @@ async function bootstrap() {
   await search();
 }
 
-function renderStats(statsPayload, paymentStats) {
+function renderStats(statsPayload) {
   const stats = statsPayload && statsPayload.stats ? statsPayload.stats : {};
   const cards = [
-    ['Registered', stats.total ?? 0],
     ['Checked In', stats.checkedIn ?? 0],
-    ['Not Yet', stats.notCheckedIn ?? 0],
-    ['Payments Pending', stats.paymentsPending ?? 0],
+    ['Expected', stats.notCheckedIn ?? 0],
+    ['Pending Pay', stats.paymentsPending ?? 0],
   ];
-  $('stats-grid').innerHTML = cards.map(([label, value]) => `<div class="stat"><b>${escapeHtml(value)}</b><br>${escapeHtml(label)}</div>`).join('');
+  $('dashboard-stats').innerHTML = cards.map(([label, value]) => `<div class="stat-card"><span class="stat-val">${escapeHtml(value)}</span><span class="stat-label">${escapeHtml(label)}</span></div>`).join('');
+}
+
+function setVisible(id, visible) {
+  const el = $(id);
+  if (el) el.hidden = !visible;
 }
 
 function switchTab(tab) {
-  document.querySelectorAll('.tabs button').forEach((button) => button.classList.toggle('active', button.dataset.tab === tab));
-  document.querySelectorAll('.tab').forEach((panel) => panel.classList.remove('active'));
-  $(`tab-${tab}`).classList.add('active');
+  document.querySelectorAll('.search-tabs .tab-btn').forEach((button) => button.classList.toggle('active', button.dataset.tab === tab));
+  document.querySelectorAll('.search-section .tab').forEach((panel) => panel.classList.remove('active'));
+  const panel = $(`tab-${tab}`);
+  if (panel) panel.classList.add('active');
+
+  setVisible('results', tab !== 'detail' && tab !== 'payments' && tab !== 'checkin' && tab !== 'magic');
+  setVisible('detail-wrap', tab === 'detail' && !!selectedRegistration);
+  setVisible('payment-panel', tab === 'payments');
+  setVisible('checkin-panel', tab === 'checkin');
+  setVisible('magic-panel', tab === 'magic');
+
+  if (tab === 'detail' && !selectedRegistration) showToast('Select a registration first.');
 }
 
 function paymentClass(status) {
   const s = String(status || '').toLowerCase();
-  if (s === 'paid' || s === 'paid_onsite') return 'good';
-  if (s.includes('pending')) return 'warn';
-  return '';
+  if (s === 'paid' || s === 'paid_onsite') return 'checked-in';
+  if (s.includes('pending')) return 'not-arrived';
+  return 'neutral';
 }
 
 async function search() {
@@ -126,19 +139,20 @@ async function search() {
   if ($('payment-filter').value) params.set('paymentStatus', $('payment-filter').value);
   const payload = await api(`/api/registrations?${params.toString()}`);
   renderResults(payload.registrations || []);
+  switchTab('registrations');
 }
 
 function renderResults(rows) {
   if (!rows.length) {
-    $('results').innerHTML = '<div class="empty-state">No registrations found.</div>';
+    $('results').innerHTML = '<div class="info-msg">No registrations found.</div>';
     return;
   }
   $('results').innerHTML = rows.map((r) => `
-    <article class="result-card ${selectedRegistration === r.registrationId ? 'selected' : ''}" data-id="${escapeHtml(r.registrationId)}">
-      <div><strong>${escapeHtml(r.firstName)} ${escapeHtml(r.lastName)}</strong> <span class="pill">${escapeHtml(r.registrationId)}</span></div>
-      <div class="meta">${escapeHtml(r.email)} • ${escapeHtml(r.phone || '')}</div>
-      <div class="meta">${escapeHtml(r.church || 'No church listed')}</div>
-      <div><span class="pill ${paymentClass(r.paymentStatus)}">${escapeHtml(r.paymentStatus || 'payment unknown')}</span><span class="pill">$${escapeHtml(r.finalAmount ?? '')}</span><span class="pill">Attendees: ${escapeHtml(r.attendeeCount ?? 0)}</span>${String(r.checkedIn).toLowerCase() === 'true' ? '<span class="pill good">Checked In</span>' : ''}</div>
+    <article class="card result-card ${selectedRegistration === r.registrationId ? 'selected' : ''}" data-id="${escapeHtml(r.registrationId)}">
+      <div class="result-header"><strong>${escapeHtml(r.firstName)} ${escapeHtml(r.lastName)}</strong><span class="badge">${escapeHtml(r.registrationId)}</span></div>
+      <div class="result-meta">${escapeHtml(r.email)}${r.phone ? ' • ' + escapeHtml(r.phone) : ''}<br>${escapeHtml(r.church || 'No church listed')}</div>
+      <div class="result-badges"><span class="status-badge ${paymentClass(r.paymentStatus)}">${escapeHtml(r.paymentStatus || 'payment unknown')}</span><span class="status-badge neutral">$${escapeHtml(r.finalAmount ?? '')}</span><span class="status-badge neutral">${escapeHtml(r.attendeeCount ?? 0)} attendees</span>${String(r.checkedIn).toLowerCase() === 'true' ? '<span class="status-badge checked-in">Checked In</span>' : ''}</div>
+      <div class="result-action"><button class="btn btn-primary btn-sm">Open →</button></div>
     </article>
   `).join('');
 }
@@ -195,16 +209,19 @@ function attendeeEditor(attendee = {}, index = 0) {
 }
 
 function renderDetail(reg) {
-  $('detail-empty').hidden = true;
-  $('detail').hidden = false;
-  $('detail').innerHTML = `<div class="card">
-    <div class="detail-head"><div><h2>${escapeHtml(reg.firstName)} ${escapeHtml(reg.lastName)}</h2><p class="meta">${escapeHtml(reg.registrationId)} • ${escapeHtml(reg.email)}</p></div><div><span class="pill ${paymentClass(reg.paymentStatus)}">${escapeHtml(reg.paymentStatus)}</span><span class="pill">$${escapeHtml(reg.finalAmount)}</span></div></div>
-    <div class="form-grid">
+  $('detail-wrap').hidden = false;
+  $('detail').innerHTML = `<div class="card-header"><div><h2>${escapeHtml(reg.firstName)} ${escapeHtml(reg.lastName)}</h2><span class="badge-mono">${escapeHtml(reg.registrationId)} • ${escapeHtml(reg.email)}</span></div><span class="status-badge ${paymentClass(reg.paymentStatus)}">${escapeHtml(reg.paymentStatus)}</span></div>
+    <div class="detail-grid">
+      <p><strong>Church:</strong> ${escapeHtml(reg.church || '—')}</p>
+      <p><strong>Phone:</strong> ${escapeHtml(reg.phone || '—')}</p>
+      <p><strong>Amount:</strong> $${escapeHtml(reg.finalAmount || '0')}</p>
+      <p><strong>Checked In:</strong> ${escapeHtml(reg.checkedIn || 'No')}</p>
+    </div>
+    <div class="form-grid compact-form">
       ${field('firstName', 'First Name', reg.firstName)}${field('lastName', 'Last Name', reg.lastName)}${field('phone', 'Phone', reg.phone)}${field('church', 'Church', reg.church)}${field('arrivalDate', 'Arrival Date', reg.arrivalDate)}${field('departureDate', 'Departure Date', reg.departureDate)}${field('emergencyContactName', 'Emergency Contact Name', reg.emergencyContactName)}${field('emergencyContactPhone', 'Emergency Contact Phone', reg.emergencyContactPhone)}${field('dietaryNeeds', 'Dietary Needs', reg.dietaryNeeds, 'textarea')}${field('specialNeeds', 'Special Needs', reg.specialNeeds, 'textarea')}
     </div>
-  </div>
-  <div class="card"><h2>Attendees</h2><div id="attendee-list">${(reg.attendees || []).map(attendeeEditor).join('')}</div><button id="add-attendee" class="btn secondary">Add Attendee</button></div>
-  <button id="save-detail" class="btn primary">Save Registration</button>`;
+    <div class="guest-list-section"><div class="guest-list-header"><strong>Attendees</strong><button id="add-attendee" class="btn btn-sm btn-white">Add</button></div><div id="attendee-list">${(reg.attendees || []).map(attendeeEditor).join('')}</div></div>
+    <div class="detail-actions"><button id="save-detail" class="btn btn-primary full-width">Save Registration</button></div>`;
 }
 
 function collectDetail() {
@@ -261,11 +278,11 @@ document.addEventListener('DOMContentLoaded', () => {
   $('login-form').addEventListener('submit', handleLogin);
   $('logout-btn').addEventListener('click', async () => { await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {}); showAuth('Signed out.'); });
   $('refresh-btn').addEventListener('click', async () => { await api('/api/sync/refresh', { method: 'POST' }); await bootstrap(); showToast('Cache refreshed.'); });
-  document.querySelectorAll('.tabs button').forEach((button) => button.addEventListener('click', () => switchTab(button.dataset.tab)));
-  $('search-btn').addEventListener('click', search);
-  $('search').addEventListener('keydown', (event) => { if (event.key === 'Enter') search(); });
-  $('payment-filter').addEventListener('change', search);
-  $('results').addEventListener('click', (event) => { const card = event.target.closest('.result-card'); if (card) selectRegistration(card.dataset.id); });
+  document.querySelectorAll('.search-tabs .tab-btn').forEach((button) => button.addEventListener('click', () => switchTab(button.dataset.tab)));
+  $('search-btn').addEventListener('click', () => search().catch((error) => showToast(error.message)));
+  $('search').addEventListener('keydown', (event) => { if (event.key === 'Enter') search().catch((error) => showToast(error.message)); });
+  $('payment-filter').addEventListener('change', () => search().catch((error) => showToast(error.message)));
+  $('results').addEventListener('click', (event) => { const card = event.target.closest('.result-card'); if (card) selectRegistration(card.dataset.id).catch((error) => showToast(error.message)); });
   $('detail').addEventListener('click', (event) => {
     if (event.target.id === 'save-detail') saveDetail().catch((error) => showToast(error.message));
     if (event.target.id === 'add-attendee') {
