@@ -11,7 +11,7 @@ const port = process.env.PORT || 3000;
 const gasUrl = process.env.WR26_GAS_URL || process.env.GOOGLE_SCRIPT_URL || '';
 const gasSecret = process.env.WR26_GAS_SECRET || process.env.GAS_SECRET || '';
 const sessionSecret = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
-const sessionCookieName = 'wr26_session';
+const sessionCookieName = 'imsda_registration_session';
 const sessionTtlSeconds = parseInt(process.env.SESSION_TTL_SECONDS || '43200', 10);
 const syncIntervalMs = parseInt(process.env.PWA_SYNC_INTERVAL_MS || '60000', 10);
 const minSyncRegistrations = parseInt(process.env.SYNC_MIN_REGISTRATIONS || '1', 10);
@@ -173,6 +173,7 @@ const cache = {
   stats: {},
   paymentStats: {},
   byRegistrationId: new Map(),
+  byQrToken: new Map(),
   attendeesByRegistrationId: new Map(),
   seminarPrefsByRegistrationId: new Map(),
   lastSyncAt: null,
@@ -198,10 +199,14 @@ function buildIndexes(snapshot) {
   cache.stats = snapshot.stats || {};
   cache.paymentStats = snapshot.paymentStats || {};
   cache.byRegistrationId = new Map();
+  cache.byQrToken = new Map();
   cache.attendeesByRegistrationId = new Map();
   cache.seminarPrefsByRegistrationId = new Map();
 
-  cache.registrations.forEach((registration) => cache.byRegistrationId.set(String(registration.registrationId), registration));
+  cache.registrations.forEach((registration) => {
+    cache.byRegistrationId.set(String(registration.registrationId), registration);
+    if (registration.qrToken) cache.byQrToken.set(String(registration.qrToken), registration);
+  });
   cache.attendees.forEach((attendee) => {
     const id = String(attendee.registrationId || attendee.registration_id || '');
     if (!id) return;
@@ -278,6 +283,7 @@ function searchRegistrations(query, filters = {}) {
       const attendees = cache.attendeesByRegistrationId.get(id) || [];
       const haystack = [
         registration.registrationId,
+        registration.qrToken,
         registration.firstName,
         registration.lastName,
         registration.email,
@@ -296,10 +302,31 @@ function searchRegistrations(query, filters = {}) {
     }));
 }
 
+function resolveScannedRegistration(scanValue) {
+  const raw = String(scanValue || '').trim();
+  if (!raw) return null;
+  const candidates = [raw];
+  try {
+    const parsedUrl = new URL(raw);
+    ['registrationId', 'regId', 'id', 'token', 'qrToken'].forEach((key) => {
+      const val = parsedUrl.searchParams.get(key);
+      if (val) candidates.push(val);
+    });
+    const pathParts = parsedUrl.pathname.split('/').filter(Boolean);
+    pathParts.forEach((part) => candidates.push(part));
+  } catch (_error) {}
+  for (const candidate of candidates) {
+    if (cache.byRegistrationId.has(String(candidate))) return cache.byRegistrationId.get(String(candidate));
+    if (cache.byQrToken.has(String(candidate))) return cache.byQrToken.get(String(candidate));
+  }
+  const lowered = raw.toLowerCase();
+  return cache.registrations.find((r) => String(r.registrationId || '').toLowerCase() === lowered || String(r.qrToken || '').toLowerCase() === lowered) || null;
+}
+
 app.post('/api/auth/login', noStore, loginRateLimiter, async (req, res) => {
   const username = String(req.body.username || '').trim();
   const password = String(req.body.password || '');
-  if (!authUsers.length) return res.status(503).json({ success: false, error: 'No WR26 users are configured on the server' });
+  if (!authUsers.length) return res.status(503).json({ success: false, error: 'No IMSDA Registration users are configured on the server' });
   const user = authUsers.find((candidate) => candidate.username === username);
   const passwordMatch = user ? await bcrypt.compare(password, user.password) : false;
   if (!user || !passwordMatch) return res.status(401).json({ success: false, error: 'Invalid username or password' });
@@ -366,6 +393,17 @@ app.get('/api/registration/:id', noStore, requireRole('registrar', 'checkin', 'p
   }
 });
 
+app.get('/api/scan/:value', noStore, requireRole('registrar', 'checkin', 'readonly'), async (req, res) => {
+  try {
+    await ensureCacheReady();
+    const registration = resolveScannedRegistration(req.params.value);
+    if (!registration) return res.status(404).json({ success: false, error: 'No registration found for this QR code' });
+    res.json({ success: true, registration: attachDetails(registration), sync: getSyncMeta() });
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message, sync: getSyncMeta() });
+  }
+});
+
 app.post('/api/registration/:id', noStore, requireRole('registrar'), async (req, res) => {
   try {
     const payload = await gasRequest('portalAdminSaveRegistration', {
@@ -406,6 +444,28 @@ app.post('/api/check-in', noStore, requireRole('checkin', 'registrar'), async (r
   } catch (error) {
     res.status(503).json({ success: false, error: error.message, sync: getSyncMeta() });
   }
+});
+
+app.post('/api/offline-actions', noStore, requireRole('checkin', 'registrar', 'payments'), async (req, res) => {
+  const actions = Array.isArray(req.body.actions) ? req.body.actions : [];
+  const results = [];
+  for (const action of actions) {
+    try {
+      if (action.type === 'check-in') {
+        const payload = await gasRequest('checkinById', { registrationId: action.registrationId, adminUser: req.session.sub });
+        results.push({ clientId: action.clientId, success: !!payload.success, response: payload });
+      } else if (action.type === 'payment') {
+        const payload = await gasRequest('recordPayment', { registrationId: action.registrationId, paymentMethod: action.paymentMethod, amountPaid: Number(action.amountPaid || 0), checkNumber: action.checkNumber || '', paymentNotes: action.paymentNotes || '', adminUser: req.session.sub });
+        results.push({ clientId: action.clientId, success: !!payload.success, response: payload });
+      } else {
+        results.push({ clientId: action.clientId, success: false, error: 'Unsupported offline action type' });
+      }
+    } catch (error) {
+      results.push({ clientId: action.clientId, success: false, error: error.message });
+    }
+  }
+  if (results.some((result) => result.success)) await refreshCache(true).catch(() => {});
+  res.json({ success: true, results, sync: getSyncMeta() });
 });
 
 app.post('/api/magic-link/request', noStore, rateLimit({ windowMs: 60 * 60 * 1000, max: 8, standardHeaders: true, legacyHeaders: false }), async (req, res) => {
@@ -457,15 +517,15 @@ app.get('/health', (_req, res) => {
 });
 
 app.listen(port, async () => {
-  console.log(`WR26 PWA server running on port ${port}`);
+  console.log(`IMSDA Registration PWA server running on port ${port}`);
   console.log(`  App: http://localhost:${port}/app`);
   if (gasUrl) {
     try {
       await refreshCache(true);
-      console.log(`Initial WR26 sync complete at ${cache.lastSyncAt}`);
+      console.log(`Initial IMSDA Registration sync complete at ${cache.lastSyncAt}`);
     } catch (error) {
-      console.error('Initial WR26 sync failed:', error.message);
+      console.error('Initial IMSDA Registration sync failed:', error.message);
     }
-    setInterval(() => refreshCache(false).catch((error) => console.error('Background WR26 sync failed:', error.message)), syncIntervalMs);
+    setInterval(() => refreshCache(false).catch((error) => console.error('Background IMSDA Registration sync failed:', error.message)), syncIntervalMs);
   }
 });
