@@ -1,6 +1,9 @@
 let currentUser = null;
 let selectedRegistration = null;
 let selectedBundle = null;
+let html5QrCode = null;
+let scannerRunning = false;
+let offlineQueue = JSON.parse(localStorage.getItem('imsda_registration_queue') || '[]');
 
 const $ = (id) => document.getElementById(id);
 
@@ -14,6 +17,44 @@ function showToast(message) {
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function logActivity(message, good = true) {
+  const list = $('activity-list');
+  if (!list) return;
+  const li = document.createElement('li');
+  li.textContent = `${good ? '✓' : '⚠'} ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} — ${message}`;
+  list.prepend(li);
+  while (list.children.length > 8) list.removeChild(list.lastChild);
+}
+
+function saveQueue() {
+  localStorage.setItem('imsda_registration_queue', JSON.stringify(offlineQueue));
+  updateQueueUI();
+}
+
+function updateQueueUI() {
+  const bar = $('offline-queue-bar');
+  const count = $('queue-count');
+  if (!bar || !count) return;
+  count.textContent = offlineQueue.length;
+  bar.style.display = offlineQueue.length ? 'flex' : 'none';
+}
+
+function enqueueAction(action) {
+  offlineQueue.push({ clientId: `${Date.now()}-${Math.random().toString(16).slice(2)}`, createdAt: new Date().toISOString(), ...action });
+  saveQueue();
+  logActivity(`Queued ${action.type} for ${action.registrationId}`, false);
+  showToast('Offline action queued. Sync when back online.');
+}
+
+function updateOnlineStatus() {
+  const status = $('connection-status');
+  if (!status) return;
+  const online = navigator.onLine;
+  status.textContent = online ? 'Online' : 'Offline';
+  status.className = `status-indicator ${online ? 'online' : 'offline'}`;
+  if (online && offlineQueue.length) processOfflineQueue().catch(() => {});
 }
 
 async function api(path, options = {}) {
@@ -60,6 +101,8 @@ function hideAuth() {
 }
 
 async function restoreSession() {
+  updateQueueUI();
+  updateOnlineStatus();
   try {
     const payload = await api('/api/auth/me');
     currentUser = payload.user;
@@ -92,7 +135,7 @@ async function handleLogin(event) {
 
 async function bootstrap() {
   const payload = await api('/api/bootstrap');
-  renderStats(payload.stats, payload.paymentStats);
+  renderStats(payload.stats);
   await search();
 }
 
@@ -111,19 +154,31 @@ function setVisible(id, visible) {
   if (el) el.hidden = !visible;
 }
 
+async function stopScanner() {
+  if (html5QrCode && scannerRunning) {
+    await html5QrCode.stop().catch(() => {});
+    scannerRunning = false;
+  }
+  const reader = $('reader');
+  if (reader) reader.style.display = 'none';
+  const scanBtn = $('scan-btn');
+  if (scanBtn) scanBtn.textContent = '📷 Start Scanner';
+}
+
 function switchTab(tab) {
   document.querySelectorAll('.search-tabs .tab-btn').forEach((button) => button.classList.toggle('active', button.dataset.tab === tab));
   document.querySelectorAll('.search-section .tab').forEach((panel) => panel.classList.remove('active'));
   const panel = $(`tab-${tab}`);
   if (panel) panel.classList.add('active');
 
-  setVisible('results', tab !== 'detail' && tab !== 'payments' && tab !== 'checkin' && tab !== 'magic');
+  setVisible('results', tab !== 'detail' && tab !== 'payments' && tab !== 'checkin' && tab !== 'magic' && tab !== 'scan');
   setVisible('detail-wrap', tab === 'detail' && !!selectedRegistration);
   setVisible('payment-panel', tab === 'payments');
   setVisible('checkin-panel', tab === 'checkin');
   setVisible('magic-panel', tab === 'magic');
+  if (tab !== 'scan') stopScanner().catch(() => {});
 
-  if (tab === 'detail' && !selectedRegistration) showToast('Select a registration first.');
+  if ((tab === 'detail' || tab === 'payments' || tab === 'checkin' || tab === 'magic') && !selectedRegistration) showToast('Select a registration first.');
 }
 
 function paymentClass(status) {
@@ -162,11 +217,55 @@ async function selectRegistration(id) {
   const payload = await api(`/api/registration/${encodeURIComponent(id)}`);
   selectedBundle = payload.registration;
   renderDetail(selectedBundle);
-  $('payment-target').textContent = `${selectedBundle.firstName} ${selectedBundle.lastName} • ${selectedBundle.registrationId}`;
-  $('pay-amount').value = selectedBundle.finalAmount || '';
-  $('checkin-target').textContent = `${selectedBundle.firstName} ${selectedBundle.lastName} • ${selectedBundle.registrationId}`;
-  $('magic-email').value = selectedBundle.email || '';
+  fillActionTargets(selectedBundle);
   switchTab('detail');
+}
+
+async function openScannedRegistration(scanValue) {
+  const payload = await api(`/api/scan/${encodeURIComponent(scanValue)}`);
+  selectedBundle = payload.registration;
+  selectedRegistration = selectedBundle.registrationId;
+  renderDetail(selectedBundle);
+  fillActionTargets(selectedBundle);
+  logActivity(`Scanned ${selectedBundle.firstName || ''} ${selectedBundle.lastName || ''}`.trim() || selectedBundle.registrationId);
+  await stopScanner();
+  switchTab('detail');
+}
+
+function fillActionTargets(reg) {
+  $('payment-target').textContent = `${reg.firstName} ${reg.lastName} • ${reg.registrationId}`;
+  $('pay-amount').value = reg.finalAmount || '';
+  $('checkin-target').textContent = `${reg.firstName} ${reg.lastName} • ${reg.registrationId}`;
+  $('magic-email').value = reg.email || '';
+}
+
+async function toggleScanner() {
+  const reader = $('reader');
+  if (!reader) return;
+  if (scannerRunning) {
+    await stopScanner();
+    return;
+  }
+  if (typeof Html5Qrcode === 'undefined') {
+    showToast('QR scanner library did not load.');
+    return;
+  }
+  reader.style.display = 'block';
+  $('scan-btn').textContent = 'Stop Scanner';
+  html5QrCode = html5QrCode || new Html5Qrcode('reader');
+  try {
+    await html5QrCode.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 240, height: 240 } },
+      (decodedText) => openScannedRegistration(decodedText).catch((error) => showToast(error.message)),
+      () => {}
+    );
+    scannerRunning = true;
+  } catch (error) {
+    reader.style.display = 'none';
+    $('scan-btn').textContent = '📷 Start Scanner';
+    showToast(`Camera unavailable: ${error.message || error}`);
+  }
 }
 
 function field(name, label, value, type = 'text') {
@@ -247,24 +346,43 @@ async function saveDetail() {
   const payload = await api(`/api/registration/${encodeURIComponent(selectedRegistration)}`, { method: 'POST', body: data });
   selectedBundle = payload.registration || payload;
   showToast('Registration saved.');
+  logActivity(`Saved ${selectedRegistration}`);
   await selectRegistration(selectedRegistration);
 }
 
 async function savePayment() {
   if (!selectedRegistration) return showToast('Select a registration first.');
-  await api('/api/payment', {
-    method: 'POST',
-    body: { registrationId: selectedRegistration, paymentMethod: $('pay-method').value, amountPaid: $('pay-amount').value, checkNumber: $('pay-check').value, paymentNotes: $('pay-notes').value },
-  });
+  const action = { type: 'payment', registrationId: selectedRegistration, paymentMethod: $('pay-method').value, amountPaid: $('pay-amount').value, checkNumber: $('pay-check').value, paymentNotes: $('pay-notes').value };
+  if (!navigator.onLine) return enqueueAction(action);
+  await api('/api/payment', { method: 'POST', body: action });
   showToast('Payment saved.');
+  logActivity(`Payment saved for ${selectedRegistration}`);
   await selectRegistration(selectedRegistration);
 }
 
 async function checkInSelected() {
   if (!selectedRegistration) return showToast('Select a registration first.');
+  const action = { type: 'check-in', registrationId: selectedRegistration };
+  if (!navigator.onLine) return enqueueAction(action);
   await api('/api/check-in', { method: 'POST', body: { registrationId: selectedRegistration } });
   showToast('Checked in.');
+  logActivity(`Checked in ${selectedRegistration}`);
   await selectRegistration(selectedRegistration);
+}
+
+async function processOfflineQueue() {
+  if (!offlineQueue.length || !navigator.onLine) return;
+  const payload = await api('/api/offline-actions', { method: 'POST', body: { actions: offlineQueue } });
+  const failedIds = new Set((payload.results || []).filter((r) => !r.success).map((r) => r.clientId));
+  const successCount = (payload.results || []).filter((r) => r.success).length;
+  offlineQueue = offlineQueue.filter((action) => failedIds.has(action.clientId));
+  saveQueue();
+  if (successCount) {
+    showToast(`Synced ${successCount} offline action${successCount === 1 ? '' : 's'}.`);
+    logActivity(`Synced ${successCount} offline action${successCount === 1 ? '' : 's'}`);
+    await bootstrap();
+  }
+  if (offlineQueue.length) showToast(`${offlineQueue.length} offline action(s) still need attention.`);
 }
 
 async function sendMagicLink() {
@@ -272,12 +390,17 @@ async function sendMagicLink() {
   const portalUrl = $('magic-url').value.trim();
   const payload = await api('/api/magic-link/request', { method: 'POST', body: { email, portalUrl } });
   $('magic-status').textContent = payload.message || 'Link request processed.';
+  logActivity(`Magic link requested for ${email}`);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
   $('login-form').addEventListener('submit', handleLogin);
   $('logout-btn').addEventListener('click', async () => { await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {}); showAuth('Signed out.'); });
   $('refresh-btn').addEventListener('click', async () => { await api('/api/sync/refresh', { method: 'POST' }); await bootstrap(); showToast('Cache refreshed.'); });
+  $('sync-btn').addEventListener('click', () => processOfflineQueue().catch((error) => showToast(error.message)));
+  $('scan-btn').addEventListener('click', () => toggleScanner().catch((error) => showToast(error.message)));
   document.querySelectorAll('.search-tabs .tab-btn').forEach((button) => button.addEventListener('click', () => switchTab(button.dataset.tab)));
   $('search-btn').addEventListener('click', () => search().catch((error) => showToast(error.message)));
   $('search').addEventListener('keydown', (event) => { if (event.key === 'Enter') search().catch((error) => showToast(error.message)); });
