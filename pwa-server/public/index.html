@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#7c3aed">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/styles.css">
+  <title>WR26 Registration Manager</title>
+</head>
+<body>
+  <div id="auth" class="auth-screen visible">
+    <form id="login-form" class="auth-card">
+      <div class="brand-pill">WR26</div>
+      <h1>Registration Manager</h1>
+      <p>Sign in to manage Women’s Retreat registrations, attendees, payments, and check-in.</p>
+      <label>Username<input id="login-username" autocomplete="username" required></label>
+      <label>Access Code<input id="login-password" type="password" autocomplete="current-password" required></label>
+      <button class="btn primary" type="submit">Sign In</button>
+      <p id="login-error" class="error" hidden></p>
+    </form>
+  </div>
+
+  <header class="topbar">
+    <div><strong>WR26 Registration Manager</strong> <span id="sync-status">Cache not loaded</span></div>
+    <div class="top-actions"><span id="user-display">Not signed in</span><button id="refresh-btn" class="btn ghost">Refresh</button><button id="logout-btn" class="btn ghost">Logout</button></div>
+  </header>
+
+  <main class="layout">
+    <section class="hero">
+      <div><h1>Women’s Retreat 2026</h1><p>Fast cached registration management synced with Google Sheets through GAS.</p></div>
+      <div class="stats-grid" id="stats-grid"></div>
+    </section>
+
+    <nav class="tabs">
+      <button data-tab="registrations" class="active">Registrations</button>
+      <button data-tab="detail">Details</button>
+      <button data-tab="payments">Payments</button>
+      <button data-tab="checkin">Check-In</button>
+      <button data-tab="magic">Magic Link</button>
+    </nav>
+
+    <section id="tab-registrations" class="tab active">
+      <div class="panel-toolbar"><input id="search" placeholder="Search name, email, phone, attendee, church"><select id="payment-filter"><option value="">All payments</option><option value="paid">Paid</option><option value="paid_onsite">Paid onsite</option><option value="pending_pay_later">Pending pay later</option><option value="pending_offline">Pending offline</option><option value="pending_square">Pending Square</option></select><button id="search-btn" class="btn primary">Search</button></div>
+      <div id="results" class="results"></div>
+    </section>
+
+    <section id="tab-detail" class="tab"><div id="detail-empty" class="empty-state">Select a registration from the Registrations tab.</div><div id="detail" hidden></div></section>
+
+    <section id="tab-payments" class="tab"><div id="payment-panel" class="card"><h2>Record Payment</h2><p id="payment-target">Select a registration first.</p><div class="form-grid"><label>Method<select id="pay-method"><option value="cash">Cash</option><option value="check">Check</option><option value="square_onsite">Square onsite</option><option value="other">Other</option></select></label><label>Amount<input id="pay-amount" type="number" step="0.01"></label><label>Check #<input id="pay-check"></label><label>Notes<input id="pay-notes"></label></div><button id="save-payment" class="btn primary">Save Payment</button></div></section>
+
+    <section id="tab-checkin" class="tab"><div class="card"><h2>Check In</h2><p id="checkin-target">Select a registration first.</p><button id="checkin-btn" class="btn primary">Check In Selected Registration</button></div></section>
+
+    <section id="tab-magic" class="tab"><div class="card"><h2>Send Registrant Magic Link</h2><p>This sends a secure edit link to the email on the registration.</p><div class="form-grid"><label>Email<input id="magic-email" type="email"></label><label>Portal URL<input id="magic-url" placeholder="https://example.org/wr26-portal"></label></div><button id="send-magic" class="btn primary">Send Link</button><p id="magic-status"></p></div></section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="/app.js"></script>
+</body>
+</html>
