@@ -2,56 +2,118 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#7c3aed">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2c6fb6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="WR26 Manager">
   <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="/styles.css">
   <title>WR26 Registration Manager</title>
 </head>
 <body>
+  <header class="topbar">
+    <div class="header-content">
+      <div class="header-title-row">
+        <a href="/" class="btn btn-sm btn-white back-btn">← Back</a>
+        <h1>🌸 WR26 Manager</h1>
+      </div>
+      <div class="header-actions">
+        <div id="connection-status" class="status-indicator online">Online</div>
+        <button id="refresh-btn" class="btn btn-sm btn-white">Refresh</button>
+        <button id="logout-btn" class="btn btn-sm btn-white">Log Out</button>
+      </div>
+    </div>
+    <div class="header-subtitle">
+      <span id="user-display">Staff sign-in required</span>
+      <span id="sync-status">Cache not loaded</span>
+    </div>
+  </header>
+
   <div id="auth" class="auth-screen visible">
     <form id="login-form" class="auth-card">
-      <div class="brand-pill">WR26</div>
-      <h1>Registration Manager</h1>
-      <p>Sign in to manage Women’s Retreat registrations, attendees, payments, and check-in.</p>
-      <label>Username<input id="login-username" autocomplete="username" required></label>
-      <label>Access Code<input id="login-password" type="password" autocomplete="current-password" required></label>
-      <button class="btn primary" type="submit">Sign In</button>
-      <p id="login-error" class="error" hidden></p>
+      <h2>Staff Login</h2>
+      <p>Sign in to access the cached WR26 registration manager and protected actions.</p>
+      <input id="login-username" placeholder="Username" autocomplete="username" required>
+      <input id="login-password" type="password" placeholder="Access Code" autocomplete="current-password" required>
+      <button class="btn btn-primary full-width" type="submit">Sign In</button>
+      <div id="login-error" class="error-msg auth-error" hidden></div>
     </form>
   </div>
 
-  <header class="topbar">
-    <div><strong>WR26 Registration Manager</strong> <span id="sync-status">Cache not loaded</span></div>
-    <div class="top-actions"><span id="user-display">Not signed in</span><button id="refresh-btn" class="btn ghost">Refresh</button><button id="logout-btn" class="btn ghost">Logout</button></div>
-  </header>
-
   <main class="layout">
-    <section class="hero">
-      <div><h1>Women’s Retreat 2026</h1><p>Fast cached registration management synced with Google Sheets through GAS.</p></div>
-      <div class="stats-grid" id="stats-grid"></div>
+    <section id="dashboard-stats" class="stats-grid"></section>
+
+    <section class="search-section">
+      <div class="search-tabs">
+        <button data-tab="registrations" class="tab-btn active">Search</button>
+        <button data-tab="detail" class="tab-btn">Details</button>
+        <button data-tab="payments" class="tab-btn">Payment</button>
+        <button data-tab="checkin" class="tab-btn">Check-In</button>
+        <button data-tab="magic" class="tab-btn">Link</button>
+      </div>
+
+      <section id="tab-registrations" class="tab active">
+        <div class="name-inputs">
+          <input id="search" placeholder="Name, email, phone, attendee, church" autocomplete="off">
+          <select id="payment-filter" title="Payment filter">
+            <option value="">All payments</option>
+            <option value="paid">Paid</option>
+            <option value="paid_onsite">Paid onsite</option>
+            <option value="pending_pay_later">Pay later</option>
+            <option value="pending_offline">Offline</option>
+            <option value="pending_square">Square</option>
+          </select>
+        </div>
+        <button id="search-btn" class="btn btn-primary full-width">🔍 Search Registrations</button>
+      </section>
+
+      <section id="tab-detail" class="tab"><p class="tab-note">Open a registration from the results list to edit contact, attendee, and seminar details.</p></section>
+      <section id="tab-payments" class="tab"><p class="tab-note">Open a registration first, then record cash, check, Square, or other payments below.</p></section>
+      <section id="tab-checkin" class="tab"><p class="tab-note">Open a registration first, then check in the selected registration below.</p></section>
+      <section id="tab-magic" class="tab"><p class="tab-note">Send a secure edit link to the registrant email.</p></section>
     </section>
 
-    <nav class="tabs">
-      <button data-tab="registrations" class="active">Registrations</button>
-      <button data-tab="detail">Details</button>
-      <button data-tab="payments">Payments</button>
-      <button data-tab="checkin">Check-In</button>
-      <button data-tab="magic">Magic Link</button>
-    </nav>
+    <div id="main-content">
+      <div id="results" class="results-list"></div>
 
-    <section id="tab-registrations" class="tab active">
-      <div class="panel-toolbar"><input id="search" placeholder="Search name, email, phone, attendee, church"><select id="payment-filter"><option value="">All payments</option><option value="paid">Paid</option><option value="paid_onsite">Paid onsite</option><option value="pending_pay_later">Pending pay later</option><option value="pending_offline">Pending offline</option><option value="pending_square">Pending Square</option></select><button id="search-btn" class="btn primary">Search</button></div>
-      <div id="results" class="results"></div>
-    </section>
+      <div id="detail-wrap" class="card" hidden>
+        <div id="detail"></div>
+      </div>
 
-    <section id="tab-detail" class="tab"><div id="detail-empty" class="empty-state">Select a registration from the Registrations tab.</div><div id="detail" hidden></div></section>
+      <div id="payment-panel" class="card" hidden>
+        <h2>Record Payment</h2>
+        <p id="payment-target" class="meta">Select a registration first.</p>
+        <div class="form-grid compact-form">
+          <label>Method<select id="pay-method"><option value="cash">Cash</option><option value="check">Check</option><option value="square_onsite">Square onsite</option><option value="other">Other</option></select></label>
+          <label>Amount<input id="pay-amount" type="number" step="0.01"></label>
+          <label>Check #<input id="pay-check"></label>
+          <label>Notes<input id="pay-notes"></label>
+        </div>
+        <button id="save-payment" class="btn btn-primary full-width">Save Payment</button>
+      </div>
 
-    <section id="tab-payments" class="tab"><div id="payment-panel" class="card"><h2>Record Payment</h2><p id="payment-target">Select a registration first.</p><div class="form-grid"><label>Method<select id="pay-method"><option value="cash">Cash</option><option value="check">Check</option><option value="square_onsite">Square onsite</option><option value="other">Other</option></select></label><label>Amount<input id="pay-amount" type="number" step="0.01"></label><label>Check #<input id="pay-check"></label><label>Notes<input id="pay-notes"></label></div><button id="save-payment" class="btn primary">Save Payment</button></div></section>
+      <div id="checkin-panel" class="card" hidden>
+        <h2>Check In</h2>
+        <p id="checkin-target" class="meta">Select a registration first.</p>
+        <button id="checkin-btn" class="btn btn-primary full-width">✅ Check In Selected Registration</button>
+      </div>
 
-    <section id="tab-checkin" class="tab"><div class="card"><h2>Check In</h2><p id="checkin-target">Select a registration first.</p><button id="checkin-btn" class="btn primary">Check In Selected Registration</button></div></section>
+      <div id="magic-panel" class="card" hidden>
+        <h2>Send Magic Link</h2>
+        <p class="meta">This sends a secure edit link to the email on the registration.</p>
+        <div class="form-grid compact-form">
+          <label>Email<input id="magic-email" type="email"></label>
+          <label>Portal URL<input id="magic-url" placeholder="https://example.org/wr26-portal"></label>
+        </div>
+        <button id="send-magic" class="btn btn-primary full-width">Send Link</button>
+        <p id="magic-status" class="meta"></p>
+      </div>
+    </div>
 
-    <section id="tab-magic" class="tab"><div class="card"><h2>Send Registrant Magic Link</h2><p>This sends a secure edit link to the email on the registration.</p><div class="form-grid"><label>Email<input id="magic-email" type="email"></label><label>Portal URL<input id="magic-url" placeholder="https://example.org/wr26-portal"></label></div><button id="send-magic" class="btn primary">Send Link</button><p id="magic-status"></p></div></section>
+    <div class="activity-log">
+      <h3>Recent Activity</h3>
+      <ul id="activity-list"></ul>
+    </div>
   </main>
 
   <div id="toast" class="toast" hidden></div>
