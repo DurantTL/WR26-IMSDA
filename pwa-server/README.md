@@ -82,21 +82,31 @@ portalSaveRegistrationByMagicToken
 ## Environment variables
 
 ```bash
+NODE_ENV=production
 PORT=3000
 WR26_GAS_URL=https://script.google.com/macros/s/...../exec
 WR26_GAS_SECRET=your_config_sheet_SECRET_value
 SESSION_SECRET=replace-with-long-random-string
 PWA_SYNC_INTERVAL_MS=60000
 SYNC_MIN_REGISTRATIONS=1
+TRUST_PROXY=1
 WR26_AUTH_USERS='[{"username":"registrar","password":"$2b$10$...bcrypt...","roles":["registrar","payments","checkin"]}]'
 ```
 
 Notes:
 
 - `WR26_GAS_SECRET` must match Config tab `SECRET`.
-- `SESSION_SECRET` should be long and random.
+- `SESSION_SECRET` should be long and random. **Required in production** — with `NODE_ENV=production` the server refuses to start without it (an ephemeral secret would log everyone out on each restart).
 - `WR26_AUTH_USERS` must use bcrypt password hashes.
 - `SYNC_MIN_REGISTRATIONS` prevents replacing a good cache with a suspiciously empty snapshot.
+- `TRUST_PROXY` is the number of proxy hops in front of the app (e.g. `1` behind Cloudflare/Nginx) so per-IP rate limiting and magic-link IP binding see the real client IP. Defaults to `1` in production, `0` in development.
+
+### Hardening built in
+
+- Per-IP rate limiting on login (10 / 15 min), reads (240 / min), writes (60 / min), and magic-link requests (8 / hour).
+- Input validation on all write endpoints (payment amount/method, attendee counts, required IDs, magic-link tokens/emails).
+- Stateless signed sessions (HMAC-SHA256, HttpOnly + SameSite=Strict + Secure-in-production) with a `jti` and a server-side revocation list so logout immediately invalidates the token.
+- The GAS secret is never sent to the browser; the server is the only thing that talks to GAS with it.
 
 Generate bcrypt hashes after `npm install`:
 

@@ -22,6 +22,10 @@ function withScriptLock_(fn,timeoutMs){var lock=LockService.getScriptLock();var 
 
 function isValidEmail_(e){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e||'').trim());}
 
+// Best-effort audit trail for staff/admin mutations. Never throws and is a no-op
+// if the AuditLog sheet is absent, so it can be added to any write path safely.
+function logAudit_(action,registrationId,actor,details,sourceIp){try{var sh=getSS().getSheetByName('AuditLog');if(!sh)return;sh.appendRow(['AL-'+Date.now()+'-'+randHex4(),new Date(),String(action||''),String(registrationId||''),String(actor||'unknown'),String(details||''),String(sourceIp||'')]);}catch(e){Logger.log('logAudit_ failed: '+e.message);}}
+
 // Never let a missing/invalid address or a MailApp error abort the caller (e.g. a
 // registration that is already written). Returns {sent:true} or {sent:false,reason}.
 function sendEmailSafe_(opts){try{if(!opts||!isValidEmail_(opts.to)){Logger.log('sendEmailSafe_: skipped invalid/blank recipient: '+String(opts&&opts.to));return {sent:false,reason:'invalid_email'};}MailApp.sendEmail(opts);return {sent:true};}catch(e){Logger.log('sendEmailSafe_: send failed for '+String(opts.to)+': '+e.message);return {sent:false,reason:e.message};}}

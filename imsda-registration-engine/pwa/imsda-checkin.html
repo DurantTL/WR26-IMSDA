@@ -7,6 +7,14 @@
 <div id="result" class="screen result" onclick="backToMain()"><h1 id="resIcon">✅</h1><h2 id="resName"></h2><p id="resMeta"></p><div id="resPay"></div><button id="openPay" class="btn" style="display:none">Record Payment</button></div>
 <div id="paySheet" class="sheet"><h3>Record Payment</h3><div id="pmethods"></div><input id="pamount" class="input" type="number" step="0.01" placeholder="Amount"><input id="pcheck" class="input" placeholder="Check #"><input id="pnotes" class="input" placeholder="Notes"><div id="squareCalc"></div><button class="btn" id="savePay">Save Payment</button></div>
 <script>
+/*
+ * DEPRECATED (2026-05-28): This standalone check-in PWA belongs to the parked
+ * imsda-registration-engine and is superseded by the canonical staff app in
+ * pwa-server/ (full search/edit/payments/check-in/QR/offline). It is retained
+ * for reference only and is not the production path for WR26. See the root
+ * README.md and REVIEW-AND-ROADMAP.md.
+ */
+console.warn('[DEPRECATED] imsda-checkin.html is superseded by the pwa-server/ staff app. See REVIEW-AND-ROADMAP.md.');
 const state={cfg:{},db:null,pin:'',tries:0,disabledUntil:0,deviceId:'',lastToken:'',lastScanAt:0,currentReg:null,paymentMethod:'cash'};
 const pwaActions=['validatePin','getAllRegistrations','recordCheckin','recordPayment','getCheckinStats'];
 const qs=(s)=>document.querySelector(s); const qsa=(s)=>[...document.querySelectorAll(s)];

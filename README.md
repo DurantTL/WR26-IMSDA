@@ -157,6 +157,17 @@ Key, Value
 Token, Timestamp, Email, Registration ID, Expires At, Last Used At, Status, Purpose, Request IP, Notes
 ```
 
+**AuditLog**
+
+```text
+Audit ID, Timestamp, Action, Registration ID, Actor, Details, Source IP
+```
+
+The `AuditLog` tab records staff/admin mutations (admin edits, payments,
+check-ins, transfers, waitlist promotions/removals, and registrant self-service
+edits). Writing to it is best-effort: if the tab is absent, the action still
+succeeds and logging is skipped.
+
 ### Setup helpers
 
 Run from Apps Script after copying/pushing the GAS files:
@@ -201,6 +212,8 @@ SEMINAR_FULL_BEHAVIOR=allow_with_review
 SEMINAR_CAPACITY_DEFAULT=0
 CHECKIN_PIN
 CHECKIN_TOKEN
+MAGIC_LINK_ENFORCE_IP=false
+MAGIC_LINK_COOLDOWN_SECONDS=60
 ```
 
 Important:
@@ -208,6 +221,7 @@ Important:
 - `SECRET` must match the WordPress plugin secret and the PWA server `WR26_GAS_SECRET`.
 - `CHECKIN_PIN` and `CHECKIN_TOKEN` are still available for legacy check-in flows, but the new IMSDA Registration PWA uses server-side staff login with `WR26_AUTH_USERS`.
 - `SQUARE_FEE_*` only matters if the retreat chooses to pass card fees to registrants.
+- `MAGIC_LINK_COOLDOWN_SECONDS` throttles repeat magic-link requests per email (anti-spam). `MAGIC_LINK_ENFORCE_IP` is **off by default**; set it to `true` only if you want to reject a magic link used from a different network than it was requested from (this can lock out mobile/forwarded users, so leave off unless needed).
 
 ---
 
