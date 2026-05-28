@@ -153,10 +153,16 @@ npm install
 npm start
 ```
 
-Open:
+Open the staff PWA:
 
 ```text
 http://localhost:3000/app/
+```
+
+Open the registrant self-service portal:
+
+```text
+http://localhost:3000/portal/
 ```
 
 Health check:
@@ -187,10 +193,16 @@ Production requirements:
 - matching `WR26_GAS_SECRET`
 - configured `WR26_AUTH_USERS`
 
-The PWA browser should open at:
+The staff PWA should open at:
 
 ```text
 https://YOUR-DOMAIN/app/
+```
+
+The registrant self-service portal should open at:
+
+```text
+https://YOUR-DOMAIN/portal/
 ```
 
 ---
@@ -237,6 +249,14 @@ POST /api/magic-link/request
 POST /api/magic-link/registration
 POST /api/magic-link/save
 ```
+
+---
+
+## Magic-link registration management
+
+The staff PWA is at `/app/`. The registrant self-service portal is at `/portal/` (also available as `/portal.html`; `/manage/` redirects to `/portal/`). WordPress registration confirmation and edit emails should point users to `/portal/` for magic-link management, or include generated magic links from GAS.
+
+Staff can select/open a registration and use the **Link** tab to send a secure edit link to the registrant email. Registrants can also request their own privacy-safe management link from `/portal/`.
 
 ---
 

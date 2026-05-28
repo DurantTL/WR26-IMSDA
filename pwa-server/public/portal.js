@@ -1,0 +1,257 @@
+(() => {
+  const MAX_ATTENDEES = 5;
+  const SAFE_MAGIC_LINK_MESSAGE = 'If a registration exists for that email, a link has been sent.';
+  const EDITABLE_FIELDS = [
+    ['firstName', 'First Name', 'text'],
+    ['lastName', 'Last Name', 'text'],
+    ['phone', 'Phone', 'tel'],
+    ['church', 'Church', 'text'],
+    ['dietaryNeeds', 'Dietary Needs', 'textarea'],
+    ['emergencyContactName', 'Emergency Contact Name', 'text'],
+    ['emergencyContactPhone', 'Emergency Contact Phone', 'tel'],
+    ['specialNeeds', 'Special Needs', 'textarea'],
+  ];
+  const ATTENDEE_FIELDS = [
+    ['first_name', 'First Name', 'text'],
+    ['last_name', 'Last Name', 'text'],
+    ['phone', 'Phone', 'tel'],
+    ['attendee_type', 'Attendee Type', 'text'],
+    ['meal_preference', 'Meal Preference', 'text'],
+    ['dietary_needs', 'Dietary Needs', 'textarea'],
+    ['childcare_needed', 'Childcare Needed', 'text'],
+  ];
+
+  const state = {
+    token: '',
+    bundle: null,
+    attendees: [],
+  };
+
+  const $ = (id) => document.getElementById(id);
+
+  function escapeHtml(value = '') {
+    return String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\'': '&#39;', '"': '&quot;' }[char]));
+  }
+
+  function getTokenFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('token') || params.get('magicToken') || params.get('t') || '';
+  }
+
+  function setBusy(button, busy, label) {
+    if (!button) return;
+    button.disabled = busy;
+    if (label) button.textContent = busy ? 'Please wait…' : label;
+  }
+
+  function showOnly(panelId) {
+    ['request-panel', 'loading-panel', 'edit-panel', 'saved-panel'].forEach((id) => { $(id).hidden = id !== panelId; });
+  }
+
+  function showStatus(message, type = 'info') {
+    const status = $('portal-status');
+    status.textContent = message || '';
+    status.className = `portal-alert ${type}`;
+    status.hidden = !message;
+  }
+
+  async function api(path, body) {
+    const response = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(body || {}),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload.success === false) {
+      throw new Error(payload.error || payload.message || 'Request failed. Please try again.');
+    }
+    return payload;
+  }
+
+  function fieldHtml(name, label, type, value) {
+    if (type === 'textarea') {
+      return `<label>${escapeHtml(label)}<textarea data-field="${escapeHtml(name)}" rows="3">${escapeHtml(value)}</textarea></label>`;
+    }
+    return `<label>${escapeHtml(label)}<input data-field="${escapeHtml(name)}" type="${escapeHtml(type)}" value="${escapeHtml(value)}"></label>`;
+  }
+
+  function renderRegistrationFields(registration = {}) {
+    $('registration-fields').innerHTML = EDITABLE_FIELDS.map(([name, label, type]) => fieldHtml(name, label, type, registration[name] || '')).join('');
+  }
+
+  function attendeeCardHtml(attendee = {}, index = 0) {
+    const removeButton = state.attendees.length > 1
+      ? `<button class="btn btn-sm btn-white portal-remove-attendee" type="button" data-remove-attendee="${index}">Remove</button>`
+      : '';
+    const fields = ATTENDEE_FIELDS.map(([name, label, type]) => {
+      const value = attendee[name] || '';
+      if (type === 'textarea') return `<label>${escapeHtml(label)}<textarea data-attendee-field="${escapeHtml(name)}" rows="2">${escapeHtml(value)}</textarea></label>`;
+      return `<label>${escapeHtml(label)}<input data-attendee-field="${escapeHtml(name)}" type="${escapeHtml(type)}" value="${escapeHtml(value)}"></label>`;
+    }).join('');
+    return `<div class="attendee-card portal-attendee-card" data-attendee-index="${index}">
+      <div class="portal-attendee-heading">
+        <h3>Attendee ${index + 1}</h3>
+        ${removeButton}
+      </div>
+      <input type="hidden" data-attendee-field="attendee_id" value="${escapeHtml(attendee.attendee_id || attendee.attendeeId || '')}">
+      <div class="form-grid compact-form">${fields}</div>
+    </div>`;
+  }
+
+  function renderAttendees() {
+    $('portal-attendee-list').innerHTML = state.attendees.map(attendeeCardHtml).join('');
+    $('add-portal-attendee').disabled = state.attendees.length >= MAX_ATTENDEES;
+    document.querySelectorAll('[data-remove-attendee]').forEach((button) => {
+      button.addEventListener('click', () => {
+        syncAttendeeStateFromDom();
+        const index = Number(button.dataset.removeAttendee);
+        state.attendees.splice(index, 1);
+        if (!state.attendees.length) state.attendees.push({});
+        renderAttendees();
+      });
+    });
+  }
+
+  function formatSeminarPreference(pref = {}) {
+    const bits = [pref.attendeeName, pref.sessionSlot, pref.preferenceRank ? `Rank ${pref.preferenceRank}` : '', pref.seminarTitle || pref.assignedSeminar].filter(Boolean);
+    return bits.length ? bits.join(' • ') : JSON.stringify(pref);
+  }
+
+  function renderSeminarSummary(bundle = {}) {
+    const prefs = Array.isArray(bundle.seminarPreferences) ? bundle.seminarPreferences : [];
+    const summary = $('seminar-summary');
+    const list = $('seminar-summary-list');
+    if (!prefs.length) {
+      summary.hidden = true;
+      list.innerHTML = '';
+      return;
+    }
+    summary.hidden = false;
+    list.innerHTML = `<ul class="portal-seminar-list">${prefs.map((pref) => `<li>${escapeHtml(formatSeminarPreference(pref))}</li>`).join('')}</ul>`;
+  }
+
+  function renderBundle(bundle) {
+    const registration = bundle.registration || {};
+    const attendees = Array.isArray(bundle.attendees) ? bundle.attendees : [];
+    state.bundle = bundle;
+    state.attendees = attendees.length ? attendees.map((attendee) => ({ ...attendee })) : [{}];
+    $('registration-heading').textContent = `${registration.firstName || ''} ${registration.lastName || ''}`.trim() || 'Manage Registration';
+    $('registration-meta').textContent = [registration.registrationId, registration.email].filter(Boolean).join(' • ');
+    $('registration-status').textContent = registration.paymentStatus || registration.status || 'Open';
+    renderRegistrationFields(registration);
+    renderAttendees();
+    renderSeminarSummary(bundle);
+    showStatus('', 'info');
+    showOnly('edit-panel');
+  }
+
+  function syncAttendeeStateFromDom() {
+    const next = [];
+    document.querySelectorAll('.portal-attendee-card').forEach((card) => {
+      const index = Number(card.dataset.attendeeIndex);
+      const previous = state.attendees[index] || {};
+      const attendee = {
+        attendee_id: previous.attendee_id || previous.attendeeId || '',
+        seminar_preferences: previous.seminar_preferences || previous.seminarPreferences || {},
+      };
+      card.querySelectorAll('[data-attendee-field]').forEach((field) => {
+        attendee[field.dataset.attendeeField] = field.value;
+      });
+      next.push(attendee);
+    });
+    state.attendees = next;
+  }
+
+  function collectPayload() {
+    syncAttendeeStateFromDom();
+    const fields = {};
+    document.querySelectorAll('#registration-fields [data-field]').forEach((field) => {
+      fields[field.dataset.field] = field.value;
+    });
+    return {
+      token: state.token,
+      fields,
+      attendees: state.attendees.slice(0, MAX_ATTENDEES).map((attendee) => ({
+        attendee_id: attendee.attendee_id || attendee.attendeeId || '',
+        first_name: attendee.first_name || '',
+        last_name: attendee.last_name || '',
+        phone: attendee.phone || '',
+        attendee_type: attendee.attendee_type || '',
+        meal_preference: attendee.meal_preference || '',
+        dietary_needs: attendee.dietary_needs || '',
+        childcare_needed: attendee.childcare_needed || '',
+        seminar_preferences: attendee.seminar_preferences || attendee.seminarPreferences || {},
+      })),
+    };
+  }
+
+  async function requestMagicLink(event) {
+    event.preventDefault();
+    const button = $('request-submit');
+    setBusy(button, true, 'Send My Management Link');
+    showStatus('', 'info');
+    try {
+      const email = $('request-email').value.trim();
+      await api('/api/magic-link/request', { email, portalUrl: `${window.location.origin}/portal/` });
+      showStatus(SAFE_MAGIC_LINK_MESSAGE, 'success');
+      $('magic-request-form').reset();
+    } catch (error) {
+      showStatus(error.message, 'error');
+    } finally {
+      setBusy(button, false, 'Send My Management Link');
+    }
+  }
+
+  async function loadRegistration() {
+    showOnly('loading-panel');
+    showStatus('', 'info');
+    try {
+      const bundle = await api('/api/magic-link/registration', { token: state.token });
+      renderBundle(bundle);
+    } catch (error) {
+      showOnly('request-panel');
+      showStatus(error.message, 'error');
+    }
+  }
+
+  async function saveRegistration(event) {
+    event.preventDefault();
+    const button = $('save-registration');
+    setBusy(button, true, 'Save Changes');
+    showStatus('', 'info');
+    try {
+      const saved = await api('/api/magic-link/save', collectPayload());
+      $('saved-bundle').textContent = JSON.stringify(saved, null, 2);
+      showStatus('Registration saved successfully.', 'success');
+      renderBundle(saved);
+      $('saved-panel').hidden = false;
+      $('saved-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (error) {
+      showStatus(error.message, 'error');
+    } finally {
+      setBusy(button, false, 'Save Changes');
+    }
+  }
+
+  function addAttendee() {
+    syncAttendeeStateFromDom();
+    if (state.attendees.length >= MAX_ATTENDEES) return;
+    state.attendees.push({});
+    renderAttendees();
+  }
+
+  function init() {
+    state.token = getTokenFromUrl();
+    $('magic-request-form').addEventListener('submit', requestMagicLink);
+    $('registration-form').addEventListener('submit', saveRegistration);
+    $('add-portal-attendee').addEventListener('click', addAttendee);
+    if (!state.token) {
+      showOnly('request-panel');
+      return;
+    }
+    loadRegistration();
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();

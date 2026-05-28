@@ -566,6 +566,15 @@ function htmlHeaders(res) {
   res.setHeader('Cache-Control', 'no-store');
 }
 
+function sendPortalPage(_req, res) {
+  htmlHeaders(res);
+  res.sendFile(path.join(__dirname, 'public', 'portal.html'));
+}
+
+app.get(/^\/portal\/$/, sendPortalPage);
+app.get(/^\/portal$/, (_req, res) => res.redirect(302, '/portal/'));
+app.get(/^\/manage\/?$/, (_req, res) => res.redirect(302, '/portal/'));
+
 app.use('/app', express.static(path.join(__dirname, 'public'), { setHeaders: htmlHeaders }));
 app.use('/', express.static(path.join(__dirname, 'public'), { setHeaders: htmlHeaders }));
 
