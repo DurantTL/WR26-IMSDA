@@ -222,6 +222,12 @@ function paymentSummaryHtml() {
 </div>
 <script>
 (function($){
+  // NOTE: These constants drive only the on-screen preview and the amount Square
+  // charges at checkout. Google Apps Script independently recomputes the owed
+  // amount from the Config sheet (EARLY_BIRD_PRICE / REGULAR_PRICE / *_END_DATE)
+  // and the PromoCodes sheet, and is the source of truth for the recorded balance.
+  // Keep these in sync with the GAS Config sheet; any drift is flagged by GAS
+  // reconciliation rather than silently mischarging.
   var EARLY_PRICE = 120;
   var REGULAR_PRICE = 140;
   var EARLY_END = '2026-08-14T23:59:59';

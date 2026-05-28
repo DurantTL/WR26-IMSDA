@@ -8,6 +8,16 @@ This repository contains the Women’s Retreat 2026 registration system using th
 
 The PWA is intentionally named **IMSDA Registration** in the browser/app UI so it can be reused or adapted more easily later. The repository and WR26 event files remain WR26-specific.
 
+> **Canonical components (see `REVIEW-AND-ROADMAP.md`):** the production path is the
+> legacy **`plugin/wr26-registration.php`** (Option A), the staff app is
+> **`pwa-server/`**, and the registration form of record is
+> **`form/wr26-registration-fluentforms.smart-payments.json`** (it includes the
+> chargeable payment item and the `a1_*` attendee fields). The
+> `imsda-registration-engine/` plugin and its `pwa/imsda-checkin.html` are kept as
+> future/experimental and are not the production path. Payment is
+> **server-authoritative**: GAS recomputes the owed amount from the Config and
+> `PromoCodes` sheets; the form's in-page total is a charge/display convenience.
+
 ---
 
 ## Current architecture
@@ -34,7 +44,7 @@ Staff mobile/desktop PWA UI
 | `gas/*.gs` | Sheet writes, edits, check-in, payments, magic links, PWA cache snapshots. |
 | `pwa-server/` | Separate Node/Express cached PWA server. Browser talks to same-origin `/api/*`, not directly to GAS. |
 | `plugin/wr26-registration-portal.php` | Optional companion WordPress portal/magic-link fallback. Does not replace the PWA. |
-| `form/wr26-registration-fluentforms.json` | Fluent Forms import JSON / form structure. |
+| `form/wr26-registration-fluentforms.smart-payments.json` | Canonical Fluent Forms import JSON (chargeable payment item + `a1_*` fields). Generated from the base JSON by `tools/patch-wr26-form-smart-payments.js`. |
 
 ---
 
