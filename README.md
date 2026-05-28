@@ -265,9 +265,12 @@ plugin/wr26-registration.php
    - GAS URL
    - Fluent Form ID
    - Edit Registration Page URL
-4. Copy `wr26_gas_secret` from WordPress settings into the Google Sheet Config row `SECRET`.
-5. Submit a test Fluent Forms registration.
-6. Confirm rows are written to:
+4. Go to **WR26 → GAS Tools**. GAS Tools is part of the main WR26 Registration plugin, so only the main plugin needs to be active.
+5. Copy the displayed GAS Secret into the Google Sheet **Config** tab as `SECRET`.
+6. Use **Ping GAS / Cache Snapshot** first to verify the WordPress-to-GAS connection and matching secret.
+7. Use **Send Fake Registration to GAS** only for testing. It creates real test rows in the Sheet, so delete those test rows after confirming the connection.
+8. Submit a test Fluent Forms registration.
+9. Confirm rows are written to:
    - `Registrations`
    - `Attendees`
    - `SeminarPreferences`
