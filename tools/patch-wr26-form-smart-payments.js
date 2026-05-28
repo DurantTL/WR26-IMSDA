@@ -347,7 +347,12 @@ function patchPayment(fields) {
     hiddenField('total_amount', 'total amount'),
     customPaymentAmountField(),
     paymentSummaryHtml(),
-  ].filter((field) => !hasField(fields, fieldName(field)) && !fields.some((existing) => existing.uniqElKey === field.uniqElKey));
+  ].filter((field) => {
+    const name = fieldName(field);
+    const nameAlreadyExists = name ? hasField(fields, name) : false;
+    const keyAlreadyExists = fields.some((existing) => existing.uniqElKey === field.uniqElKey);
+    return !nameAlreadyExists && !keyAlreadyExists;
+  });
 
   if (!additions.length) return 0;
 
