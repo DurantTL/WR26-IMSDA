@@ -38,6 +38,8 @@ This does **not** replace `plugin/wr26-registration.php`. The legacy plugin shou
 
 ```text
 pwa-server/
+  Dockerfile
+  .dockerignore
   package.json
   server.js
   public/
@@ -192,6 +194,31 @@ Production requirements:
 - valid `WR26_GAS_URL`
 - matching `WR26_GAS_SECRET`
 - configured `WR26_AUTH_USERS`
+
+
+### XCloud Docker Compose deployment
+
+XCloud can deploy this PWA with **Custom Docker → Docker Compose From Git**. Use these settings:
+
+| XCloud setting | Value |
+|---|---|
+| Compose file name | `docker-compose.yml` |
+| Primary port | `3000` |
+| Environment file directory | `pwa-server` |
+
+Create the environment file in XCloud for the `pwa-server` directory (do not commit real secrets). It must include:
+
+```bash
+NODE_ENV=production
+PORT=3000
+WR26_GAS_URL=https://script.google.com/macros/s/...../exec
+WR26_GAS_SECRET=your_config_sheet_SECRET_value
+SESSION_SECRET=replace-with-long-random-string
+WR26_AUTH_USERS='[{"username":"registrar","password":"$2b$10$...bcrypt...","roles":["registrar","payments","checkin"]}]'
+TRUST_PROXY=1
+```
+
+The repository root includes `docker-compose.yml`; that Compose file builds `./pwa-server/Dockerfile`, publishes `3000:3000`, and loads runtime configuration from `./pwa-server/.env`. The `.env` file is intentionally ignored and excluded from the Docker build context so secrets are supplied by the deployment environment, not committed to Git.
 
 The staff PWA should open at:
 

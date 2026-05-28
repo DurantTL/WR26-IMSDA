@@ -81,7 +81,11 @@ plugin/
   wr26-registration.php          Legacy production intake plugin
   wr26-registration-portal.php   Optional WordPress portal companion
 
+docker-compose.yml        Docker Compose entrypoint for XCloud/Compose deployments
+
 pwa-server/
+  Dockerfile
+  .dockerignore
   server.js
   package.json
   public/
@@ -686,6 +690,33 @@ When capacity is full, the system can write to `Waitlist`. Staff can promote/rem
 - [ ] Copy WP secret to Config `SECRET`.
 - [ ] Submit a test form.
 - [ ] Confirm Registrations, Attendees, and SeminarPreferences rows are created.
+
+
+### XCloud Docker Compose deployment
+
+For XCloud, deploy the IMSDA Registration PWA with **Custom Docker → Docker Compose From Git**. Use:
+
+| XCloud setting | Value |
+|---|---|
+| Compose file name | `docker-compose.yml` |
+| Primary port | `3000` |
+| Environment file directory | `pwa-server` |
+
+The root `docker-compose.yml` defines the `imsda-registration` service, builds `./pwa-server/Dockerfile`, publishes `3000:3000`, and reads runtime environment variables from `./pwa-server/.env`. Do not commit real secrets; supply the environment file through XCloud.
+
+Required XCloud environment variables:
+
+```bash
+NODE_ENV=production
+PORT=3000
+WR26_GAS_URL=https://script.google.com/macros/s/...../exec
+WR26_GAS_SECRET=your_config_sheet_SECRET_value
+SESSION_SECRET=replace-with-long-random-string
+WR26_AUTH_USERS='[{"username":"registrar","password":"$2b$10$...bcrypt...","roles":["registrar","payments","checkin"]}]'
+TRUST_PROXY=1
+```
+
+Keep the existing non-Docker Node deployment path available for local development or other hosts; Docker Compose is an additional deployment option.
 
 ### IMSDA Registration PWA
 
