@@ -34,6 +34,10 @@ function portalRequestMagicLink(payload){
     if(!regs.length)return {success:true,message:'If a registration exists for that email, a link has been sent.'};
 
     var sh=ensureMagicLinksSheet_();
+    // Per-email cooldown: if a link was issued to this address very recently, return
+    // the same privacy-safe message without sending another (basic anti-spam).
+    var cooldownSec=Number((getConfig()||{}).MAGIC_LINK_COOLDOWN_SECONDS||60);
+    if(cooldownSec>0){var existingVals=sh.getDataRange().getValues();var lastTs=0;for(var ci=1;ci<existingVals.length;ci++){if(String(existingVals[ci][2]||'').trim().toLowerCase()===email){var t=existingVals[ci][1] instanceof Date?existingVals[ci][1].getTime():new Date(existingVals[ci][1]).getTime();if(!isNaN(t)&&t>lastTs)lastTs=t;}}if(lastTs&&(Date.now()-lastTs)<cooldownSec*1000){Logger.log('portalRequestMagicLink: cooldown active for '+email);return {success:true,message:'If a registration exists for that email, a link has been sent.',cooldown:true};}}
     var expires=new Date(Date.now()+14*24*60*60*1000);
     var links=[];
     regs.forEach(function(reg){
@@ -58,7 +62,7 @@ function portalRequestMagicLink(payload){
   }catch(e){return {success:false,message:e.message};}
 }
 
-function portalValidateToken_(token){
+function portalValidateToken_(token,requestIp){
   token=String(token||'').trim();
   if(!token)return {success:false,message:'Missing token'};
   var sh=ensureMagicLinksSheet_();
@@ -69,6 +73,8 @@ function portalValidateToken_(token){
     if(status==='revoked')return {success:false,message:'This link has been revoked'};
     var exp=vals[i][4] instanceof Date?vals[i][4]:new Date(vals[i][4]);
     if(exp && !isNaN(exp.getTime()) && exp.getTime()<Date.now())return {success:false,message:'This link has expired'};
+    // Optional IP binding (off by default to avoid locking out mobile/forwarded users).
+    if((getConfig()||{}).MAGIC_LINK_ENFORCE_IP){var storedIp=String(vals[i][8]||'').trim();var curIp=String(requestIp||'').trim();if(storedIp&&curIp&&storedIp!==curIp){Logger.log('portalValidateToken_: IP mismatch for token (stored '+storedIp+' vs '+curIp+')');return {success:false,message:'This link cannot be used from a different network'};}}
     sh.getRange(i+1,6).setValue(new Date());
     return {success:true,row:i+1,email:vals[i][2],registrationId:vals[i][3],purpose:vals[i][7]};
   }
@@ -138,7 +144,7 @@ function portalGetRegistrationBundle(registrationId){
 
 function portalGetRegistrationByMagicToken(payload){
   try{
-    var v=portalValidateToken_((payload&&payload.token)||'');
+    var v=portalValidateToken_((payload&&payload.token)||'',payload&&payload.requestIp);
     if(!v.success)return v;
     return portalGetRegistrationBundle(v.registrationId);
   }catch(e){return {success:false,message:e.message};}
@@ -196,7 +202,7 @@ function portalSaveRegistrationByMagicToken(payload){
   var lock=LockService.getScriptLock();
   if(!lock.tryLock(10000))return {success:false,message:'System busy, please try again'};
   try{
-    var v=portalValidateToken_((payload&&payload.token)||'');
+    var v=portalValidateToken_((payload&&payload.token)||'',payload&&payload.requestIp);
     if(!v.success)return v;
     var reg=getRegistrationById(v.registrationId);
     if(!reg)return {success:false,message:'Registration not found'};
@@ -209,6 +215,7 @@ function portalSaveRegistrationByMagicToken(payload){
       var rep=replaceAttendeesForRegistration_(reg,payload.attendees);
       warnings=rep.warnings||[];
     }
+    logAudit_('portalEdit',reg.registrationId,v.email||'registrant','Magic-link self-service edit',payload&&payload.requestIp);
     try{sendEditConfirmationEmail(getRegistrationById(reg.registrationId));}catch(e){Logger.log('Portal edit confirmation failed: '+e.message);}
     var bundle=portalGetRegistrationBundle(reg.registrationId);
     bundle.warnings=warnings;

@@ -10,6 +10,13 @@ const app = express();
 const port = process.env.PORT || 3000;
 const gasUrl = process.env.WR26_GAS_URL || process.env.GOOGLE_SCRIPT_URL || '';
 const gasSecret = process.env.WR26_GAS_SECRET || process.env.GAS_SECRET || '';
+const isProduction = process.env.NODE_ENV === 'production';
+// In production an unset SESSION_SECRET would mean every restart silently logs
+// all staff out (and breaks multi-instance). Fail fast instead of limping along.
+if (isProduction && !process.env.SESSION_SECRET) {
+  console.error('FATAL: SESSION_SECRET must be set in production. Refusing to start.');
+  process.exit(1);
+}
 const sessionSecret = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 const sessionCookieName = 'imsda_registration_session';
 const sessionTtlSeconds = parseInt(process.env.SESSION_TTL_SECONDS || '43200', 10);
@@ -18,9 +25,13 @@ const minSyncRegistrations = parseInt(process.env.SYNC_MIN_REGISTRATIONS || '1',
 
 if (!gasUrl) console.warn('WR26_GAS_URL is not set. API calls will fail.');
 if (!gasSecret) console.warn('WR26_GAS_SECRET is not set. GAS calls requiring secret will fail.');
-if (!process.env.SESSION_SECRET) console.warn('SESSION_SECRET is not set. Using an ephemeral secret.');
+if (!process.env.SESSION_SECRET) console.warn('SESSION_SECRET is not set. Using an ephemeral secret (development only).');
 
 app.disable('x-powered-by');
+// Behind a reverse proxy / Cloudflare in production, trust the first hop so req.ip
+// (used for rate limiting and optional magic-link IP binding) is the real client,
+// not the proxy. Override with TRUST_PROXY (integer hop count) if needed.
+app.set('trust proxy', process.env.TRUST_PROXY != null ? Number(process.env.TRUST_PROXY) : (isProduction ? 1 : 0));
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: false }));
 
@@ -81,6 +92,18 @@ function signSession(payload) {
   return `${encoded}.${signature}`;
 }
 
+// Server-side revocation list for logged-out tokens. Sessions are stateless
+// signed tokens, so logout records the token's jti here until its natural expiry.
+// In-memory is sufficient (tokens also expire on their own); cleared on restart.
+const revokedSessions = new Map();
+function revokeSession(payload) {
+  if (payload && payload.jti && payload.exp) revokedSessions.set(payload.jti, payload.exp);
+}
+function cleanupRevoked() {
+  const now = Math.floor(Date.now() / 1000);
+  for (const [jti, exp] of revokedSessions) if (exp < now) revokedSessions.delete(jti);
+}
+
 function verifySession(token) {
   if (!token || !token.includes('.')) return null;
   const [encoded, signature] = token.split('.');
@@ -91,6 +114,7 @@ function verifySession(token) {
   try {
     const payload = JSON.parse(fromBase64Url(encoded));
     if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) return null;
+    if (payload.jti && revokedSessions.has(payload.jti)) return null;
     return payload;
   } catch (_error) {
     return null;
@@ -103,7 +127,7 @@ function getSession(req) {
 
 function createSession(user) {
   const issuedAt = Math.floor(Date.now() / 1000);
-  return signSession({ sub: user.username, roles: user.roles, iat: issuedAt, exp: issuedAt + sessionTtlSeconds });
+  return signSession({ sub: user.username, roles: user.roles, iat: issuedAt, exp: issuedAt + sessionTtlSeconds, jti: crypto.randomBytes(8).toString('hex') });
 }
 
 function setSessionCookie(res, token) {
@@ -148,6 +172,17 @@ const loginRateLimiter = rateLimit({
   legacyHeaders: false,
   message: { success: false, error: 'Too many login attempts. Try again later.' },
 });
+
+// Per-IP throttles for the rest of the API: generous for legitimate staff use
+// during check-in, but enough to blunt enumeration/brute-force or a runaway client.
+const apiReadLimiter = rateLimit({ windowMs: 60 * 1000, max: 240, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'Too many requests. Please slow down.' } });
+const apiWriteLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'Too many requests. Please slow down.' } });
+
+const ONSITE_PAYMENT_METHODS = ['cash', 'check', 'square_onsite', 'other'];
+const isNonEmptyString = (v) => typeof v === 'string' && v.trim().length > 0;
+const isFiniteNonNegative = (v) => Number.isFinite(Number(v)) && Number(v) >= 0;
+const validationError = (res, msg) => res.status(400).json({ success: false, error: msg });
+const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());
 
 async function gasRequest(action, payload = {}, includeSecret = true) {
   if (!gasUrl) throw new Error('WR26_GAS_URL is not configured');
@@ -341,7 +376,9 @@ app.get('/api/auth/me', noStore, (req, res) => {
   res.json({ success: true, user: { username: session.sub, roles: session.roles } });
 });
 
-app.post('/api/auth/logout', noStore, (_req, res) => {
+app.post('/api/auth/logout', noStore, (req, res) => {
+  const session = getSession(req);
+  if (session) revokeSession(session);
   clearSessionCookie(res);
   res.json({ success: true });
 });
@@ -355,7 +392,7 @@ app.get('/api/sync/status', noStore, requireAuthenticated, async (_req, res) => 
   }
 });
 
-app.post('/api/sync/refresh', noStore, requireAuthenticated, async (_req, res) => {
+app.post('/api/sync/refresh', noStore, apiWriteLimiter, requireAuthenticated, async (_req, res) => {
   try {
     const sync = await refreshCache(true);
     res.json({ success: true, sync });
@@ -373,7 +410,7 @@ app.get('/api/bootstrap', noStore, requireAuthenticated, async (_req, res) => {
   }
 });
 
-app.get('/api/registrations', noStore, requireRole('registrar', 'checkin', 'payments', 'readonly'), async (req, res) => {
+app.get('/api/registrations', noStore, apiReadLimiter, requireRole('registrar', 'checkin', 'payments', 'readonly'), async (req, res) => {
   try {
     await ensureCacheReady();
     res.json({ success: true, registrations: searchRegistrations(req.query.q, req.query), sync: getSyncMeta() });
@@ -382,7 +419,7 @@ app.get('/api/registrations', noStore, requireRole('registrar', 'checkin', 'paym
   }
 });
 
-app.get('/api/registration/:id', noStore, requireRole('registrar', 'checkin', 'payments', 'readonly'), async (req, res) => {
+app.get('/api/registration/:id', noStore, apiReadLimiter, requireRole('registrar', 'checkin', 'payments', 'readonly'), async (req, res) => {
   try {
     await ensureCacheReady();
     const registration = cache.byRegistrationId.get(String(req.params.id));
@@ -393,7 +430,7 @@ app.get('/api/registration/:id', noStore, requireRole('registrar', 'checkin', 'p
   }
 });
 
-app.get('/api/scan/:value', noStore, requireRole('registrar', 'checkin', 'readonly'), async (req, res) => {
+app.get('/api/scan/:value', noStore, apiReadLimiter, requireRole('registrar', 'checkin', 'readonly'), async (req, res) => {
   try {
     await ensureCacheReady();
     const registration = resolveScannedRegistration(req.params.value);
@@ -404,11 +441,15 @@ app.get('/api/scan/:value', noStore, requireRole('registrar', 'checkin', 'readon
   }
 });
 
-app.post('/api/registration/:id', noStore, requireRole('registrar'), async (req, res) => {
+app.post('/api/registration/:id', noStore, apiWriteLimiter, requireRole('registrar'), async (req, res) => {
   try {
+    const fields = req.body.fields;
+    if (fields !== undefined && (typeof fields !== 'object' || Array.isArray(fields) || fields === null)) return validationError(res, 'fields must be an object');
+    if (req.body.attendees !== undefined && !Array.isArray(req.body.attendees)) return validationError(res, 'attendees must be an array');
+    if (Array.isArray(req.body.attendees) && req.body.attendees.length > 5) return validationError(res, 'A registration can have at most 5 attendees');
     const payload = await gasRequest('portalAdminSaveRegistration', {
       registrationId: req.params.id,
-      fields: req.body.fields || {},
+      fields: fields || {},
       attendees: Array.isArray(req.body.attendees) ? req.body.attendees : [],
       adminUser: req.session.sub,
     });
@@ -419,8 +460,13 @@ app.post('/api/registration/:id', noStore, requireRole('registrar'), async (req,
   }
 });
 
-app.post('/api/payment', noStore, requireRole('payments', 'registrar', 'checkin'), async (req, res) => {
+app.post('/api/payment', noStore, apiWriteLimiter, requireRole('payments', 'registrar', 'checkin'), async (req, res) => {
   try {
+    if (!isNonEmptyString(req.body.registrationId)) return validationError(res, 'registrationId is required');
+    if (!isFiniteNonNegative(req.body.amountPaid)) return validationError(res, 'amountPaid must be a non-negative number');
+    if (req.body.paymentMethod && !ONSITE_PAYMENT_METHODS.includes(String(req.body.paymentMethod).toLowerCase())) {
+      return validationError(res, `paymentMethod must be one of: ${ONSITE_PAYMENT_METHODS.join(', ')}`);
+    }
     const payload = await gasRequest('recordPayment', {
       registrationId: req.body.registrationId,
       paymentMethod: req.body.paymentMethod,
@@ -436,8 +482,9 @@ app.post('/api/payment', noStore, requireRole('payments', 'registrar', 'checkin'
   }
 });
 
-app.post('/api/check-in', noStore, requireRole('checkin', 'registrar'), async (req, res) => {
+app.post('/api/check-in', noStore, apiWriteLimiter, requireRole('checkin', 'registrar'), async (req, res) => {
   try {
+    if (!isNonEmptyString(req.body.registrationId)) return validationError(res, 'registrationId is required');
     const payload = await gasRequest('checkinById', { registrationId: req.body.registrationId, adminUser: req.session.sub });
     if (payload.success) await refreshCache(true);
     res.status(payload.success ? 200 : 400).json({ ...payload, sync: getSyncMeta() });
@@ -446,8 +493,10 @@ app.post('/api/check-in', noStore, requireRole('checkin', 'registrar'), async (r
   }
 });
 
-app.post('/api/offline-actions', noStore, requireRole('checkin', 'registrar', 'payments'), async (req, res) => {
-  const actions = Array.isArray(req.body.actions) ? req.body.actions : [];
+app.post('/api/offline-actions', noStore, apiWriteLimiter, requireRole('checkin', 'registrar', 'payments'), async (req, res) => {
+  if (!Array.isArray(req.body.actions)) return validationError(res, 'actions must be an array');
+  if (req.body.actions.length > 200) return validationError(res, 'Too many queued actions in one batch (max 200)');
+  const actions = req.body.actions;
   const results = [];
   for (const action of actions) {
     try {
@@ -468,8 +517,10 @@ app.post('/api/offline-actions', noStore, requireRole('checkin', 'registrar', 'p
   res.json({ success: true, results, sync: getSyncMeta() });
 });
 
-app.post('/api/magic-link/request', noStore, rateLimit({ windowMs: 60 * 60 * 1000, max: 8, standardHeaders: true, legacyHeaders: false }), async (req, res) => {
+app.post('/api/magic-link/request', noStore, rateLimit({ windowMs: 60 * 60 * 1000, max: 8, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'Too many link requests. Please try again later.' } }), async (req, res) => {
   try {
+    if (!isValidEmail(req.body.email)) return validationError(res, 'A valid email address is required');
+    if (!isNonEmptyString(req.body.portalUrl)) return validationError(res, 'portalUrl is required');
     const payload = await gasRequest('portalRequestMagicLink', {
       email: req.body.email,
       portalUrl: req.body.portalUrl,
@@ -482,19 +533,25 @@ app.post('/api/magic-link/request', noStore, rateLimit({ windowMs: 60 * 60 * 100
   }
 });
 
-app.post('/api/magic-link/registration', noStore, async (req, res) => {
+app.post('/api/magic-link/registration', noStore, apiReadLimiter, async (req, res) => {
   try {
-    const payload = await gasRequest('portalGetRegistrationByMagicToken', { token: req.body.token }, false);
+    if (!isNonEmptyString(req.body.token)) return validationError(res, 'token is required');
+    const payload = await gasRequest('portalGetRegistrationByMagicToken', { token: req.body.token, requestIp: req.ip }, false);
     res.status(payload.success ? 200 : 400).json(payload);
   } catch (error) {
     res.status(503).json({ success: false, error: error.message });
   }
 });
 
-app.post('/api/magic-link/save', noStore, async (req, res) => {
+app.post('/api/magic-link/save', noStore, apiWriteLimiter, async (req, res) => {
   try {
+    if (!isNonEmptyString(req.body.token)) return validationError(res, 'token is required');
+    if (req.body.fields !== undefined && (typeof req.body.fields !== 'object' || Array.isArray(req.body.fields) || req.body.fields === null)) return validationError(res, 'fields must be an object');
+    if (req.body.attendees !== undefined && !Array.isArray(req.body.attendees)) return validationError(res, 'attendees must be an array');
+    if (Array.isArray(req.body.attendees) && req.body.attendees.length > 5) return validationError(res, 'A registration can have at most 5 attendees');
     const payload = await gasRequest('portalSaveRegistrationByMagicToken', {
       token: req.body.token,
+      requestIp: req.ip,
       fields: req.body.fields || {},
       attendees: Array.isArray(req.body.attendees) ? req.body.attendees : [],
     }, false);
@@ -515,6 +572,8 @@ app.use('/', express.static(path.join(__dirname, 'public'), { setHeaders: htmlHe
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), sync: getSyncMeta() });
 });
+
+setInterval(cleanupRevoked, 10 * 60 * 1000);
 
 app.listen(port, async () => {
   console.log(`IMSDA Registration PWA server running on port ${port}`);
