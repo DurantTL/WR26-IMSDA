@@ -1,0 +1,10 @@
+services:
+  imsda-registration:
+    build:
+      context: ./pwa-server
+      dockerfile: Dockerfile
+    container_name: imsda-registration
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file: ./pwa-server/.env
