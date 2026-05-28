@@ -46,13 +46,15 @@ function portalRequestMagicLink(payload){
     var html='<p>Hello,</p><p>Use the secure link below to review or update your Women\'s Retreat 2026 registration.</p>'+
       links.map(function(l){return '<p><a href="'+l.url+'">Manage '+(l.name||l.registrationId)+'</a></p>';}).join('')+
       '<p>This link expires in 14 days. If you did not request this, you can ignore this email.</p>';
-    MailApp.sendEmail({
+    var emailResult=sendEmailSafe_({
       to:email,
       subject:(cfg.EVENT_NAME||"Women's Retreat 2026")+' registration management link',
       htmlBody:html,
       body:'Use this link to manage your registration:\n\n'+links.map(function(l){return (l.name||l.registrationId)+': '+l.url;}).join('\n')+'\n\nThis link expires in 14 days.'
     });
-    return {success:true,message:'If a registration exists for that email, a link has been sent.'};
+    if(emailResult&&emailResult.sent===false)Logger.log('portalRequestMagicLink: link rows written but email not sent ('+(emailResult.reason||'unknown')+') for '+email);
+    // Privacy-safe generic message regardless of email outcome; failure is logged for staff.
+    return {success:true,message:'If a registration exists for that email, a link has been sent.',emailSent:!!(emailResult&&emailResult.sent)};
   }catch(e){return {success:false,message:e.message};}
 }
 

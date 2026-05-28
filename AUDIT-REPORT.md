@@ -3,6 +3,14 @@
 **Date:** 2026-05-14  
 **Scope:** `imsda-registration-engine/` plugin, `plugin/wr26-registration.php`, `gas/*.gs`, `form/wr26-registration-fluentforms.json`, both README files.
 
+> **Status note (2026-05-28):** The findings below describe the codebase *as of
+> 2026-05-14*. The BLOCKING/HIGH items have since been remediated in code — the
+> "Audit Remediation Status" footer at the end is the accurate current state, and
+> a 2026-05-28 re-verification confirmed the fixes. For the up-to-date
+> architecture decisions and the current hardening roadmap, see
+> `REVIEW-AND-ROADMAP.md`. The "Summary Table" immediately below is the original
+> intake count and is retained for history.
+
 ---
 
 ## Summary Table
@@ -18,7 +26,7 @@
 | README gaps               |    0     |  1   |   2    |  3  |
 | Incomplete admin pages    |    0     |  5   |   0    |  0  |
 | PWA status                |    0     |  0   |   0    |  2  |
-| **TOTALS**                |  **0**  | **0**|  **0**| **0** |
+| **TOTALS (original intake)** | **11** | **8** | **10** | **17** |
 
 ### Overall Assessment
 

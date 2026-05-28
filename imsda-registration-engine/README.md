@@ -1,5 +1,16 @@
 # IMSDA Registration Engine
 
+> **Status: future / experimental — NOT the production path for WR26.**
+> The canonical production stack is **Option A** (`plugin/wr26-registration.php` +
+> `pwa-server/`); see the root `README.md` and `REVIEW-AND-ROADMAP.md`. This
+> engine is kept for the longer-term multi-event direction. The blocking/HIGH
+> bugs from the 2026-05-14 audit have since been fixed in code (verified
+> 2026-05-28: all four seminar sessions and `attendee_type` are parsed,
+> `worker_registration` is read, the `update()` method handles partial saves,
+> admin reads the correct GAS response keys, and `savePromoCode`/`checkinById`
+> send the correct camelCase keys). Re-verify against live GAS before any
+> production use.
+
 Unified multi-event registration plugin for IMSDA. One plugin instance manages all events (WR26, CM26, MC26, etc.). Each event has its own Fluent Forms form, Google Apps Script backend, and GAS secret.
 
 ---
@@ -226,18 +237,19 @@ For each legacy plugin:
 
 ## 11. Known issues
 
-The following HIGH and BLOCKING issues are open as of the audit date. See AUDIT-REPORT.md for full details.
+The BLOCKING/HIGH items from the 2026-05-14 audit (response-key mismatches,
+the `save()` partial-update bug, `savePromoCode`/`checkinById` key names,
+missing Edit/Transfer handlers, sessions 3–4 parsing, the `worker_registration`
+field name) have all been **fixed in code** and verified on 2026-05-28. See
+`AUDIT-REPORT.md` for the original detail and `REVIEW-AND-ROADMAP.md` for the
+current status.
 
-| Issue | Severity | Section |
-|-------|----------|---------|
-| Admin page data views (Registrations, Waitlist, Check-In, Church Rosters, Promo Codes) never populate — response key mismatches with GAS | BLOCKING | 2.2–2.8 |
-| `save()` partial-update bug — Regenerate Secret, Set PIN, Generate Token silently fail | BLOCKING | 4.1 |
-| `savePromoCode` sends snake_case keys, GAS expects camelCase — promo code creation always fails | BLOCKING | 2.9 |
-| `checkinById` sends `registration_id`, GAS expects `registrationId` | BLOCKING | 2.10 |
-| Edit and Transfer buttons in Registrations page have no click handlers | HIGH | 1.2 |
-| Sessions 3 and 4 seminar preferences not parsed — data silently discarded | HIGH | 2.11 |
-| `worker_registration` form field read as `worker_flag` — worker flag always empty | MEDIUM | 2.12 |
-| `sendEditConfirmationEmail` defined but not called after token-based edits | LOW | 1.5 |
+Remaining engine notes (not production-critical, since the engine is parked):
+
+| Note | Severity |
+|------|----------|
+| Token-based public edit forwards contact fields only (no attendee/seminar edits) — by design today; re-verify if the engine is ever promoted to canonical. | LOW |
+| Standalone `pwa/imsda-checkin.html` is redundant with `pwa-server/` and is slated for deprecation. | LOW |
 
 ---
 
