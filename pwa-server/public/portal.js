@@ -208,6 +208,11 @@
     showStatus('', 'info');
     try {
       const bundle = await api('/api/magic-link/registration', { token: state.token });
+      // Remove the token from the URL so it isn't cached in browser history or exposed to referrers.
+      if (window.history && window.history.replaceState) {
+        const clean = window.location.pathname;
+        window.history.replaceState(null, '', clean);
+      }
       renderBundle(bundle);
     } catch (error) {
       showOnly('request-panel');
@@ -222,7 +227,13 @@
     showStatus('', 'info');
     try {
       const saved = await api('/api/magic-link/save', collectPayload());
-      $('saved-bundle').textContent = JSON.stringify(saved, null, 2);
+      const reg = (saved && saved.registration) || {};
+      $('saved-bundle').textContent = [
+        reg.firstName && reg.lastName ? `Name: ${reg.firstName} ${reg.lastName}` : '',
+        reg.email ? `Email: ${reg.email}` : '',
+        reg.registrationId ? `Registration ID: ${reg.registrationId}` : '',
+        reg.paymentStatus ? `Payment: ${reg.paymentStatus}` : '',
+      ].filter(Boolean).join('\n') || 'Your registration was updated.';
       showStatus('Registration saved successfully.', 'success');
       renderBundle(saved);
       $('saved-panel').hidden = false;
