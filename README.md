@@ -406,19 +406,19 @@ npm start
 Open the staff PWA:
 
 ```text
-http://localhost:3000/app/
+http://localhost:3001/app/
 ```
 
 Open the registrant self-service portal:
 
 ```text
-http://localhost:3000/portal/
+http://localhost:3001/portal/
 ```
 
 ### Required environment variables
 
 ```bash
-PORT=3000
+PORT=3001
 WR26_GAS_URL=https://script.google.com/macros/s/...../exec
 WR26_GAS_SECRET=your_config_sheet_SECRET_value
 SESSION_SECRET=replace-with-long-random-string
@@ -699,16 +699,18 @@ For XCloud, deploy the IMSDA Registration PWA with **Custom Docker → Docker Co
 | XCloud setting | Value |
 |---|---|
 | Compose file name | `docker-compose.yml` |
-| Primary port | `3000` |
+| Primary service port | `3001` |
 | Environment file directory | `pwa-server` |
+| Health check | `https://registration.imsda.org/health` |
+| App URL | `https://registration.imsda.org/app/` |
 
-The root `docker-compose.yml` defines the `imsda-registration` service, builds `./pwa-server/Dockerfile`, publishes `3000:3000`, and reads runtime environment variables from `./pwa-server/.env`. Do not commit real secrets; supply the environment file through XCloud.
+The root `docker-compose.yml` defines the `imsda-registration` service, builds `./pwa-server/Dockerfile`, publishes `3001:3001`, and reads runtime environment variables from `./pwa-server/.env`. Do not commit real secrets; supply the environment file through XCloud.
 
 Required XCloud environment variables:
 
 ```bash
 NODE_ENV=production
-PORT=3000
+PORT=3001
 WR26_GAS_URL=https://script.google.com/macros/s/...../exec
 WR26_GAS_SECRET=your_config_sheet_SECRET_value
 SESSION_SECRET=replace-with-long-random-string

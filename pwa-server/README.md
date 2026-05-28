@@ -85,7 +85,7 @@ portalSaveRegistrationByMagicToken
 
 ```bash
 NODE_ENV=production
-PORT=3000
+PORT=3001
 WR26_GAS_URL=https://script.google.com/macros/s/...../exec
 WR26_GAS_SECRET=your_config_sheet_SECRET_value
 SESSION_SECRET=replace-with-long-random-string
@@ -158,19 +158,19 @@ npm start
 Open the staff PWA:
 
 ```text
-http://localhost:3000/app/
+http://localhost:3001/app/
 ```
 
 Open the registrant self-service portal:
 
 ```text
-http://localhost:3000/portal/
+http://localhost:3001/portal/
 ```
 
 Health check:
 
 ```text
-http://localhost:3000/health
+http://localhost:3001/health
 ```
 
 The camera scanner generally requires HTTPS on phones. Localhost is acceptable for desktop development, but production check-in devices should use HTTPS.
@@ -203,14 +203,16 @@ XCloud can deploy this PWA with **Custom Docker → Docker Compose From Git**. U
 | XCloud setting | Value |
 |---|---|
 | Compose file name | `docker-compose.yml` |
-| Primary port | `3000` |
+| Primary service port | `3001` |
 | Environment file directory | `pwa-server` |
+| Health check | `https://registration.imsda.org/health` |
+| App URL | `https://registration.imsda.org/app/` |
 
 Create the environment file in XCloud for the `pwa-server` directory (do not commit real secrets). It must include:
 
 ```bash
 NODE_ENV=production
-PORT=3000
+PORT=3001
 WR26_GAS_URL=https://script.google.com/macros/s/...../exec
 WR26_GAS_SECRET=your_config_sheet_SECRET_value
 SESSION_SECRET=replace-with-long-random-string
@@ -218,18 +220,24 @@ WR26_AUTH_USERS='[{"username":"registrar","password":"$2b$10$...bcrypt...","role
 TRUST_PROXY=1
 ```
 
-The repository root includes `docker-compose.yml`; that Compose file builds `./pwa-server/Dockerfile`, publishes `3000:3000`, and loads runtime configuration from `./pwa-server/.env`. The `.env` file is intentionally ignored and excluded from the Docker build context so secrets are supplied by the deployment environment, not committed to Git.
+The repository root includes `docker-compose.yml`; that Compose file builds `./pwa-server/Dockerfile`, publishes `3001:3001`, and loads runtime configuration from `./pwa-server/.env`. The `.env` file is intentionally ignored and excluded from the Docker build context so secrets are supplied by the deployment environment, not committed to Git.
 
 The staff PWA should open at:
 
 ```text
-https://YOUR-DOMAIN/app/
+https://registration.imsda.org/app/
+```
+
+The XCloud health check should use:
+
+```text
+https://registration.imsda.org/health
 ```
 
 The registrant self-service portal should open at:
 
 ```text
-https://YOUR-DOMAIN/portal/
+https://registration.imsda.org/portal/
 ```
 
 ---
