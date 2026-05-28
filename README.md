@@ -399,10 +399,16 @@ npm install
 npm start
 ```
 
-Open:
+Open the staff PWA:
 
 ```text
 http://localhost:3000/app/
+```
+
+Open the registrant self-service portal:
+
+```text
+http://localhost:3000/portal/
 ```
 
 ### Required environment variables
@@ -524,6 +530,8 @@ Important: full offline editing of registration/attendee details is not implemen
 ---
 
 ## Magic-link registration management
+
+The staff PWA is at `/app/`. The registrant self-service portal is at `/portal/` (also available as `/portal.html`; `/manage/` redirects to `/portal/`). WordPress registration confirmation and edit emails should point users to `/portal/` for magic-link management, or include generated magic links from GAS.
 
 There are two ways to use the magic-link system.
 

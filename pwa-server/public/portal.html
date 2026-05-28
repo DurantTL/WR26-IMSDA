@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2c6fb6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="WR26 Portal">
+  <link rel="stylesheet" href="/styles.css">
+  <title>Manage Your Women’s Retreat 2026 Registration</title>
+</head>
+<body class="portal-body">
+  <header class="topbar portal-topbar">
+    <div class="header-content">
+      <div class="header-title-row">
+        <h1>🌸 Women’s Retreat 2026</h1>
+      </div>
+      <div class="header-actions">
+        <a href="/portal/" class="btn btn-sm btn-white">Portal Home</a>
+      </div>
+    </div>
+    <div class="header-subtitle">
+      <span>Registrant self-service registration management</span>
+    </div>
+  </header>
+
+  <main class="layout portal-layout">
+    <section id="portal-status" class="portal-alert" hidden></section>
+
+    <section id="request-panel" class="card portal-card" hidden>
+      <h2>Manage Your Women’s Retreat 2026 Registration</h2>
+      <p class="meta">Enter the email address used on your registration. We will send a private link that lets you review and update your registration.</p>
+      <form id="magic-request-form" class="portal-form">
+        <label>Email Address<input id="request-email" type="email" autocomplete="email" required></label>
+        <button id="request-submit" class="btn btn-primary full-width" type="submit">Send My Management Link</button>
+      </form>
+    </section>
+
+    <section id="loading-panel" class="card portal-card" hidden>
+      <h2>Loading your registration…</h2>
+      <p class="meta">Please wait while we verify your secure link.</p>
+    </section>
+
+    <section id="edit-panel" class="card portal-card" hidden>
+      <div class="card-header">
+        <div>
+          <h2 id="registration-heading">Manage Registration</h2>
+          <span id="registration-meta" class="badge-mono"></span>
+        </div>
+        <span id="registration-status" class="status-badge neutral"></span>
+      </div>
+
+      <form id="registration-form">
+        <h3>Registrant Information</h3>
+        <div id="registration-fields" class="form-grid compact-form"></div>
+
+        <div class="guest-list-section portal-attendees-section">
+          <div class="guest-list-header">
+            <div>
+              <strong>Attendees</strong>
+              <p class="meta">You may list up to 5 attendees on this registration.</p>
+            </div>
+            <button id="add-portal-attendee" class="btn btn-sm btn-white" type="button">Add Attendee</button>
+          </div>
+          <div id="portal-attendee-list"></div>
+        </div>
+
+        <section id="seminar-summary" class="guest-list-section" hidden>
+          <h3>Current Seminar Preferences</h3>
+          <p class="meta">Seminar choices are shown for reference and will be preserved for existing attendees.</p>
+          <div id="seminar-summary-list"></div>
+        </section>
+
+        <div class="detail-actions">
+          <button id="save-registration" class="btn btn-primary full-width" type="submit">Save Changes</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="saved-panel" class="card portal-card success-card" hidden>
+      <h2>Registration saved</h2>
+      <p>Your registration updates were saved successfully.</p>
+      <details open>
+        <summary>Returned registration bundle</summary>
+        <pre id="saved-bundle" class="bundle-preview"></pre>
+      </details>
+    </section>
+  </main>
+
+  <script src="/portal.js" defer></script>
+</body>
+</html>
