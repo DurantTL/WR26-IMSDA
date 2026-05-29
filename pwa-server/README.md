@@ -273,9 +273,28 @@ GET  /api/scan/:value
 
 ```text
 POST /api/payment
+POST /api/refund
+POST /api/transfer
 POST /api/check-in
 POST /api/offline-actions
 ```
+
+### Seminars, rosters & reminders
+
+```text
+GET  /api/seminars
+POST /api/seminars                  (upsert a breakout: slot, title, capacity)
+POST /api/seminars/assign           ({dryRun} for a preview)
+GET  /api/seminars/roster?slot=&title=
+GET  /api/church-rosters            (grouped from the live cache; printable)
+POST /api/reminders/pending-charges ({dryRun} previews who owes)
+```
+
+The staff app's **Tools** tab uses these for printable church rosters, seminar
+capacity + ranked-preference assignment, and pay-later reminders. The
+**Transfer/Swap** and **Refund** panels use `/api/transfer` and `/api/refund`;
+the check-in screen shows the balance due plus the Square card total
+(base + 2.9% + $0.30). Writes require `registrar` (or `payments` for refunds).
 
 ### Magic-link helper routes
 

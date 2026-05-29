@@ -168,9 +168,38 @@ Audit ID, Timestamp, Action, Registration ID, Actor, Details, Source IP
 ```
 
 The `AuditLog` tab records staff/admin mutations (admin edits, payments,
-check-ins, transfers, waitlist promotions/removals, and registrant self-service
-edits). Writing to it is best-effort: if the tab is absent, the action still
-succeeds and logging is skipped.
+refunds, check-ins, transfers, waitlist promotions/removals, seminar
+assignment, and registrant self-service edits). Writing to it is best-effort:
+if the tab is absent, the action still succeeds and logging is skipped.
+
+**Refunds**
+
+```text
+Refund ID, Timestamp, Registration ID, Name, Amount, Method, Reason, Status, Refunded By, Notes
+```
+
+Refunds are recorded here (additive — the `Registrations` column map is
+unchanged). Recording a refund sets the registration's payment status to
+`refunded` or `partial_refund` (based on how much was collected) and appends a
+dated note to `Admin Notes`. Multiple partial refunds accumulate.
+
+**Seminars**
+
+```text
+Slot, Slot Label, Seminar Title, Capacity, Assigned Count, Active, Notes
+```
+
+Defines the 8 breakouts across the 4 time slots (`Slot` values `session_1`–
+`session_4`). `Capacity` of `0` means unlimited. The assignment engine reads
+this sheet, places each attendee by ranked preference within capacity, and
+writes the result back to `SeminarPreferences` (`Assigned Seminar` /
+`Assignment Status`) and the live `Assigned Count` here. When a seminar is full
+the behavior follows Config `SEMINAR_FULL_BEHAVIOR` (`allow_with_review`
+over-fills the top choice and flags it `full_review`; otherwise the attendee is
+left `unassigned_full`).
+
+Both `Refunds` and `Seminars` are created automatically by
+`wr26EnsureSheetSetup()`.
 
 ### Setup helpers
 
@@ -481,9 +510,29 @@ GET  /api/scan/:value
 
 ```text
 POST /api/payment
+POST /api/refund
+POST /api/transfer
 POST /api/check-in
 POST /api/offline-actions
 ```
+
+### Seminars, rosters & reminders
+
+```text
+GET  /api/seminars
+POST /api/seminars                  (upsert a breakout: slot, title, capacity)
+POST /api/seminars/assign           ({dryRun} for a preview)
+GET  /api/seminars/roster?slot=&title=
+GET  /api/church-rosters            (grouped from the live cache; printable)
+POST /api/reminders/pending-charges ({dryRun} previews who owes)
+```
+
+These power the staff app's **Tools** tab (rosters, seminar capacity +
+assignment, payment reminders), the **Transfer/Swap** and **Refund** panels,
+and the balance-due display at check-in (which also shows the Square card total,
+base + 2.9% + $0.30, for collection in the Square app). `/api/refund`,
+`/api/transfer`, `/api/seminars` (POST), and `/api/seminars/assign` require the
+`registrar` (or `payments` for refunds) role; reads require any staff role.
 
 ### Magic-link helper routes
 

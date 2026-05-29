@@ -149,3 +149,50 @@ Still intentionally deferred (low value for this event):
   / Payment Status reflect the GAS recompute.
 - **PWA:** `cd pwa-server && npm install && npm start`; sign in; verify cache,
   search, a payment record, a check-in, and the offline queue + sync.
+
+---
+
+## 6. WR26 general-ideas feature build-out
+
+Status of the WR26 planning requests on the canonical Option A stack
+(Fluent Forms → `plugin/wr26-registration.php` → `gas/*.gs` + Sheets →
+`pwa-server/` staff app + magic-link portal). ✅ done · ⚠️ needs live UAT only.
+
+### Already in place before this pass (verified by review)
+- ✅ Per-attendee phone / meal preference / ranked seminar prefs (all 4 sessions).
+- ✅ Edit attendees after registration — staff app + magic-link registrant portal.
+- ✅ Promo codes incl. half-off early bird (`PromoCodes`; GAS server-authoritative).
+- ✅ Private notes (`Admin Notes`) + full `AuditLog`.
+- ✅ QR check-in with offline queue.
+- ✅ Pay-Later **default** in the Fluent Form (`default_payment: offline`).
+- ✅ Big "check your email" confirmation message + payment-link mention + loading note.
+- ✅ Childcare capture + conditional message; worker (non-paying) Google Form URL.
+- ✅ Pricing $120/$140 and date cutoffs in Config.
+
+### Built in this pass
+- ✅ **Refunds** — `Refunds` sheet + `recordRefund`; staff Refund panel; sets
+  `refunded`/`partial_refund`, dated note, audited. (`gas/Refunds.gs`,
+  `/api/refund`.)
+- ✅ **Transfer / "taking place of"** surfaced in the staff app — Transfer/Swap
+  panel creates the replacement registration while keeping the original and the
+  linkage (`TransferLog`, original kept as `transferred`). (`/api/transfer`.)
+- ✅ **Seminar assignment & capacity** — `Seminars` sheet (8 breakouts / 4 slots,
+  per-breakout capacity), rank-honoring assignment engine with graceful "full"
+  handling, preview + run, fill summary, seminar roster. (`gas/Seminars.gs`,
+  `/api/seminars*`.)
+- ✅ **Pending-charge reminders** — on-demand emails to pay-later registrants who
+  still owe, with a "preview who owes" dry-run. (`gas/Reminders.gs`,
+  `/api/reminders/pending-charges`.)
+- ✅ **Church roster** — printable per-church individual list in the staff app
+  (`/api/church-rosters`).
+- ✅ **Check-in balance** — shows amount owed and the Square card total
+  (base + 2.9% + $0.30) so staff can collect in the Square app.
+- ✅ **Registrant portal** now shows balance due / paid-in-full.
+
+### Remaining (live UAT — cannot be exercised without a deployed GAS + Sheet)
+1. Run `wr26EnsureSheetSetup()` to create the new `Refunds` and `Seminars` tabs,
+   then `wr26SetupCheck()`.
+2. Populate the `Seminars` sheet with the 8 breakout titles + capacities (or via
+   the staff Tools tab), then run a dry-run and a real assignment.
+3. Smoke-test refund, transfer, reminder, and check-in-balance flows end to end
+   against live data; confirm `AuditLog` rows appear.

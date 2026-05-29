@@ -131,6 +131,28 @@
     list.innerHTML = `<ul class="portal-seminar-list">${prefs.map((pref) => `<li>${escapeHtml(formatSeminarPreference(pref))}</li>`).join('')}</ul>`;
   }
 
+  function renderPaymentNotice(registration = {}) {
+    const box = $('portal-balance');
+    if (!box) return;
+    const status = String(registration.paymentStatus || '').toLowerCase();
+    const billed = Number(registration.finalAmount || 0);
+    const collected = Number(registration.amountPaid != null && registration.amountPaid !== '' ? registration.amountPaid : 0);
+    const balance = Math.round((billed - collected) * 100) / 100;
+    if (status === 'paid' || status === 'paid_onsite' || (billed > 0 && balance <= 0)) {
+      box.className = 'balance-box paid';
+      box.innerHTML = '<span class="balance-amount">Paid in full</span><span class="balance-sub">Thank you! No balance is due.</span>';
+      box.hidden = false;
+      return;
+    }
+    if (balance > 0) {
+      box.className = 'balance-box';
+      box.innerHTML = `<span class="balance-amount">Balance due: $${escapeHtml(balance.toFixed(2))}</span><span class="balance-sub">Pay online or mail a check payable to IMSDA. Your confirmation email contains your payment link.</span>`;
+      box.hidden = false;
+      return;
+    }
+    box.hidden = true;
+  }
+
   function renderBundle(bundle) {
     const registration = bundle.registration || {};
     const attendees = Array.isArray(bundle.attendees) ? bundle.attendees : [];
@@ -139,6 +161,7 @@
     $('registration-heading').textContent = `${registration.firstName || ''} ${registration.lastName || ''}`.trim() || 'Manage Registration';
     $('registration-meta').textContent = [registration.registrationId, registration.email].filter(Boolean).join(' • ');
     $('registration-status').textContent = registration.paymentStatus || registration.status || 'Open';
+    renderPaymentNotice(registration);
     renderRegistrationFields(registration);
     renderAttendees();
     renderSeminarSummary(bundle);
