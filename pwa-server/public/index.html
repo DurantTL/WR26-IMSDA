@@ -175,8 +175,16 @@
         <div id="reminders-output" class="tools-output"></div>
 
         <div class="panel-divider"></div>
+        <h2>Worker Registration Link</h2>
+        <p class="meta">Send this link to workers / volunteers so they can self-register (no payment, no login required).</p>
+        <div class="action-row">
+          <input id="worker-link" readonly>
+          <button id="copy-worker-link" class="btn btn-white">Copy</button>
+        </div>
+
+        <div class="panel-divider"></div>
         <h2>Add Worker</h2>
-        <p class="meta">Register a non-paying worker / volunteer ($0). They appear in rosters, meal counts, and seminar assignment. Workers can also self-register at <code>/worker/</code>.</p>
+        <p class="meta">Or register a non-paying worker / volunteer ($0) directly. They appear in rosters, meal counts, and seminar assignment.</p>
         <div class="form-grid compact-form">
           <label>First Name<input id="worker-first"></label>
           <label>Last Name<input id="worker-last"></label>
@@ -184,7 +192,7 @@
           <label>Phone<input id="worker-phone" type="tel"></label>
           <label>Church<input id="worker-church"></label>
           <label>Role / Title<input id="worker-role" placeholder="e.g. Volunteer, Presenter"></label>
-          <label>Meal Preference<input id="worker-meal"></label>
+          <label>Meal Preference<select id="worker-meal"></select></label>
           <label>Dietary Needs<input id="worker-dietary"></label>
         </div>
         <button id="save-worker" class="btn btn-primary full-width">Add Worker</button>
@@ -239,6 +247,7 @@
   </main>
 
   <div id="toast" class="toast" hidden></div>
+  <script src="/wr26-options.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

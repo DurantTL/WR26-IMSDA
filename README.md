@@ -549,7 +549,11 @@ POST /api/reminders/pending-charges ({dryRun} previews who owes)
 POST /api/worker/register           (public, rate-limited — self-serve worker page)
 POST /api/worker/add                (staff; registrar role)
 GET  /worker/                       (public worker registration page)
+GET  /api/seminars/public           (public; active seminar titles for dropdowns)
 ```
+
+Staff can copy the **worker registration link** (to `/worker/`) from the Tools
+tab and send it to volunteers.
 
 ### Staff management (admin only)
 

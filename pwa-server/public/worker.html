@@ -36,7 +36,7 @@
           <label>Phone<input id="w-phone" type="tel" autocomplete="tel"></label>
           <label>Church<input id="w-church"></label>
           <label>Role / Title<input id="w-role" placeholder="e.g. Volunteer, Presenter, Childcare"></label>
-          <label>Meal Preference<input id="w-meal"></label>
+          <label>Meal Preference<select id="w-meal"></select></label>
           <label>Dietary Needs<input id="w-dietary"></label>
           <label>Emergency Contact Name<input id="w-ec-name"></label>
           <label>Emergency Contact Phone<input id="w-ec-phone" type="tel"></label>
@@ -44,16 +44,8 @@
 
         <section class="guest-list-section">
           <h3>Seminar Preferences (optional)</h3>
-          <p class="meta">Rank up to two choices per session. We assign by preference where space allows.</p>
-          <div class="form-grid compact-form">
-            <label>Friday 4 PM — 1st<input data-pref="session_1.pref_1"></label>
-            <label>Friday 4 PM — 2nd<input data-pref="session_1.pref_2"></label>
-            <label>Saturday 2 PM — 1st<input data-pref="session_2.pref_1"></label>
-            <label>Saturday 2 PM — 2nd<input data-pref="session_2.pref_2"></label>
-            <label>Saturday 3:30 — 1st<input data-pref="session_3.pref_1"></label>
-            <label>Saturday 3:30 — 2nd<input data-pref="session_3.pref_2"></label>
-            <label>Sunday 8:15<input data-pref="session_4.pref_1"></label>
-          </div>
+          <p class="meta">Rank your choices per session. We assign by preference where space allows.</p>
+          <div id="w-seminars" class="form-grid compact-form"></div>
         </section>
 
         <div class="detail-actions">
@@ -70,6 +62,7 @@
     </section>
   </main>
 
+  <script src="/wr26-options.js"></script>
   <script src="/worker.js" defer></script>
 </body>
 </html>

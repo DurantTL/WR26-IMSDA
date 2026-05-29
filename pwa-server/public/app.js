@@ -141,6 +141,11 @@ function applyRoleVisibility() {
 
 async function bootstrap() {
   applyRoleVisibility();
+  // Load live seminar titles so attendee + worker dropdowns match what's
+  // assignable. Non-fatal — falls back to built-in option values.
+  await window.WR26_OPTIONS.loadSeminars('/api/seminars/public').catch(() => {});
+  const meal = $('worker-meal');
+  if (meal && !meal.options.length) meal.innerHTML = window.WR26_OPTIONS.selectHtml('', '', window.WR26_OPTIONS.MEAL_OPTIONS).replace(/^<select[^>]*>/, '').replace(/<\/select>$/, '');
   const payload = await api('/api/bootstrap');
   renderStats(payload.stats);
   await search();
@@ -325,7 +330,21 @@ function prefValue(attendee, slot, key) {
   return prefs[slot] && prefs[slot][key] ? prefs[slot][key] : '';
 }
 
+function seminarPrefFields(attendee) {
+  const O = window.WR26_OPTIONS;
+  return O.SEMINAR_SLOTS.map((slotDef) => {
+    const ranks = [];
+    for (let r = 1; r <= slotDef.ranks; r += 1) {
+      const label = slotDef.ranks > 1 ? `${slotDef.label} — Pref ${r}` : slotDef.label;
+      const attr = `data-pref="${slotDef.slot}.pref_${r}"`;
+      ranks.push(`<label>${escapeHtml(label)}${O.selectHtml(attr, prefValue(attendee, slotDef.slot, `pref_${r}`), O.seminarOptions(slotDef.slot), '- None -')}</label>`);
+    }
+    return ranks.join('');
+  }).join('');
+}
+
 function attendeeEditor(attendee = {}, index = 0) {
+  const O = window.WR26_OPTIONS;
   return `<div class="attendee-card" data-attendee-index="${index}">
     <h3>Attendee ${index + 1}</h3>
     <div class="form-grid">
@@ -334,21 +353,15 @@ function attendeeEditor(attendee = {}, index = 0) {
       <label>Phone<input data-a="phone" value="${escapeHtml(attendee.phone)}"></label>
       <label>Email<input data-a="email" value="${escapeHtml(attendee.email)}"></label>
       <label>Church<input data-a="church" value="${escapeHtml(attendee.church)}"></label>
-      <label>Adult/Child<input data-a="attendee_type" value="${escapeHtml(attendee.attendee_type)}"></label>
-      <label>Meal Preference<input data-a="meal_preference" value="${escapeHtml(attendee.meal_preference)}"></label>
-      <label>Childcare Needed<input data-a="childcare_needed" value="${escapeHtml(attendee.childcare_needed)}"></label>
+      <label>Attendee Type${O.selectHtml('data-a="attendee_type"', attendee.attendee_type, O.ATTENDEE_TYPE_OPTIONS)}</label>
+      <label>Meal Preference${O.selectHtml('data-a="meal_preference"', attendee.meal_preference, O.MEAL_OPTIONS)}</label>
+      <label>Childcare Needed${O.selectHtml('data-a="childcare_needed"', attendee.childcare_needed, O.CHILDCARE_OPTIONS)}</label>
       <label>Dietary Needs<textarea data-a="dietary_needs" rows="2">${escapeHtml(attendee.dietary_needs)}</textarea></label>
       <label>Notes<textarea data-a="notes" rows="2">${escapeHtml(attendee.notes)}</textarea></label>
     </div>
     <h4>Seminar Preferences</h4>
     <div class="form-grid">
-      <label>Friday 4 PM Pref 1<input data-pref="session_1.pref_1" value="${escapeHtml(prefValue(attendee, 'session_1', 'pref_1'))}"></label>
-      <label>Friday 4 PM Pref 2<input data-pref="session_1.pref_2" value="${escapeHtml(prefValue(attendee, 'session_1', 'pref_2'))}"></label>
-      <label>Saturday 2 PM Pref 1<input data-pref="session_2.pref_1" value="${escapeHtml(prefValue(attendee, 'session_2', 'pref_1'))}"></label>
-      <label>Saturday 2 PM Pref 2<input data-pref="session_2.pref_2" value="${escapeHtml(prefValue(attendee, 'session_2', 'pref_2'))}"></label>
-      <label>Saturday 3:30 Pref 1<input data-pref="session_3.pref_1" value="${escapeHtml(prefValue(attendee, 'session_3', 'pref_1'))}"></label>
-      <label>Saturday 3:30 Pref 2<input data-pref="session_3.pref_2" value="${escapeHtml(prefValue(attendee, 'session_3', 'pref_2'))}"></label>
-      <label>Sunday 8:15<input data-pref="session_4.pref_1" value="${escapeHtml(prefValue(attendee, 'session_4', 'pref_1'))}"></label>
+      ${seminarPrefFields(attendee)}
     </div>
     <input type="hidden" data-a="attendee_id" value="${escapeHtml(attendee.attendee_id)}">
   </div>`;
@@ -636,6 +649,13 @@ document.addEventListener('DOMContentLoaded', () => {
   $('run-assign').addEventListener('click', () => runAssignment(false).catch((error) => showToast(error.message)));
   $('preview-reminders').addEventListener('click', () => runReminders(true).catch((error) => showToast(error.message)));
   $('send-reminders').addEventListener('click', () => runReminders(false).catch((error) => showToast(error.message)));
+  const workerLink = $('worker-link');
+  if (workerLink) workerLink.value = `${window.location.origin}/worker/`;
+  $('copy-worker-link').addEventListener('click', async () => {
+    const link = $('worker-link').value;
+    try { await navigator.clipboard.writeText(link); showToast('Worker link copied.'); }
+    catch (_e) { $('worker-link').select(); document.execCommand('copy'); showToast('Worker link copied.'); }
+  });
   $('save-worker').addEventListener('click', () => saveWorker().catch((error) => showToast(error.message)));
   $('load-staff').addEventListener('click', () => loadStaff().catch((error) => showToast(error.message)));
   $('save-staff').addEventListener('click', () => saveStaff().catch((error) => showToast(error.message)));

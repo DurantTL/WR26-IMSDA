@@ -76,7 +76,26 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  function renderOptionFields() {
+    const O = window.WR26_OPTIONS;
+    const meal = $('w-meal');
+    if (meal) meal.innerHTML = O.selectHtml('', '', O.MEAL_OPTIONS).replace(/^<select[^>]*>/, '').replace(/<\/select>$/, '');
+    const seminars = $('w-seminars');
+    if (seminars) {
+      seminars.innerHTML = O.SEMINAR_SLOTS.map((slotDef) => {
+        const out = [];
+        for (let r = 1; r <= slotDef.ranks; r += 1) {
+          const label = slotDef.ranks > 1 ? `${slotDef.label} — Pref ${r}` : slotDef.label;
+          out.push(`<label>${label}${O.selectHtml(`data-pref="${slotDef.slot}.pref_${r}"`, '', O.seminarOptions(slotDef.slot), '- None -')}</label>`);
+        }
+        return out.join('');
+      }).join('');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    await window.WR26_OPTIONS.loadSeminars('/api/seminars/public').catch(() => {});
+    renderOptionFields();
     $('worker-form').addEventListener('submit', submitWorker);
     $('worker-another').addEventListener('click', resetForm);
   });

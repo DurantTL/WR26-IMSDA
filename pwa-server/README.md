@@ -302,11 +302,24 @@ the check-in screen shows the balance due plus the Square card total
 POST /api/worker/register     (public, rate-limited; self-serve worker page)
 POST /api/worker/add          (staff; registrar role)
 GET  /worker/                 (public worker registration page)
+GET  /api/seminars/public     (public; active seminar titles for dropdowns)
 ```
 
 Workers register for free into the same sheets as paid attendees (so they show
 in rosters / meal counts / seminar assignment) at `finalAmount` 0 / status
-`worker_no_charge`. The public `/worker/` page replaces the external Google Form.
+`worker_no_charge`. The public `/worker/` page replaces the external Google Form,
+and staff can copy a shareable worker link from the Tools tab.
+
+### Form dropdowns (match the Fluent Form)
+
+`public/wr26-options.js` is a shared module that renders `<select>` dropdowns for
+meal preference, attendee type, childcare, and seminar preferences across the
+**staff attendee editor**, the **registrant portal**, the **worker page**, and
+**Add Worker** — using the same values as the Fluent Form. Seminar dropdowns are
+populated from the live `Seminars` sheet (via `/api/seminars/public`) so the
+choices always equal what's assignable, falling back to built-in option values
+until the sheet is populated. Editing preserves any unknown/legacy stored value
+so a dropdown never silently drops existing data.
 
 ### Staff management (admin only)
 

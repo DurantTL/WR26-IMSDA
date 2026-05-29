@@ -563,6 +563,22 @@ app.post('/api/transfer', noStore, apiWriteLimiter, requireRole('registrar'), as
   }
 });
 
+// Public, unauthenticated list of active seminars (titles only) so the registrant
+// portal and worker page can build seminar dropdowns that match what's assignable.
+// Read-only and rate-limited; exposes no PII.
+app.get('/api/seminars/public', noStore, apiReadLimiter, async (_req, res) => {
+  try {
+    const payload = await gasRequest('getSeminars');
+    const seminars = (payload && Array.isArray(payload.seminars) ? payload.seminars : [])
+      .filter((s) => s && s.active !== false && String(s.title || '').trim())
+      .map((s) => ({ slot: s.slot, title: s.title }));
+    res.json({ success: true, seminars });
+  } catch (error) {
+    // Degrade gracefully — the client falls back to built-in option values.
+    res.json({ success: true, seminars: [] });
+  }
+});
+
 app.get('/api/seminars', noStore, apiReadLimiter, requireRole('registrar', 'checkin', 'payments', 'readonly'), async (_req, res) => {
   try {
     const payload = await gasRequest('getSeminars');
