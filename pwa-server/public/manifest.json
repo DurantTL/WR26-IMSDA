@@ -1,9 +1,24 @@
 {
   "name": "IMSDA Registration",
   "short_name": "IMSDA Reg",
-  "start_url": "/app/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#edf3fa",
   "theme_color": "#2c6fb6",
-  "icons": []
+  "description": "IMSDA Women's Retreat 2026 staff registration management and check-in",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
