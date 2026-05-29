@@ -1,808 +1,282 @@
-# WR26 IMSDA Registration System
+# IMSDA Women's Retreat 2026 — Registration Platform
 
-This repository contains the Women’s Retreat 2026 registration system using the **Option A production path**:
-
-- **Legacy WordPress plugin** handles Fluent Forms registration intake.
-- **Google Apps Script + Google Sheets** remain the source of truth.
-- **IMSDA Registration PWA** is the separate CM26-style cached app for staff registration management, QR check-in, payments, magic links, and offline check-in/payment queueing.
-
-The PWA is intentionally named **IMSDA Registration** in the browser/app UI so it can be reused or adapted more easily later. The repository and WR26 event files remain WR26-specific.
-
-> **Canonical components (see `REVIEW-AND-ROADMAP.md`):** the production path is the
-> legacy **`plugin/wr26-registration.php`** (Option A), the staff app is
-> **`pwa-server/`**, and the registration form of record is
-> **`form/wr26-registration-fluentforms.smart-payments.json`** (it includes the
-> chargeable payment item and the `a1_*` attendee fields). The
-> `imsda-registration-engine/` plugin and its `pwa/imsda-checkin.html` are kept as
-> future/experimental and are not the production path. Payment is
-> **server-authoritative**: GAS recomputes the owed amount from the Config and
-> `PromoCodes` sheets; the form's in-page total is a charge/display convenience.
+> **Indiana–Michigan State Dorcas Association** · "Rooted & Rising" Women's Retreat
+> A self-hosted, installable Progressive Web App (PWA) for event registration, payments, seminar sign-up, check-in, and administration.
 
 ---
 
-## Current architecture
+## 📑 Table of Contents
 
-```text
-Fluent Forms registration form
-        ↓
-Legacy WR26 WordPress plugin
-        ↓
-Google Apps Script Web App
-        ↓
-Google Sheets source of truth
-        ↓
-IMSDA Registration PWA server cache
-        ↓
-Staff mobile/desktop PWA UI
-```
-
-### What each layer does
-
-| Layer | Purpose |
-|---|---|
-| `plugin/wr26-registration.php` | Production-safe legacy intake from Fluent Forms into GAS/Sheets. Keep this active. |
-| `gas/*.gs` | Sheet writes, edits, check-in, payments, magic links, PWA cache snapshots. |
-| `pwa-server/` | Separate Node/Express cached PWA server. Browser talks to same-origin `/api/*`, not directly to GAS. |
-| `plugin/wr26-registration-portal.php` | Optional companion WordPress portal/magic-link fallback. Does not replace the PWA. |
-| `form/wr26-registration-fluentforms.smart-payments.json` | Canonical Fluent Forms import JSON (chargeable payment item + `a1_*` fields). Generated from the base JSON by `tools/patch-wr26-form-smart-payments.js`. |
+1. [Overview](#overview)
+2. [Event Facts](#event-facts)
+3. [Feature Status](#feature-status)
+4. [Architecture](#architecture)
+5. [Repository Layout](#repository-layout)
+6. [Quick Start](#quick-start)
+7. [Configuration](#configuration)
+8. [Deployment](#deployment)
+9. [Registration Flow](#registration-flow)
+10. [Attendee Management](#attendee-management)
+11. [Seminars / Breakouts](#seminars--breakouts)
+12. [Admin & Check-in](#admin--check-in)
+13. [Data & Privacy](#data--privacy)
+14. [Roadmap](#roadmap)
+15. [License](#license)
 
 ---
 
-## Event details
+## Overview
 
-- **Event**: Women’s Retreat 2026
-- **Open Camp Meeting begins**: Wednesday, June 3, 2026
-- **Early Bird deadline**: August 14, 2026
-- **Regular registration deadline**: September 17, 2026
-- **Housing**: no housing flow in this system
-- **Boxed dinners**: no boxed dinners
-- **Shirts**: optional/TBD; do not treat shirts as a required core flow
-- **Pricing**:
-  - Early Bird: `$120`
-  - Regular: `$140`
-- **Promo guidance**:
-  - Half-off Early Bird should normally be a `$60` fixed discount unless intentionally configured differently.
+The IMSDA Women's Retreat platform is a lightweight, **self-hosted registration engine** built as a Progressive Web App. It handles the full lifecycle of event participation:
 
----
+- Public registration with multiple attendees per submission, each with their own phone, meal preference, and seminar choices
+- Early-bird / regular pricing, promo codes (half off early bird), and **pay-later by default**
+- A self-service registrant portal (magic-link access) for editing attendees and moving/swapping registrations
+- An admin dashboard for the roster, church groupings, notes, refunds, and seminar capacity
+- On-site QR check-in that shows the balance owed and supports collecting card payment via the Square app
+- Installable PWA with offline support
 
-## Repository map
+This repository contains several deployable components (see [Repository Layout](#repository-layout)) but the **primary, recommended deployment** is the `imsda-registration-engine/` Node.js service.
 
-```text
-gas/
-  Code.gs                 Main GAS router / Web App entry
-  Config.gs               Reads Config tab
-  Registration*.gs        Registration writes/edits/search
-  CheckIn.gs              Check-in and payment actions
-  Portal.gs               Magic-link and registration bundle actions
-  PwaSync.gs              Full cache snapshot for IMSDA Registration PWA
-  Setup.gs                Sheet setup/check helpers
-
-plugin/
-  wr26-registration.php          Legacy production intake plugin
-  wr26-registration-portal.php   Optional WordPress portal companion
-
-docker-compose.yml        Docker Compose entrypoint for XCloud/Compose deployments
-
-pwa-server/
-  Dockerfile
-  .dockerignore
-  server.js
-  package.json
-  public/
-    index.html
-    app.js
-    styles.css
-    manifest.json
-  README.md
-
-form/
-  wr26-registration-fluentforms.json
-```
+The authoritative business requirements live in [`IMPORTANT-INSTURCTIONS.txt`](IMPORTANT-INSTURCTIONS.txt); the detailed gap analysis lives in [`AUDIT-REPORT.md`](AUDIT-REPORT.md); the phased delivery plan lives in [`REVIEW-AND-ROADMAP.md`](REVIEW-AND-ROADMAP.md).
 
 ---
 
-## Google Sheet setup
+## Event Facts
 
-Create or verify these tabs. You can use `wr26EnsureSheetSetup()` from Apps Script to add missing tabs/headers, then run `wr26SetupCheck()` to verify alignment.
+| Item | Value |
+|------|-------|
+| Event | IMSDA Women's Retreat 2026 — "Rooted & Rising" |
+| Host | Indiana–Michigan State Dorcas Association |
+| Open Camp Meeting | Wednesday, June 3, 2026 |
+| Early-bird price | **$120** (ends **August 14, 2026**) |
+| Regular price | **$140** (ends **September 17, 2026**) |
+| Promo codes | **Half off the early-bird price** |
+| Worker registration | Non-paying attendees register via a separate Google Form |
+| Meals | **No boxed dinners** |
+| Childcare | Provided only if enough children register; otherwise no dedicated program |
+| Shirts | Optional — may not be offered |
 
-### Required tabs and headers
-
-**Registrations**
-
-```text
-Registration ID, Timestamp, First Name, Last Name, Email, Phone, Church, Arrival Date, Departure Date, Dietary Needs, Emergency Contact Name, Emergency Contact Phone, Special Needs, Promo Code, Discount Amount, Original Amount, Final Amount, Payment Method, Payment Status, Square Payment ID, FF Entry ID, Status, Transfer Notes, Checked In, Check-In Time, Check-In By, QR Token, Edit Token, Admin Notes, Amount Paid, Coupon Used
-```
-
-**Attendees**
-
-```text
-Attendee ID, Registration ID, First Name, Last Name, Phone, Email, Church, Adult/Child, Meal Preference, Dietary Needs, Childcare Needed, Seminar Preferences Complete, Notes
-```
-
-**SeminarPreferences**
-
-```text
-Preference ID, Registration ID, Attendee ID, Attendee Name, Session Slot, Preference Rank, Seminar Title, Seminar ID, Assigned Seminar, Assignment Status, Notes
-```
-
-**Waitlist**
-
-```text
-Waitlist ID, Timestamp, First Name, Last Name, Email, Phone, Church, FF Entry ID, Status, Position, Promoted At, Notes
-```
-
-**PromoCodes**
-
-```text
-Code, Description, Discount Type, Discount Amount, Max Uses, Current Uses, Expiry Date, Active, Min Purchase
-```
-
-**TransferLog**
-
-```text
-Transfer ID, Timestamp, Original Reg ID, New Reg ID, Original Name, New Name, Original Email, New Email, Reason, Refund Notes, Admin Notes, Transferred By
-```
-
-**CheckIns**
-
-```text
-Check-In ID, Timestamp, Registration ID, Name, Church, Method, Admin User
-```
-
-**Config**
-
-```text
-Key, Value
-```
-
-**MagicLinks**
-
-```text
-Token, Timestamp, Email, Registration ID, Expires At, Last Used At, Status, Purpose, Request IP, Notes
-```
-
-**AuditLog**
-
-```text
-Audit ID, Timestamp, Action, Registration ID, Actor, Details, Source IP
-```
-
-The `AuditLog` tab records staff/admin mutations (admin edits, payments,
-check-ins, transfers, waitlist promotions/removals, and registrant self-service
-edits). Writing to it is best-effort: if the tab is absent, the action still
-succeeds and logging is skipped.
-
-### Setup helpers
-
-Run from Apps Script after copying/pushing the GAS files:
-
-```javascript
-wr26EnsureSheetSetup();
-wr26SetupCheck();
-```
-
-If `wr26SetupCheck()` reports out-of-order columns, manually reorder the sheet headers before live submissions.
+Pricing and date constants are defined in `imsda-registration-engine/server.js`
+(`EARLY_BIRD_PRICE`, `REGULAR_PRICE`, `EARLY_BIRD_END`, `REGULAR_END`).
 
 ---
 
-## Config sheet keys
+## Feature Status
 
-At minimum, configure these rows in the **Config** tab:
+Legend: ✅ working · ⚠️ partial · ❌ planned (see [Roadmap](#roadmap)).
+Current state as of 2026-05-29 — see [`AUDIT-REPORT.md`](AUDIT-REPORT.md) for details.
 
-```text
-SECRET
-ADMIN_EMAIL
-NOTIFICATION_EMAIL
-CAPACITY=350
-EVENT_NAME=Women's Retreat 2026
-EVENT_DATES
-EVENT_LOCATION
-GAS_VERSION
-EARLY_BIRD_PRICE=120
-REGULAR_PRICE=140
-EARLY_BIRD_END_DATE=2026-08-14
-REGULAR_END_DATE=2026-09-17
-OPEN_CAMP_MEETING_DATE=2026-06-03
-EDIT_PAGE_URL
-PAYMENT_DEFAULT=pay_later
-WORKER_REGISTRATION_URL
-CHILDCARE_ENABLED=true
-CHILDCARE_MINIMUM_CHILDREN=0
-CHILDCARE_MESSAGE
-SQUARE_FEE_ENABLED=true
-SQUARE_FEE_PERCENT=2.9
-SQUARE_FEE_FIXED=0.30
-SEMINAR_FULL_BEHAVIOR=allow_with_review
-SEMINAR_CAPACITY_DEFAULT=0
-CHECKIN_PIN
-CHECKIN_TOKEN
-MAGIC_LINK_ENFORCE_IP=false
-MAGIC_LINK_COOLDOWN_SECONDS=60
-```
+### Registration
+- ✅ Multi-attendee registration in a single submission
+- ✅ Early-bird / regular pricing (automatic, date-driven)
+- ⚠️ Promo codes — needs explicit **half-off-early-bird** rule + tests
+- ⚠️ Per-attendee details — name/email present; **phone, meal preference, seminar choices** being added per attendee
+- ⚠️ Loading + confirmation messaging during submit; **big "check your email" reminder** to add
 
-Important:
+### Payments
+- ⚠️ Pay now / pay later — flip the **default to pay-later**
+- ⚠️ Square card payments
+- ⚠️ Pay-later email with an embedded **payment link/option**
+- ❌ Pending-charge reminder email ("did you forget?")
+- ⚠️ Refund tracking — field exists; no workflow yet
 
-- `SECRET` must match the WordPress plugin secret and the PWA server `WR26_GAS_SECRET`.
-- `CHECKIN_PIN` and `CHECKIN_TOKEN` are still available for legacy check-in flows, but the new IMSDA Registration PWA uses server-side staff login with `WR26_AUTH_USERS`.
-- `SQUARE_FEE_*` controls passing card processing fees to registrants. WR26 passes Square fees, so these default to enabled (`2.9% + $0.30`). The online registration form already adds this surcharge on the card path; these Config keys apply the same fee to on-site Square payments recorded through the PWA. Set `SQUARE_FEE_ENABLED=false` to stop passing fees.
-- `MAGIC_LINK_COOLDOWN_SECONDS` throttles repeat magic-link requests per email (anti-spam). `MAGIC_LINK_ENFORCE_IP` is **off by default**; set it to `true` only if you want to reject a magic link used from a different network than it was requested from (this can lock out mobile/forwarded users, so leave off unless needed).
+### Attendee Management
+- ⚠️ Edit attendees after registration (admin only today → add self-service)
+- ❌ Move / swap a registration so one person **takes another's place**, keeping the **original record + "taking place of" linkage**
+- ✅ Private admin notes ("keep info safe")
+- ⚠️ Church roster — data exists; needs a dedicated per-church individual view
 
----
+### Seminars / Breakouts
+- ❌ Seminar registration: **8 breakouts across 4 time slots** with **ranked preferences** and graceful "full" handling
 
-## GAS deployment
+### Communications
+- ⚠️ Email via Google (SMTP scaffold; templates needed)
+- ✅ Confirmation flow exists → add big email reminder + loading state
+- ❌ Pending-charge reminder emails
 
-1. Copy or push all files in `/gas` to the Apps Script project.
-2. In Apps Script, run any function once, such as `doGet`, and accept permissions for `SpreadsheetApp` and `MailApp`.
-3. Run:
+### Check-in
+- ✅ QR-code check-in
+- ⚠️ Show **amount owed** at check-in and support the **Square app** for card payment
 
-```javascript
-wr26EnsureSheetSetup();
-wr26SetupCheck();
-```
+### Other
+- ❌ Childcare opt-in (conditional program)
+- ❌ T-shirt opt-in (optional)
+- ❌ Worker (non-paying) registration via Google Form
 
-4. Deploy as a Web App:
-   - **Execute as**: Me
-   - **Who has access**: Anyone / Anyone, even anonymous
-5. Copy the Web App URL.
-6. Put the Web App URL into:
-   - WordPress WR26 settings
-   - PWA server environment variable `WR26_GAS_URL`
-
-Important: if you create a new deployment URL, update both WordPress and the PWA server environment.
-
-`gas/.clasp.json` should contain only a placeholder script ID in the repo. Replace it locally with the real script ID before `clasp push`, and do not commit the private ID.
+### Technical
+- ✅ Installable PWA, offline support (service worker + manifest)
+- ✅ Self-hosted; JSON file storage
 
 ---
 
-## WordPress legacy intake setup
+## Architecture
 
-Use the legacy plugin as the production intake path.
-
-1. Activate:
-
-```text
-plugin/wr26-registration.php
+```
+        ┌──────────────────────────────────────────────┐
+        │            Browser / Installed PWA            │
+        │  index.html · portal.html · admin.html ·      │
+        │  checkin.html · app.js · sw.js · manifest.json│
+        └───────────────────────┬──────────────────────┘
+                                 │ HTTPS / JSON
+                                 ▼
+        ┌──────────────────────────────────────────────┐
+        │     imsda-registration-engine (Express)       │
+        │  REST API · pricing · promos · magic links ·  │
+        │  QR check-in · CSV export                      │
+        └───────┬───────────────┬──────────────┬────────┘
+                │               │              │
+                ▼               ▼              ▼
+        JSON data store   Square API    Google SMTP (email)
+        (registrations,   (card pay)    (confirmations,
+         promos)                         reminders)
 ```
 
-2. Go to **WR26 → Settings**.
-3. Configure:
-   - GAS URL
-   - Fluent Form ID
-   - Edit Registration Page URL
-4. Go to **WR26 → GAS Tools**. GAS Tools is part of the main WR26 Registration plugin, so only the main plugin needs to be active.
-5. Copy the displayed GAS Secret into the Google Sheet **Config** tab as `SECRET`.
-6. Use **Ping GAS / Cache Snapshot** first to verify the WordPress-to-GAS connection and matching secret.
-7. Use **Send Fake Registration to GAS** only for testing. It creates real test rows in the Sheet, so delete those test rows after confirming the connection.
-8. Submit a test Fluent Forms registration.
-9. Confirm rows are written to:
-   - `Registrations`
-   - `Attendees`
-   - `SeminarPreferences`
-
-The legacy plugin should remain active even when using the separate IMSDA Registration PWA.
+Optional/alternate components: a WordPress plugin (`plugin/`) that embeds the
+form via shortcode (see [`OPTION-A-LEGACY-PORTAL.md`](OPTION-A-LEGACY-PORTAL.md)),
+Google Apps Script backends (`gas/`, `form/`), and a minimal static shell server
+(`pwa-server/`).
 
 ---
 
-## Fluent Forms expected field names
+## Repository Layout
 
-The parser is field-name sensitive. Make sure the imported form JSON uses these keys.
-
-### Primary registration/contact fields
-
-```text
-first_name
-last_name
-email
-phone
-church
-church_other
-arrival_date
-departure_date
-emergency_contact_name
-emergency_contact_phone
-special_needs
-attendee_notes
-attendee_count
-payment_method
-promo_code
-worker_registration
-acknowledgment
+```
+WR26-IMSDA/
+├── imsda-registration-engine/   # ⭐ Primary PWA + API (Node.js/Express)
+│   ├── server.js                #    REST API, pricing, promos, check-in
+│   ├── public/                  #    index, portal, admin, checkin, app.js, sw.js, manifest
+│   ├── data/churches.json       #    seed church list
+│   └── tools/seed.js            #    data seeding
+├── pwa-server/                  # Minimal static PWA shell server (smoke test)
+├── gas/                         # Google Apps Script backend (legacy/alt)
+├── form/                        # Google Form integration script (worker reg)
+├── plugin/                      # WordPress plugin (legacy/alt embed)
+├── tools/                       # Utility scripts (seed, etc.)
+├── docker-compose.yml           # One-command deployment (port 3001)
+├── IMPORTANT-INSTURCTIONS.txt   # Authoritative business requirements
+├── AUDIT-REPORT.md              # Current-state gap analysis
+└── REVIEW-AND-ROADMAP.md        # Phased delivery plan
 ```
 
-### Attendee fields
-
-Attendee 1 should now use the same attendee-level pattern as the other attendees. This avoids the old issue where attendee 1 was partly implied by the primary contact.
-
-For attendee 1:
-
-```text
-a1_first_name
-a1_last_name
-a1_phone
-a1_attendee_type
-a1_meal_preference
-a1_dietary_needs
-a1_childcare_needed
-a1_session1_pref1
-a1_session1_pref2
-a1_session2_pref1
-a1_session2_pref2
-a1_session3_pref1
-a1_session3_pref2
-a1_session4
-```
-
-For attendees 2–5, replace `N` with `2`, `3`, `4`, or `5`:
-
-```text
-aN_first_name
-aN_last_name
-aN_phone
-aN_attendee_type
-aN_meal_preference
-aN_dietary_needs
-aN_childcare_needed
-aN_session1_pref1
-aN_session1_pref2
-aN_session2_pref1
-aN_session2_pref2
-aN_session3_pref1
-aN_session3_pref2
-aN_session4
-```
-
-### Seminar option values
-
-Keep these values stable even if labels change:
-
-```text
-Session 1 Friday 4 PM: fri_opt_1, fri_opt_2
-Session 2 Saturday 2 PM: sat_2pm_opt_1, sat_2pm_opt_2, sat_2pm_opt_3
-Session 3 Saturday 3:30 PM: sat_330_opt_1, sat_330_opt_2
-Session 4 Sunday 8:15 AM: sun_opt_1
-```
-
-### Payment method values
-
-```text
-offline -> normalized to pay_later
-square  -> normalized to square
-```
+Component READMEs:
+- [`imsda-registration-engine/README.md`](imsda-registration-engine/README.md)
+- [`pwa-server/README.md`](pwa-server/README.md)
 
 ---
 
-## IMSDA Registration PWA setup
-
-The separate PWA lives in `pwa-server/` and is the recommended staff-facing registration manager and check-in app.
-
-Read the full setup guide here:
-
-```text
-pwa-server/README.md
-```
-
-### What the PWA does
-
-- Staff login
-- Cached registration search
-- Registration detail editor
-- Attendee editor, up to 5 attendees
-- Seminar preference editor for all 4 sessions
-- QR scanner
-- Check-in
-- On-site payment recording
-- Registrant magic-link sending
-- Offline queue for check-in and payment actions
-- Manual cache refresh
-
-### Basic local start
+## Quick Start
 
 ```bash
-cd pwa-server
+cd imsda-registration-engine
 npm install
 npm start
 ```
 
-Open the staff PWA:
+Visit `http://localhost:3001`.
 
-```text
-http://localhost:3001/app/
-```
+---
 
-Open the registrant self-service portal:
+## Configuration
 
-```text
-http://localhost:3001/portal/
-```
+Environment variables (full list in
+[`imsda-registration-engine/README.md`](imsda-registration-engine/README.md)):
 
-### Required environment variables
+| Variable | Description |
+|----------|-------------|
+| `PORT` | Server port (default 3001) |
+| `ADMIN_PASSWORD` | Admin dashboard password |
+| `DATA_DIR` | JSON data storage directory |
+| `SQUARE_ACCESS_TOKEN` / `SQUARE_LOCATION_ID` | Square API credentials for card payments |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | Google SMTP for confirmation & reminder emails |
+
+---
+
+## Deployment
+
+Recommended deployment is via Docker Compose:
 
 ```bash
-PORT=3001
-WR26_GAS_URL=https://script.google.com/macros/s/...../exec
-WR26_GAS_SECRET=your_config_sheet_SECRET_value
-SESSION_SECRET=replace-with-long-random-string
-PWA_SYNC_INTERVAL_MS=60000
-WR26_AUTH_USERS='[{"username":"registrar","password":"$2b$10$...bcrypt...","roles":["registrar","payments","checkin"]}]'
+docker compose up -d
 ```
 
-The scanner requires HTTPS on phones. Localhost works for development, but production must be served over HTTPS through a reverse proxy, Cloudflare Tunnel, or another HTTPS deployment path.
+This builds and runs the `imsda-registration-engine` on port 3001.
 
 ---
 
-## PWA staff roles
+## Registration Flow
 
-| Role | Access |
-|---|---|
-| `admin` | All access |
-| `registrar` | Search/edit registrations and attendees |
-| `payments` | Record payments |
-| `checkin` | Check in guests and record check-in payments |
-| `readonly` | View/search only |
-
-Generate bcrypt hashes for `WR26_AUTH_USERS` inside `pwa-server` after `npm install`:
-
-```bash
-node -e "const bcrypt=require('bcrypt'); bcrypt.hash(process.argv[1],10).then(console.log)" "your-password"
-```
+1. Attendee visits the site (installable PWA).
+2. Chooses how many attendees to register.
+3. Enters per-attendee details — name, email, **phone, meal preference, seminar preferences (ranked)**.
+4. Applies a promo code (optional; half off early bird).
+5. Chooses **Pay Later (default)** or Pay Now (Square).
+6. Sees a loading/confirmation message, then a **large reminder to check email**.
+7. Receives a confirmation email with a QR code (and, for pay-later, a payment link).
 
 ---
 
-## PWA API routes
+## Attendee Management
 
-The browser talks to the Node server, not directly to GAS.
+Through the admin dashboard and the magic-link registrant portal:
 
-### Auth
-
-```text
-POST /api/auth/login
-GET  /api/auth/me
-POST /api/auth/logout
-```
-
-### Cache
-
-```text
-GET  /api/bootstrap
-GET  /api/sync/status
-POST /api/sync/refresh
-```
-
-### Registration management
-
-```text
-GET  /api/registrations?q=...
-GET  /api/registration/:id
-POST /api/registration/:id
-GET  /api/scan/:value
-```
-
-### Operations
-
-```text
-POST /api/payment
-POST /api/check-in
-POST /api/offline-actions
-```
-
-### Magic-link helper routes
-
-```text
-POST /api/magic-link/request
-POST /api/magic-link/registration
-POST /api/magic-link/save
-```
+- **Edit** any attendee's details after registration.
+- **Move / swap** a registration so one person takes another's place — the
+  **original registration is retained** and a "taking place of" linkage records
+  who replaced whom.
+- **Refunds** are recorded when a spot is given up or a registration is cancelled.
+- **Private notes** can be attached to a registration to keep sensitive info safe.
+- **Church roster** view lists each church's individual attendees.
 
 ---
 
-## QR scanner behavior
+## Seminars / Breakouts
 
-The IMSDA Registration PWA can open a registration from scanned QR content if the scan contains:
+Eight breakout sessions run across four time slots:
 
-- the exact `Registration ID`,
-- the exact `QR Token`,
-- a URL with `registrationId`, `regId`, `id`, `token`, or `qrToken`,
-- or a URL path segment containing the registration ID or QR token.
+| Time slot | Options |
+|-----------|---------|
+| Friday 4:00–5:00 PM | 2 |
+| Saturday 2:00–3:15 PM | 3 |
+| Saturday 3:30–4:45 PM | 2 |
+| Sunday 8:15–9:15 AM | 1 |
 
-Camera access requires HTTPS in production.
-
----
-
-## Offline queue behavior
-
-The PWA queues these actions when the device is offline:
-
-- check-in
-- payment recording
-
-Queued actions are stored in browser `localStorage` under:
-
-```text
-imsda_registration_queue
-```
-
-When the device comes back online, the app automatically attempts to sync queued actions through:
-
-```text
-POST /api/offline-actions
-```
-
-The queue can also be synced manually with the **Sync Now** button in the bottom queue bar.
-
-Important: full offline editing of registration/attendee details is not implemented yet. Only check-in and payment actions are queued offline.
+Each attendee **ranks preferences** per slot. Seminars have capacity; when one
+fills, the system assigns the next-ranked choice — a full seminar is handled
+gracefully, not as an error.
 
 ---
 
-## Magic-link registration management
+## Admin & Check-in
 
-The staff PWA is at `/app/`. The registrant self-service portal is at `/portal/` (also available as `/portal.html`; `/manage/` redirects to `/portal/`). WordPress registration confirmation and edit emails should point users to `/portal/` for magic-link management, or include generated magic links from GAS.
-
-There are two ways to use the magic-link system.
-
-### 1. From the IMSDA Registration PWA
-
-Staff can select/open a registration and use the **Link** tab to send a secure edit link to the registrant email.
-
-### 2. Optional WordPress companion plugin
-
-Activate the optional companion plugin only if you want WordPress-hosted magic-link request/edit pages:
-
-```text
-plugin/wr26-registration-portal.php
-```
-
-Shortcodes:
-
-```text
-[wr26_magic_link_request portal_url="https://YOUR-SITE.org/wr26-registration-portal/"]
-[wr26_registration_portal]
-[wr26_staff_registration_manager]
-```
-
-Notes:
-
-- The companion plugin reuses the existing legacy plugin options: GAS URL and GAS secret.
-- `[wr26_staff_registration_manager]` currently requires a WordPress user with `manage_options`.
-- The PWA is still the preferred staff tool.
+- Admin dashboard at `/admin.html` — roster, church groupings, notes, refunds,
+  seminar capacity, CSV export.
+- Check-in at `/checkin.html` — QR scan or search by name; shows the **balance
+  owed** so staff can collect card payment via the **Square app**.
 
 ---
 
-## Check-in day guide
+## Data & Privacy
 
-Use the **IMSDA Registration PWA** as the primary check-in tool.
-
-Recommended flow:
-
-1. Staff sign in.
-2. Confirm the header shows `Online` and recent cache status.
-3. Use **Scan** tab for QR codes.
-4. Use **Search** tab if a QR code does not scan.
-5. Open registration details.
-6. Confirm attendee information.
-7. Record outstanding payment if needed.
-8. Tap **Check-In**.
-9. If the device goes offline, continue check-in/payment work; queued actions will appear in the bottom bar.
-10. When online again, tap **Sync Now** or let the app auto-sync.
+Registration data is stored server-side as JSON in `DATA_DIR`. Private notes and
+attendee contact details are visible only behind the admin password / magic-link
+portal. See component READMEs for storage details.
 
 ---
 
-## Payment flow
+## Roadmap
 
-Default expectation:
+See [`REVIEW-AND-ROADMAP.md`](REVIEW-AND-ROADMAP.md) for the phased plan. In short:
 
-- Pay Later is the default method.
-- Pay Now can remain available if enabled.
-- Outstanding balances can be recorded before or during check-in.
-
-If Square/credit card fees are passed through, configure:
-
-```text
-SQUARE_FEE_ENABLED=true
-SQUARE_FEE_PERCENT
-SQUARE_FEE_FIXED
-```
-
-The PWA records payment actions back to GAS/Sheets and refreshes its local cache after successful writes.
+1. **Core correctness** — pay-later default, half-off-early-bird promo, per-attendee phone/meal validation.
+2. **Seminars** — 8 breakouts / 4 slots with ranked preferences and capacity.
+3. **Attendee management** — self-service editing, move/swap with original-record linkage, refunds workflow, church roster view.
+4. **Communications** — Google email confirmations, pay-later payment link, pending-charge reminders, big email reminder + loading state.
+5. **Check-in & payments** — show balance owed, Square app collection.
+6. **Polish** — childcare opt-in, optional shirts, worker (non-paying) Google Form.
 
 ---
 
-## Childcare
+## License
 
-- Childcare is conditional.
-- Collect childcare interest per attendee/child.
-- If only a few children register, a dedicated childcare program may not be offered.
-- Confirmation messaging should state childcare details will be confirmed later if needed.
-
-Recommended Config keys:
-
-```text
-CHILDCARE_ENABLED
-CHILDCARE_MINIMUM_CHILDREN
-CHILDCARE_MESSAGE
-```
-
----
-
-## Worker / non-paying attendee registration
-
-Workers/non-paying attendees should not use the standard paid registration flow unless explicitly instructed.
-
-Store the worker form URL in Config:
-
-```text
-WORKER_REGISTRATION_URL
-```
-
----
-
-## Promo code workflow
-
-Promo handling is split by payment path:
-
-- **Card / Pay Now discounts are handled by Fluent Forms' native coupon field.** The
-  coupon discounts the chargeable amount at checkout and the coupon code is reported
-  back through `fluentform_payment_success` into the Sheet (`Coupon Used`). The
-  registration form intentionally does **not** apply its own promo discount in
-  JavaScript, so a code never gets discounted twice.
-- **Pay-Later discounts** can be recorded via the GAS `PromoCodes` sheet: the
-  registrant enters a code in the `promo_code` field and GAS recomputes the owed
-  balance from the sheet. Use this for the occasional pay-later promo.
-
-To create a pay-later promo, use the WR26 Promo tab in WordPress or the GAS/admin workflow.
-
-Example half-off Early Bird promo:
-
-```text
-Code: HALFRETREAT
-Discount Type: fixed amount
-Discount Amount: 60
-Active: yes
-Expiry Date: set as needed
-Min Purchase: optional
-```
-
----
-
-## Transfer and waitlist workflow
-
-### Transfer
-
-Use the legacy plugin/admin transfer flow to transfer one registration to another person. Transfers are logged to `TransferLog`.
-
-### Waitlist
-
-When capacity is full, the system can write to `Waitlist`. Staff can promote/remove from the waitlist through the existing admin workflow. Promotion creates a registration and sends email when supported by the configured GAS/plugin flow.
-
----
-
-## First deployment checklist
-
-### Google Sheet
-
-- [ ] Create all required tabs.
-- [ ] Add required headers.
-- [ ] Add Config rows.
-- [ ] Run `wr26EnsureSheetSetup()`.
-- [ ] Run `wr26SetupCheck()`.
-
-### GAS
-
-- [ ] Push/copy all `/gas` files.
-- [ ] Authorize Apps Script permissions.
-- [ ] Deploy Web App as **Me** and **Anyone / Anyone, even anonymous**.
-- [ ] Copy Web App URL.
-
-### WordPress
-
-- [ ] Activate `plugin/wr26-registration.php`.
-- [ ] Configure GAS URL.
-- [ ] Configure Fluent Form ID.
-- [ ] Configure Edit Registration Page URL.
-- [ ] Copy WP secret to Config `SECRET`.
-- [ ] Submit a test form.
-- [ ] Confirm Registrations, Attendees, and SeminarPreferences rows are created.
-
-
-### XCloud Docker Compose deployment
-
-For XCloud, deploy the IMSDA Registration PWA with **Custom Docker → Docker Compose From Git**. Use:
-
-| XCloud setting | Value |
-|---|---|
-| Compose file name | `docker-compose.yml` |
-| Primary service port | `3001` |
-| Environment file directory | `pwa-server` |
-| Health check | `https://registration.imsda.org/health` |
-| App URL | `https://registration.imsda.org/app/` |
-
-The root `docker-compose.yml` defines the `imsda-registration` service, builds `./pwa-server/Dockerfile`, publishes `3001:3001`, and reads runtime environment variables from `./pwa-server/.env`. Do not commit real secrets; supply the environment file through XCloud.
-
-Required XCloud environment variables:
-
-```bash
-NODE_ENV=production
-PORT=3001
-WR26_GAS_URL=https://script.google.com/macros/s/...../exec
-WR26_GAS_SECRET=your_config_sheet_SECRET_value
-SESSION_SECRET=replace-with-long-random-string
-WR26_AUTH_USERS='[{"username":"registrar","password":"$2b$10$...bcrypt...","roles":["registrar","payments","checkin"]}]'
-TRUST_PROXY=1
-```
-
-Keep the existing non-Docker Node deployment path available for local development or other hosts; Docker Compose is an additional deployment option.
-
-### IMSDA Registration PWA
-
-- [ ] Configure environment variables.
-- [ ] Install dependencies with `npm install`.
-- [ ] Start with `npm start`.
-- [ ] Sign in with a test user.
-- [ ] Confirm cache loads.
-- [ ] Search by primary name, attendee name, email, phone, and church.
-- [ ] Test a multi-attendee edit.
-- [ ] Test payment record.
-- [ ] Test check-in.
-- [ ] Test QR scan over HTTPS.
-- [ ] Test offline check-in/payment queue and sync.
-
----
-
-## Troubleshooting
-
-### Unauthorized
-
-- Confirm WordPress secret, Config `SECRET`, and PWA `WR26_GAS_SECRET` match.
-- Confirm GAS Web App deployment is accessible.
-
-### PWA has no registrations
-
-- Confirm `portalGetCacheSnapshot` is routed in `gas/Code.gs`.
-- Confirm `gas/PwaSync.gs` was deployed.
-- Check `/health` and `/api/sync/status`.
-- Confirm the Google Sheet has at least one valid registration row.
-
-### QR scanner unavailable
-
-- Confirm the app is served over HTTPS.
-- Confirm browser camera permission is allowed.
-- Confirm `html5-qrcode` can load.
-
-### Offline queue does not sync
-
-- Confirm staff session is still valid.
-- Confirm the device is online.
-- Confirm `/api/offline-actions` is reachable.
-- Check whether a queued action references a registration ID that no longer exists.
-
-### Form imports but public form is blank
-
-- Check Fluent Forms field types and container/repeater compatibility.
-- Re-import the JSON after validating field names.
-- Verify the active Fluent Form ID matches WR26 settings.
-
-### Attendees or seminars are missing
-
-- Confirm `a1_*` through `a5_*` field names match the expected parser keys.
-- Confirm `attendee_count` is set correctly.
-- Confirm `Attendees` and `SeminarPreferences` headers are correct.
-
----
-
-## Current limitations
-
-- PWA cache is in memory; restarting the Node server reloads from GAS.
-- Offline queue currently supports check-in and payment actions only, not full registration editing.
-- Staff accounts are configured through environment JSON, not a web UI.
-- The PWA icon set is not included yet.
-- Saving attendees/seminar preferences replaces rows for that registration to keep sheet data consistent; test before live use.
-
----
-
-## Recommended next passes
-
-- Add app icons and install polish.
-- Add printable church rosters.
-- Add seminar roster reports.
-- Add payment dashboard/pending-payment cleanup screen.
-- Add non-admin staff role management UI.
-- Add optional persistent cache store if server restarts become an issue.
+Proprietary — IMSDA internal use.
