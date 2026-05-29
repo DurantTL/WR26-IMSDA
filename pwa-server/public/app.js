@@ -133,7 +133,14 @@ async function handleLogin(event) {
   }
 }
 
+function applyRoleVisibility() {
+  const roles = (currentUser && Array.isArray(currentUser.roles)) ? currentUser.roles : [];
+  const staffBtn = $('staff-tab-btn');
+  if (staffBtn) staffBtn.hidden = !roles.includes('admin');
+}
+
 async function bootstrap() {
+  applyRoleVisibility();
   const payload = await api('/api/bootstrap');
   renderStats(payload.stats);
   await search();
@@ -172,13 +179,14 @@ function switchTab(tab) {
   if (panel) panel.classList.add('active');
 
   const detailTabs = ['detail', 'payments', 'checkin', 'magic', 'transfer'];
-  setVisible('results', !detailTabs.includes(tab) && tab !== 'scan' && tab !== 'tools');
+  setVisible('results', !detailTabs.includes(tab) && tab !== 'scan' && tab !== 'tools' && tab !== 'staff');
   setVisible('detail-wrap', tab === 'detail' && !!selectedRegistration);
   setVisible('payment-panel', tab === 'payments');
   setVisible('checkin-panel', tab === 'checkin');
   setVisible('magic-panel', tab === 'magic');
   setVisible('transfer-panel', tab === 'transfer');
   setVisible('tools-panel', tab === 'tools');
+  setVisible('staff-panel', tab === 'staff');
   if (tab === 'checkin' && selectedBundle) renderCheckinBalance(selectedBundle);
   if (tab !== 'scan') stopScanner().catch(() => {});
 
@@ -531,6 +539,45 @@ async function runReminders(dryRun) {
   }
 }
 
+async function loadStaff() {
+  const payload = await api('/api/staff');
+  const users = payload.users || [];
+  if (!users.length) { $('staff-output').innerHTML = '<div class="info-msg">No staff users yet.</div>'; return; }
+  $('staff-output').innerHTML = users.map((u) => `
+    <div class="seminar-row">
+      <span><strong>${escapeHtml(u.username)}</strong> <span class="roster-sub">${escapeHtml((u.roles || []).join(', '))}${u.source === 'bootstrap' ? ' • server admin' : ''}</span></span>
+      <span class="seminar-fill">${u.editable ? `<button class="btn btn-sm btn-white staff-edit" data-user="${escapeHtml(u.username)}" data-roles="${escapeHtml((u.roles || []).join(','))}">Edit</button> <button class="btn btn-sm btn-white staff-deactivate" data-user="${escapeHtml(u.username)}">Disable</button>` : '<span class="roster-sub">read-only</span>'}</span>
+    </div>`).join('');
+}
+
+function setStaffRoleChecks(roles) {
+  const set = new Set((roles || '').split(',').map((r) => r.trim()).filter(Boolean));
+  document.querySelectorAll('.staff-roles .role-check input').forEach((cb) => { cb.checked = set.has(cb.value); });
+}
+
+async function saveStaff() {
+  const username = $('staff-username').value.trim();
+  if (!username) return showToast('Enter a username.');
+  const roles = [...document.querySelectorAll('.staff-roles .role-check input:checked')].map((cb) => cb.value);
+  const password = $('staff-password').value;
+  const body = { username, roles };
+  if (password) body.password = password;
+  await api('/api/staff', { method: 'POST', body });
+  $('staff-status').textContent = `Saved ${username}.`;
+  $('staff-username').value = ''; $('staff-password').value = ''; setStaffRoleChecks('');
+  showToast('Staff user saved.');
+  logActivity(`Saved staff user ${username}`);
+  await loadStaff();
+}
+
+async function deactivateStaff(username) {
+  if (!confirm(`Disable staff login "${username}"?`)) return;
+  await api('/api/staff/deactivate', { method: 'POST', body: { username } });
+  showToast(`Disabled ${username}.`);
+  logActivity(`Disabled staff user ${username}`);
+  await loadStaff();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('online', updateOnlineStatus);
   window.addEventListener('offline', updateOnlineStatus);
@@ -567,6 +614,14 @@ document.addEventListener('DOMContentLoaded', () => {
   $('run-assign').addEventListener('click', () => runAssignment(false).catch((error) => showToast(error.message)));
   $('preview-reminders').addEventListener('click', () => runReminders(true).catch((error) => showToast(error.message)));
   $('send-reminders').addEventListener('click', () => runReminders(false).catch((error) => showToast(error.message)));
+  $('load-staff').addEventListener('click', () => loadStaff().catch((error) => showToast(error.message)));
+  $('save-staff').addEventListener('click', () => saveStaff().catch((error) => showToast(error.message)));
+  $('staff-output').addEventListener('click', (event) => {
+    const editBtn = event.target.closest('.staff-edit');
+    if (editBtn) { $('staff-username').value = editBtn.dataset.user; setStaffRoleChecks(editBtn.dataset.roles); $('staff-password').value = ''; $('staff-status').textContent = `Editing ${editBtn.dataset.user} — leave password blank to keep it.`; }
+    const offBtn = event.target.closest('.staff-deactivate');
+    if (offBtn) deactivateStaff(offBtn.dataset.user).catch((error) => showToast(error.message));
+  });
   populateSeminarSlots();
   restoreSession();
 });

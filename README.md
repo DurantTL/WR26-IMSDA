@@ -201,6 +201,19 @@ left `unassigned_full`).
 Both `Refunds` and `Seminars` are created automatically by
 `wr26EnsureSheetSetup()`.
 
+**Staff**
+
+```text
+Username, Password Hash, Roles, Active, Created At, Created By, Updated At, Notes
+```
+
+Staff PWA logins, managed from the app's **Staff** tab (admin only). Passwords
+are **bcrypt-hashed by the Node server before they reach GAS** — this sheet never
+stores plaintext. The `WR26_AUTH_USERS` env var remains the bootstrap admin set
+and always works even if this sheet is empty, so an operator can't be locked out;
+bootstrap admins are shown in the UI but can't be edited or disabled there.
+Created automatically by `wr26EnsureSheetSetup()`.
+
 ### Setup helpers
 
 Run from Apps Script after copying/pushing the GAS files:
@@ -233,6 +246,8 @@ EARLY_BIRD_END_DATE=2026-08-14
 REGULAR_END_DATE=2026-09-17
 OPEN_CAMP_MEETING_DATE=2026-06-03
 EDIT_PAGE_URL
+PORTAL_URL
+PORTAL_LINK_TTL_DAYS=60
 PAYMENT_DEFAULT=pay_later
 WORKER_REGISTRATION_URL
 CHILDCARE_ENABLED=true
@@ -252,7 +267,8 @@ MAGIC_LINK_COOLDOWN_SECONDS=60
 Important:
 
 - `SECRET` must match the WordPress plugin secret and the PWA server `WR26_GAS_SECRET`.
-- `CHECKIN_PIN` and `CHECKIN_TOKEN` are still available for legacy check-in flows, but the new IMSDA Registration PWA uses server-side staff login with `WR26_AUTH_USERS`.
+- **`PORTAL_URL` is the public address of the PWA registrant portal** (e.g. `https://registration.imsda.org/portal/`). Set this so GAS emails (confirmation, transfer, waitlist promotion, payment reminder) embed a **real PWA magic link** that opens the portal. Each emailed link mints a `MagicLinks` token valid for `PORTAL_LINK_TTL_DAYS` (default 60). If `PORTAL_URL` is blank, emails fall back to the legacy `EDIT_PAGE_URL` + edit-token link.
+- `CHECKIN_PIN` and `CHECKIN_TOKEN` are still available for legacy check-in flows, but the new IMSDA Registration PWA uses server-side staff login. Staff accounts come from `WR26_AUTH_USERS` (bootstrap admins) **plus** the `Staff` sheet managed in-app from the **Staff** tab (admin only).
 - `SQUARE_FEE_*` controls passing card processing fees to registrants. WR26 passes Square fees, so these default to enabled (`2.9% + $0.30`). The online registration form already adds this surcharge on the card path; these Config keys apply the same fee to on-site Square payments recorded through the PWA. Set `SQUARE_FEE_ENABLED=false` to stop passing fees.
 - `MAGIC_LINK_COOLDOWN_SECONDS` throttles repeat magic-link requests per email (anti-spam). `MAGIC_LINK_ENFORCE_IP` is **off by default**; set it to `true` only if you want to reject a magic link used from a different network than it was requested from (this can lock out mobile/forwarded users, so leave off unless needed).
 
@@ -525,6 +541,14 @@ POST /api/seminars/assign           ({dryRun} for a preview)
 GET  /api/seminars/roster?slot=&title=
 GET  /api/church-rosters            (grouped from the live cache; printable)
 POST /api/reminders/pending-charges ({dryRun} previews who owes)
+```
+
+### Staff management (admin only)
+
+```text
+GET  /api/staff                     (list bootstrap + sheet users)
+POST /api/staff                     (add/update; password bcrypt-hashed here)
+POST /api/staff/deactivate          (soft-disable a sheet user)
 ```
 
 These power the staff app's **Tools** tab (rosters, seminar capacity +

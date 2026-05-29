@@ -64,7 +64,39 @@ function loadAuthUsers() {
   }
 }
 
-const authUsers = loadAuthUsers();
+// Bootstrap admins from env — these always work even if the Staff sheet is empty,
+// so an operator can never be locked out. They cannot be edited/deleted via the API.
+const bootstrapUsers = loadAuthUsers();
+const bootstrapUsernames = new Set(bootstrapUsers.map((u) => u.username.toLowerCase()));
+
+// Staff loaded from the GAS Staff sheet (bcrypt hashes stored there). Refreshed
+// from GAS periodically and after any change. Merged with bootstrap admins at
+// lookup time, with bootstrap taking precedence.
+let sheetUsers = [];
+let sheetUsersLoadedAt = null;
+
+async function refreshStaffUsers() {
+  if (!gasUrl) return;
+  try {
+    const payload = await gasRequest('getStaffUsers');
+    if (payload && payload.success && Array.isArray(payload.users)) {
+      sheetUsers = payload.users
+        .filter((u) => u && u.username && u.passwordHash && u.active !== false)
+        .filter((u) => !bootstrapUsernames.has(String(u.username).toLowerCase()))
+        .map((u) => ({ username: String(u.username), password: String(u.passwordHash), roles: Array.isArray(u.roles) && u.roles.length ? u.roles.map(String) : ['readonly'] }));
+      sheetUsersLoadedAt = new Date().toISOString();
+    }
+  } catch (error) {
+    console.error('Failed to load staff users from GAS:', error.message);
+  }
+}
+
+function findAuthUser(username) {
+  const key = String(username || '').toLowerCase();
+  return bootstrapUsers.find((u) => u.username.toLowerCase() === key)
+    || sheetUsers.find((u) => u.username.toLowerCase() === key)
+    || null;
+}
 
 function parseCookies(req) {
   const header = req.headers.cookie || '';
@@ -367,8 +399,8 @@ function resolveScannedRegistration(scanValue) {
 app.post('/api/auth/login', noStore, loginRateLimiter, async (req, res) => {
   const username = String(req.body.username || '').trim();
   const password = String(req.body.password || '');
-  if (!authUsers.length) return res.status(503).json({ success: false, error: 'No IMSDA Registration users are configured on the server' });
-  const user = authUsers.find((candidate) => candidate.username === username);
+  if (!bootstrapUsers.length && !sheetUsers.length) return res.status(503).json({ success: false, error: 'No IMSDA Registration users are configured on the server' });
+  const user = findAuthUser(username);
   const passwordMatch = user ? await bcrypt.compare(password, user.password) : false;
   if (!user || !passwordMatch) return res.status(401).json({ success: false, error: 'Invalid username or password' });
   const token = createSession(user);
@@ -625,6 +657,65 @@ app.post('/api/reminders/pending-charges', noStore, apiWriteLimiter, requireRole
   }
 });
 
+// Staff user management (admin only). Passwords are bcrypt-hashed here so the GAS
+// Staff sheet never receives plaintext. Bootstrap (env) admins are read-only.
+const STAFF_ROLES = ['admin', 'registrar', 'payments', 'checkin', 'readonly'];
+
+app.get('/api/staff', noStore, apiReadLimiter, requireRole('admin'), async (_req, res) => {
+  try {
+    await refreshStaffUsers();
+    const sheetList = sheetUsers.map((u) => ({ username: u.username, roles: u.roles, source: 'sheet', editable: true }));
+    const bootstrapList = bootstrapUsers.map((u) => ({ username: u.username, roles: u.roles, source: 'bootstrap', editable: false }));
+    res.json({ success: true, users: [...bootstrapList, ...sheetList], loadedAt: sheetUsersLoadedAt });
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/staff', noStore, apiWriteLimiter, requireRole('admin'), async (req, res) => {
+  try {
+    const username = String(req.body.username || '').trim().toLowerCase();
+    if (!/^[a-z0-9._-]{2,40}$/.test(username)) return validationError(res, 'username must be 2–40 chars: letters, numbers, . _ -');
+    if (bootstrapUsernames.has(username)) return validationError(res, 'That username is a server-configured admin and cannot be edited here');
+    const roles = Array.isArray(req.body.roles) ? req.body.roles.map((r) => String(r).toLowerCase()) : [];
+    const invalid = roles.filter((r) => !STAFF_ROLES.includes(r));
+    if (invalid.length) return validationError(res, `Unknown role(s): ${invalid.join(', ')}. Valid: ${STAFF_ROLES.join(', ')}`);
+    const password = req.body.password === undefined ? '' : String(req.body.password);
+    // Password required on create; optional on update (omit to keep existing).
+    let passwordHash;
+    if (password) {
+      if (password.length < 8) return validationError(res, 'Password must be at least 8 characters');
+      passwordHash = await bcrypt.hash(password, 10);
+    }
+    const payload = await gasRequest('saveStaffUser', {
+      username,
+      passwordHash,
+      roles: roles.length ? roles : ['readonly'],
+      active: req.body.active === undefined ? true : !!req.body.active,
+      notes: req.body.notes || '',
+      adminUser: req.session.sub,
+    });
+    if (payload.success) await refreshStaffUsers();
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/staff/deactivate', noStore, apiWriteLimiter, requireRole('admin'), async (req, res) => {
+  try {
+    const username = String(req.body.username || '').trim().toLowerCase();
+    if (!username) return validationError(res, 'username is required');
+    if (bootstrapUsernames.has(username)) return validationError(res, 'Server-configured admins cannot be deactivated here');
+    if (username === String(req.session.sub).toLowerCase()) return validationError(res, 'You cannot deactivate your own account');
+    const payload = await gasRequest('deactivateStaffUser', { username, adminUser: req.session.sub });
+    if (payload.success) await refreshStaffUsers();
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
 app.post('/api/check-in', noStore, apiWriteLimiter, requireRole('checkin', 'registrar'), async (req, res) => {
   try {
     if (!isNonEmptyString(req.body.registrationId)) return validationError(res, 'registrationId is required');
@@ -743,6 +834,9 @@ app.listen(port, async () => {
     } catch (error) {
       console.error('Initial IMSDA Registration sync failed:', error.message);
     }
+    await refreshStaffUsers();
+    console.log(`Staff users loaded: ${bootstrapUsers.length} bootstrap + ${sheetUsers.length} from sheet`);
     setInterval(() => refreshCache(false).catch((error) => console.error('Background IMSDA Registration sync failed:', error.message)), syncIntervalMs);
+    setInterval(() => refreshStaffUsers().catch(() => {}), Math.max(syncIntervalMs, 60000));
   }
 });

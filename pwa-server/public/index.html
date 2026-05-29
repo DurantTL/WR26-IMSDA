@@ -54,6 +54,7 @@
         <button data-tab="checkin" class="tab-btn">Check-In</button>
         <button data-tab="magic" class="tab-btn">Link</button>
         <button data-tab="tools" class="tab-btn">Tools</button>
+        <button data-tab="staff" class="tab-btn" id="staff-tab-btn" hidden>Staff</button>
       </div>
 
       <section id="tab-registrations" class="tab active">
@@ -83,6 +84,7 @@
       <section id="tab-checkin" class="tab"><p class="tab-note">Open a registration first, then check in the selected registration below.</p></section>
       <section id="tab-magic" class="tab"><p class="tab-note">Send a secure edit link to the registrant email.</p></section>
       <section id="tab-tools" class="tab"><p class="tab-note">Church rosters, seminar capacity &amp; assignment, and payment reminders.</p></section>
+      <section id="tab-staff" class="tab"><p class="tab-note">Add and manage staff logins (admin only).</p></section>
     </section>
 
     <div id="reader" style="display:none;"></div>
@@ -171,6 +173,30 @@
           <button id="send-reminders" class="btn btn-primary full-width">Send Reminders</button>
         </div>
         <div id="reminders-output" class="tools-output"></div>
+      </div>
+
+      <div id="staff-panel" class="card" hidden>
+        <h2>Staff Accounts</h2>
+        <p class="meta">Add staff logins or update roles. Passwords are hashed; server-configured admins are shown but cannot be edited here.</p>
+        <div class="action-row"><button id="load-staff" class="btn btn-white full-width">Load Staff</button></div>
+        <div id="staff-output" class="tools-output"></div>
+
+        <div class="panel-divider"></div>
+        <h3>Add / Update User</h3>
+        <div class="form-grid compact-form">
+          <label>Username<input id="staff-username" autocomplete="off" placeholder="e.g. registrar2"></label>
+          <label>Password<input id="staff-password" type="password" autocomplete="new-password" placeholder="min 8 chars (blank = keep)"></label>
+        </div>
+        <fieldset class="staff-roles">
+          <legend>Roles</legend>
+          <label class="role-check"><input type="checkbox" value="registrar"> Registrar</label>
+          <label class="role-check"><input type="checkbox" value="checkin"> Check-in</label>
+          <label class="role-check"><input type="checkbox" value="payments"> Payments</label>
+          <label class="role-check"><input type="checkbox" value="readonly"> Read-only</label>
+          <label class="role-check"><input type="checkbox" value="admin"> Admin</label>
+        </fieldset>
+        <button id="save-staff" class="btn btn-primary full-width">Save User</button>
+        <p id="staff-status" class="meta"></p>
       </div>
 
       <div id="magic-panel" class="card" hidden>

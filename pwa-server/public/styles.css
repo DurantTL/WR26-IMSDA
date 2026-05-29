@@ -42,3 +42,9 @@
   body{padding:0;background:#fff;}
   .card{box-shadow:none;border:none;}
 }
+
+/* Staff management */
+.staff-roles{border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin:10px 0;}
+.staff-roles legend{font-weight:800;color:var(--text);padding:0 6px;font-size:.9rem;}
+.staff-roles .role-check{display:inline-flex;align-items:center;gap:6px;margin:4px 12px 4px 0;font-weight:600;}
+.staff-roles .role-check input{width:auto;margin:0;}

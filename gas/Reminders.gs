@@ -22,7 +22,8 @@ function sendPendingChargeReminderEmail_(reg,editPageUrl){
   var billed=Number(reg.finalAmount||0);
   var collected=Number(reg.amountPaid!=null?reg.amountPaid:0);
   var balance=Math.round((billed-collected)*100)/100;
-  var editUrl=editPageUrl?String(editPageUrl)+'?token='+encodeURIComponent(String(reg.editToken||'')):'';
+  var editUrl=portalMintLinkForRegistration_(reg,'payment_reminder');
+  if(!editUrl)editUrl=editPageUrl?String(editPageUrl)+'?token='+encodeURIComponent(String(reg.editToken||'')):'';
   var cfg=getConfig()||{};
   var body='<p>Hello '+escapeHtml(reg.firstName)+',</p>';
   body+='<p style="font-size:1.15em;font-weight:bold;">This is a friendly reminder that your '+escapeHtml(cfg.EVENT_NAME||"Women's Retreat 2026")+' registration still has a balance due.</p>';

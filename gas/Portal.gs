@@ -13,6 +13,26 @@ function ensureMagicLinksSheet_(){
   return sh;
 }
 
+// Mint a MagicLinks token for a specific registration and return the full PWA
+// portal URL that opens it. This is what GAS-sent emails (confirmation, transfer,
+// waitlist promotion, payment reminder) embed so their links work with the PWA
+// portal's token validation — the editToken alone does NOT open the portal.
+// Falls back to '' if no portal base URL is configured, so callers can degrade.
+function portalMintLinkForRegistration_(reg,purpose,portalUrlOverride){
+  try{
+    if(!reg||!reg.registrationId)return '';
+    var cfg=getConfig()||{};
+    var base=String(portalUrlOverride||cfg.PORTAL_URL||'').trim();
+    if(!base)return '';
+    var email=String(reg.email||'').trim().toLowerCase();
+    var token=Utilities.getUuid()+'-'+Utilities.getUuid();
+    var ttlDays=Number(cfg.PORTAL_LINK_TTL_DAYS||60);if(isNaN(ttlDays)||ttlDays<=0)ttlDays=60;
+    var expires=new Date(Date.now()+ttlDays*24*60*60*1000);
+    ensureMagicLinksSheet_().appendRow([token,new Date(),email,reg.registrationId,expires,'','active',String(purpose||'email_link'),'','Auto-issued for '+String(purpose||'email')]);
+    return base+(base.indexOf('?')>-1?'&':'?')+'token='+encodeURIComponent(token);
+  }catch(e){Logger.log('portalMintLinkForRegistration_ failed: '+e.message);return '';}
+}
+
 function portalFindRegistrationsByEmail_(email){
   var target=String(email||'').trim().toLowerCase();
   if(!target)return [];
