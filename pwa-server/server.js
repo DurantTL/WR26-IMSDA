@@ -488,6 +488,143 @@ app.post('/api/payment', noStore, apiWriteLimiter, requireRole('payments', 'regi
   }
 });
 
+app.post('/api/refund', noStore, apiWriteLimiter, requireRole('payments', 'registrar'), async (req, res) => {
+  try {
+    if (!isNonEmptyString(req.body.registrationId)) return validationError(res, 'registrationId is required');
+    const amount = Number(req.body.amount);
+    if (!Number.isFinite(amount) || amount <= 0) return validationError(res, 'amount must be a positive number');
+    const payload = await gasRequest('recordRefund', {
+      registrationId: req.body.registrationId,
+      amount,
+      method: req.body.method || 'other',
+      reason: req.body.reason || '',
+      refundNotes: req.body.refundNotes || '',
+      adminUser: req.session.sub,
+    });
+    if (payload.success) await refreshCache(true);
+    res.status(payload.success ? 200 : 400).json({ ...payload, sync: getSyncMeta() });
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message, sync: getSyncMeta() });
+  }
+});
+
+app.post('/api/transfer', noStore, apiWriteLimiter, requireRole('registrar'), async (req, res) => {
+  try {
+    if (!isNonEmptyString(req.body.registrationId)) return validationError(res, 'registrationId is required');
+    if (!isNonEmptyString(req.body.newFirstName) || !isNonEmptyString(req.body.newLastName)) return validationError(res, 'newFirstName and newLastName are required');
+    if (!isValidEmail(req.body.newEmail)) return validationError(res, 'A valid newEmail is required');
+    const payload = await gasRequest('transferRegistration', {
+      registrationId: req.body.registrationId,
+      newFirstName: req.body.newFirstName,
+      newLastName: req.body.newLastName,
+      newEmail: req.body.newEmail,
+      newPhone: req.body.newPhone || '',
+      newChurch: req.body.newChurch || '',
+      reason: req.body.reason || '',
+      refundNotes: req.body.refundNotes || '',
+      adminUser: req.session.sub,
+    });
+    if (payload.success) await refreshCache(true);
+    res.status(payload.success ? 200 : 400).json({ ...payload, sync: getSyncMeta() });
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message, sync: getSyncMeta() });
+  }
+});
+
+app.get('/api/seminars', noStore, apiReadLimiter, requireRole('registrar', 'checkin', 'payments', 'readonly'), async (_req, res) => {
+  try {
+    const payload = await gasRequest('getSeminars');
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/seminars', noStore, apiWriteLimiter, requireRole('registrar'), async (req, res) => {
+  try {
+    if (!isNonEmptyString(req.body.slot) || !isNonEmptyString(req.body.title)) return validationError(res, 'slot and title are required');
+    if (req.body.capacity !== undefined && !isFiniteNonNegative(req.body.capacity)) return validationError(res, 'capacity must be a non-negative number');
+    const payload = await gasRequest('saveSeminar', {
+      slot: req.body.slot,
+      title: req.body.title,
+      slotLabel: req.body.slotLabel || '',
+      capacity: Number(req.body.capacity || 0),
+      active: req.body.active === undefined ? true : req.body.active,
+      notes: req.body.notes || '',
+    });
+    if (payload.success) await refreshCache(true);
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/seminars/assign', noStore, apiWriteLimiter, requireRole('registrar'), async (req, res) => {
+  try {
+    const payload = await gasRequest('assignSeminars', { dryRun: !!req.body.dryRun, adminUser: req.session.sub });
+    if (payload.success && !req.body.dryRun) await refreshCache(true);
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/seminars/roster', noStore, apiReadLimiter, requireRole('registrar', 'checkin', 'readonly'), async (req, res) => {
+  try {
+    const payload = await gasRequest('getSeminarRoster', { slot: req.query.slot || '', title: req.query.title || '' });
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+// Per-church roster, grouped from the live cache (no extra GAS round-trip).
+app.get('/api/church-rosters', noStore, apiReadLimiter, requireRole('registrar', 'checkin', 'readonly'), async (_req, res) => {
+  try {
+    await ensureCacheReady();
+    const groups = new Map();
+    cache.registrations.forEach((r) => {
+      if (String(r.status || '').toLowerCase() !== 'active') return;
+      const church = (r.church && String(r.church).trim()) || 'Unspecified';
+      const id = String(r.registrationId);
+      const attendees = cache.attendeesByRegistrationId.get(id) || [];
+      const list = groups.get(church) || [];
+      list.push({
+        registrationId: r.registrationId,
+        primaryName: `${r.firstName || ''} ${r.lastName || ''}`.trim(),
+        email: r.email,
+        phone: r.phone,
+        paymentStatus: r.paymentStatus,
+        checkedIn: r.checkedIn,
+        attendees: attendees.map((a) => ({ name: `${a.first_name || ''} ${a.last_name || ''}`.trim(), mealPreference: a.meal_preference, phone: a.phone })),
+      });
+      groups.set(church, list);
+    });
+    const rosters = [...groups.keys()].sort().map((church) => ({
+      church,
+      registrationCount: groups.get(church).length,
+      attendeeCount: groups.get(church).reduce((sum, m) => sum + (m.attendees.length || 1), 0),
+      members: groups.get(church),
+    }));
+    res.json({ success: true, rosters, sync: getSyncMeta() });
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message, sync: getSyncMeta() });
+  }
+});
+
+app.post('/api/reminders/pending-charges', noStore, apiWriteLimiter, requireRole('payments', 'registrar'), async (req, res) => {
+  try {
+    const payload = await gasRequest('sendPendingChargeReminders', {
+      dryRun: !!req.body.dryRun,
+      registrationId: req.body.registrationId || '',
+      adminUser: req.session.sub,
+    });
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
 app.post('/api/check-in', noStore, apiWriteLimiter, requireRole('checkin', 'registrar'), async (req, res) => {
   try {
     if (!isNonEmptyString(req.body.registrationId)) return validationError(res, 'registrationId is required');
