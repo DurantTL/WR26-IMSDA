@@ -608,21 +608,34 @@ Important: full offline editing of registration/attendee details is not implemen
 
 ## Magic-link registration management
 
-The staff PWA is at `/app/`. The registrant self-service portal is at `/portal/` (also available as `/portal.html`; `/manage/` redirects to `/portal/`). WordPress registration confirmation and edit emails should point users to `/portal/` for magic-link management, or include generated magic links from GAS.
+**The PWA is the single registrant self-service surface.** The staff app is at
+`/app/` and the registrant portal is at `/portal/` (also `/portal.html`;
+`/manage/` redirects to `/portal/`). Set the `PORTAL_URL` Config key to your
+deployed `/portal/` address so GAS emails link there.
 
-There are two ways to use the magic-link system.
+There are three ways a registrant reaches the portal — all open the same PWA:
 
-### 1. From the IMSDA Registration PWA
+### 1. From a GAS email (automatic)
 
-Staff can select/open a registration and use the **Link** tab to send a secure edit link to the registrant email.
+Confirmation, transfer, waitlist-promotion, and payment-reminder emails embed a
+real PWA magic link (a `MagicLinks` token appended to `PORTAL_URL`). This is the
+primary path and requires only that `PORTAL_URL` is set.
 
-### 2. Optional WordPress companion plugin
+### 2. Self-service request
 
-Activate the optional companion plugin only if you want WordPress-hosted magic-link request/edit pages:
+A registrant visits `/portal/`, enters their email, and receives a privacy-safe
+management link.
 
-```text
-plugin/wr26-registration-portal.php
-```
+### 3. Staff-initiated
+
+Staff open a registration and use the **Link** tab to email a secure edit link on
+demand.
+
+### Optional WordPress companion plugin (legacy)
+
+`plugin/wr26-registration-portal.php` provides WordPress-hosted magic-link pages.
+It is **legacy** — for new deployments, standardize on the PWA portal above and
+keep the WordPress plugin doing registration *intake* only. If you do run it:
 
 Shortcodes:
 

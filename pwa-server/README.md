@@ -296,6 +296,18 @@ capacity + ranked-preference assignment, and pay-later reminders. The
 the check-in screen shows the balance due plus the Square card total
 (base + 2.9% + $0.30). Writes require `registrar` (or `payments` for refunds).
 
+### Staff management (admin only)
+
+```text
+GET  /api/staff
+POST /api/staff               (add/update; password bcrypt-hashed here)
+POST /api/staff/deactivate
+```
+
+Powers the admin-only **Staff** tab. Accounts come from `WR26_AUTH_USERS`
+(bootstrap admins, read-only in the UI) plus the GAS `Staff` sheet. New
+passwords are bcrypt-hashed by this server before being sent to GAS.
+
 ### Magic-link helper routes
 
 ```text
@@ -308,9 +320,22 @@ POST /api/magic-link/save
 
 ## Magic-link registration management
 
-The staff PWA is at `/app/`. The registrant self-service portal is at `/portal/` (also available as `/portal.html`; `/manage/` redirects to `/portal/`). WordPress registration confirmation and edit emails should point users to `/portal/` for magic-link management, or include generated magic links from GAS.
+**The PWA is the single registrant self-service surface.** The staff PWA is at
+`/app/`; the registrant portal is at `/portal/` (also `/portal.html`; `/manage/`
+redirects to `/portal/`).
 
-Staff can select/open a registration and use the **Link** tab to send a secure edit link to the registrant email. Registrants can also request their own privacy-safe management link from `/portal/`.
+Registrants reach the portal two ways, both fully supported:
+
+1. **From a GAS email** — confirmation, transfer, waitlist-promotion, and
+   payment-reminder emails embed a real PWA magic link (a `MagicLinks` token
+   appended to `PORTAL_URL`). Set the `PORTAL_URL` Config key to your deployed
+   `/portal/` address so these links work.
+2. **Self-service** — at `/portal/` a registrant enters their email and receives
+   a privacy-safe management link.
+
+Staff can also open a registration and use the **Link** tab to send a secure
+edit link on demand. The optional WordPress companion portal is legacy; for new
+deployments use the PWA portal as the only registrant-edit surface.
 
 ---
 
@@ -326,9 +351,12 @@ Staff can select/open a registration and use the **Link** tab to send a secure e
 - Attendee editor, up to 5 attendees
 - Seminar preference editor for all 4 sessions
 - QR scanner tab
-- Record payment panel
-- Check-in button
+- Record payment panel + refund panel
+- Transfer / swap registration panel (keeps the original + linkage)
+- Check-in button with balance due + Square card total
 - Magic-link sender
+- Tools tab: printable church rosters, seminar capacity + assignment, reminders
+- Staff tab (admin only): add/update/disable staff logins
 - Offline queue bar
 - Manual cache refresh
 - Recent activity log

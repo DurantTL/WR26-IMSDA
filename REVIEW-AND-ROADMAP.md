@@ -116,8 +116,10 @@ Still intentionally deferred (low value for this event):
 ## 5. Go-live checklist (next week)
 
 **Google Sheet / GAS**
-- [ ] Push all `gas/*.gs`; run `wr26EnsureSheetSetup()` then `wr26SetupCheck()` (creates/checks the new **AuditLog** tab and `MAGIC_LINK_*` Config rows).
+- [ ] Push all `gas/*.gs`; run `wr26EnsureSheetSetup()` then `wr26SetupCheck()` (creates/checks the **AuditLog**, **Refunds**, **Seminars**, and **Staff** tabs and Config rows).
 - [ ] Confirm Config: `SECRET`, prices, `*_END_DATE`, `CAPACITY`, `CHECKIN_PIN`/`CHECKIN_TOKEN`, `NOTIFICATION_EMAIL`.
+- [ ] Set **`PORTAL_URL`** to the deployed PWA portal (e.g. `https://registration.imsda.org/portal/`) so GAS emails embed working magic links; optionally set `PORTAL_LINK_TTL_DAYS`.
+- [ ] Populate the **Seminars** tab with the 8 breakout titles + capacities (or via the staff Tools tab).
 - [ ] Deploy the Web App (Execute as Me; Anyone, even anonymous) and copy the URL.
 
 **WordPress (Option A)**
@@ -126,11 +128,13 @@ Still intentionally deferred (low value for this event):
 - [ ] Submit a Pay-Later test and a Square test; confirm `Registrations`/`Attendees`/`SeminarPreferences` rows and that Final Amount/Payment Status reflect the GAS recompute.
 
 **PWA server**
-- [ ] Set env incl. `NODE_ENV=production`, a strong `SESSION_SECRET`, `WR26_GAS_URL`/`WR26_GAS_SECRET`, `WR26_AUTH_USERS` (bcrypt), and `TRUST_PROXY` for your proxy.
+- [ ] Set env incl. `NODE_ENV=production`, a strong `SESSION_SECRET`, `WR26_GAS_URL`/`WR26_GAS_SECRET`, `WR26_AUTH_USERS` (bcrypt bootstrap admin), and `TRUST_PROXY` for your proxy.
 - [ ] Serve over HTTPS (scanner requires it); sign in, verify cache, a payment, a check-in, QR scan, and offline queue + sync.
+- [ ] As an admin, open the **Staff** tab and add at least one non-bootstrap staff login; confirm it persists (it lives in the `Staff` sheet) and can sign in.
+- [ ] Confirm a confirmation email's portal link opens `/portal/` and loads the registration (verifies `PORTAL_URL` + magic-link minting).
 
 **Final**
-- [ ] Spot-check the `AuditLog` tab populates after a test admin edit/payment/check-in.
+- [ ] Spot-check the `AuditLog` tab populates after a test admin edit/payment/check-in/refund/transfer/staff change.
 - [ ] Confirm `node tools/validate-wr26-form-json.js form/wr26-registration-fluentforms.smart-payments.json` passes.
 
 ---
