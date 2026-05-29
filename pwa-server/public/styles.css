@@ -19,3 +19,26 @@
 .success-card{border-color:#bddfc9;}
 .bundle-preview{max-height:360px;overflow:auto;white-space:pre-wrap;background:#102033;color:#eef7ff;border-radius:12px;padding:12px;font-size:.82rem;line-height:1.45;}
 @media(max-width:540px){.portal-topbar .header-actions{width:100%;justify-content:flex-start}.portal-alert{margin:10px 12px 0}.portal-attendee-heading{align-items:flex-start;}.portal-remove-attendee{padding:6px 9px;font-size:.82rem;}}
+
+/* Refund / transfer / tools (staff app additions) */
+.panel-divider{height:1px;background:var(--border);margin:18px 0 14px;}
+.balance-box{background:var(--warn-light);color:#744210;border:1px solid #e6c48a;border-radius:12px;padding:12px;margin-bottom:12px;font-weight:700;line-height:1.5;}
+.balance-box.paid{background:var(--success-light);color:#276749;border-color:#bddfc9;}
+.balance-box .balance-amount{font-size:1.3rem;display:block;}
+.balance-box .balance-sub{font-weight:600;font-size:.85rem;display:block;margin-top:4px;}
+.tools-output{margin:10px 0;font-size:.9rem;}
+.tools-output:empty{display:none;}
+.roster-church{background:var(--panel-soft);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;}
+.roster-church h3{margin:0 0 8px;font-size:1.02rem;}
+.roster-church ul{margin:6px 0 0;padding-left:18px;line-height:1.5;color:var(--text);}
+.roster-church .roster-sub{color:var(--muted);font-size:.85rem;}
+.seminar-row{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:.9rem;}
+.seminar-row .seminar-fill{color:var(--muted);white-space:nowrap;}
+.seminar-row.full .seminar-fill{color:var(--danger);font-weight:800;}
+.detail-actions .btn-row{display:flex;gap:10px;flex-wrap:wrap;}
+.detail-actions .btn-row .btn{flex:1;min-width:130px;}
+@media print{
+  .topbar,.search-section,.stats-grid,.activity-log,.queue-bar,#reader,.detail-actions,#offline-queue-bar{display:none !important;}
+  body{padding:0;background:#fff;}
+  .card{box-shadow:none;border:none;}
+}

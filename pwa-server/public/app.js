@@ -171,14 +171,18 @@ function switchTab(tab) {
   const panel = $(`tab-${tab}`);
   if (panel) panel.classList.add('active');
 
-  setVisible('results', tab !== 'detail' && tab !== 'payments' && tab !== 'checkin' && tab !== 'magic' && tab !== 'scan');
+  const detailTabs = ['detail', 'payments', 'checkin', 'magic', 'transfer'];
+  setVisible('results', !detailTabs.includes(tab) && tab !== 'scan' && tab !== 'tools');
   setVisible('detail-wrap', tab === 'detail' && !!selectedRegistration);
   setVisible('payment-panel', tab === 'payments');
   setVisible('checkin-panel', tab === 'checkin');
   setVisible('magic-panel', tab === 'magic');
+  setVisible('transfer-panel', tab === 'transfer');
+  setVisible('tools-panel', tab === 'tools');
+  if (tab === 'checkin' && selectedBundle) renderCheckinBalance(selectedBundle);
   if (tab !== 'scan') stopScanner().catch(() => {});
 
-  if ((tab === 'detail' || tab === 'payments' || tab === 'checkin' || tab === 'magic') && !selectedRegistration) showToast('Select a registration first.');
+  if (detailTabs.includes(tab) && !selectedRegistration) showToast('Select a registration first.');
 }
 
 function paymentClass(status) {
@@ -232,11 +236,46 @@ async function openScannedRegistration(scanValue) {
   switchTab('detail');
 }
 
+// Square card processing fee (matches GAS calculateSquareFee defaults: 2.9% + $0.30).
+// Used only to *display* the card total at check-in so staff can collect via the
+// Square app; the authoritative charge is still recorded server-side.
+const SQUARE_FEE_PERCENT = 2.9;
+const SQUARE_FEE_FIXED = 0.30;
+
+function balanceFor(reg) {
+  const billed = Number(reg.finalAmount || 0);
+  const collected = Number(reg.amountPaid != null && reg.amountPaid !== '' ? reg.amountPaid : 0);
+  return Math.round((billed - collected) * 100) / 100;
+}
+
+function squareTotal(amount) {
+  if (!(amount > 0)) return 0;
+  return Math.round((amount + amount * (SQUARE_FEE_PERCENT / 100) + SQUARE_FEE_FIXED) * 100) / 100;
+}
+
+function renderCheckinBalance(reg) {
+  const box = $('checkin-balance');
+  if (!box) return;
+  const status = String(reg.paymentStatus || '').toLowerCase();
+  const balance = balanceFor(reg);
+  if (status === 'paid' || status === 'paid_onsite' || balance <= 0) {
+    box.className = 'balance-box paid';
+    box.innerHTML = `<span class="balance-amount">Paid in full</span><span class="balance-sub">${escapeHtml(reg.paymentStatus || '')}</span>`;
+  } else {
+    box.className = 'balance-box';
+    box.innerHTML = `<span class="balance-amount">Balance due: $${escapeHtml(balance.toFixed(2))}</span><span class="balance-sub">If paying by card in the Square app, charge $${escapeHtml(squareTotal(balance).toFixed(2))} (incl. ${SQUARE_FEE_PERCENT}% + $${SQUARE_FEE_FIXED.toFixed(2)} fee). Status: ${escapeHtml(reg.paymentStatus || 'unknown')}</span>`;
+  }
+  box.hidden = false;
+}
+
 function fillActionTargets(reg) {
   $('payment-target').textContent = `${reg.firstName} ${reg.lastName} • ${reg.registrationId}`;
-  $('pay-amount').value = reg.finalAmount || '';
+  $('pay-amount').value = balanceFor(reg) > 0 ? balanceFor(reg) : (reg.finalAmount || '');
   $('checkin-target').textContent = `${reg.firstName} ${reg.lastName} • ${reg.registrationId}`;
   $('magic-email').value = reg.email || '';
+  renderCheckinBalance(reg);
+  const transferTarget = $('transfer-target');
+  if (transferTarget) transferTarget.textContent = `${reg.firstName} ${reg.lastName} • ${reg.registrationId}`;
 }
 
 async function toggleScanner() {
@@ -320,7 +359,8 @@ function renderDetail(reg) {
       ${field('firstName', 'First Name', reg.firstName)}${field('lastName', 'Last Name', reg.lastName)}${field('phone', 'Phone', reg.phone)}${field('church', 'Church', reg.church)}${field('arrivalDate', 'Arrival Date', reg.arrivalDate)}${field('departureDate', 'Departure Date', reg.departureDate)}${field('emergencyContactName', 'Emergency Contact Name', reg.emergencyContactName)}${field('emergencyContactPhone', 'Emergency Contact Phone', reg.emergencyContactPhone)}${field('dietaryNeeds', 'Dietary Needs', reg.dietaryNeeds, 'textarea')}${field('specialNeeds', 'Special Needs', reg.specialNeeds, 'textarea')}
     </div>
     <div class="guest-list-section"><div class="guest-list-header"><strong>Attendees</strong><button id="add-attendee" class="btn btn-sm btn-white">Add</button></div><div id="attendee-list">${(reg.attendees || []).map(attendeeEditor).join('')}</div></div>
-    <div class="detail-actions"><button id="save-detail" class="btn btn-primary full-width">Save Registration</button></div>`;
+    <div class="detail-actions"><button id="save-detail" class="btn btn-primary full-width">Save Registration</button>
+      <div class="btn-row"><button id="goto-transfer" class="btn btn-white">Transfer / Swap</button><button id="goto-refund" class="btn btn-white">Refund</button></div></div>`;
 }
 
 function collectDetail() {
@@ -393,6 +433,104 @@ async function sendMagicLink() {
   logActivity(`Magic link requested for ${email}`);
 }
 
+async function saveRefund() {
+  if (!selectedRegistration) return showToast('Select a registration first.');
+  const amount = Number($('refund-amount').value);
+  if (!(amount > 0)) return showToast('Enter a refund amount.');
+  await api('/api/refund', { method: 'POST', body: { registrationId: selectedRegistration, amount, method: $('refund-method').value, reason: $('refund-reason').value, refundNotes: $('refund-notes').value } });
+  $('refund-amount').value = ''; $('refund-reason').value = ''; $('refund-notes').value = '';
+  showToast('Refund recorded.');
+  logActivity(`Refund $${amount} for ${selectedRegistration}`);
+  await selectRegistration(selectedRegistration);
+}
+
+async function saveTransfer() {
+  if (!selectedRegistration) return showToast('Select a registration first.');
+  const body = {
+    registrationId: selectedRegistration,
+    newFirstName: $('transfer-first').value.trim(),
+    newLastName: $('transfer-last').value.trim(),
+    newEmail: $('transfer-email').value.trim(),
+    newPhone: $('transfer-phone').value.trim(),
+    newChurch: $('transfer-church').value.trim(),
+    reason: $('transfer-reason').value.trim(),
+    refundNotes: $('transfer-refund-notes').value.trim(),
+  };
+  if (!body.newFirstName || !body.newLastName || !body.newEmail) return showToast('New first name, last name, and email are required.');
+  const payload = await api('/api/transfer', { method: 'POST', body });
+  $('transfer-status').textContent = `Transferred. New registration: ${payload.newRegId || ''}`;
+  ['transfer-first', 'transfer-last', 'transfer-email', 'transfer-phone', 'transfer-church', 'transfer-reason', 'transfer-refund-notes'].forEach((id) => { $(id).value = ''; });
+  showToast('Registration transferred.');
+  logActivity(`Transferred ${selectedRegistration} → ${payload.newRegId || 'new'}`);
+  if (payload.newRegId) await selectRegistration(payload.newRegId);
+}
+
+const SEMINAR_SLOT_LABELS = {
+  session_1: 'Friday 4:00–5:00 PM',
+  session_2: 'Saturday 2:00–3:15 PM',
+  session_3: 'Saturday 3:30–4:45 PM',
+  session_4: 'Sunday 8:15–9:15 AM',
+};
+
+async function loadRosters() {
+  const payload = await api('/api/church-rosters');
+  const rosters = payload.rosters || [];
+  if (!rosters.length) { $('rosters-output').innerHTML = '<div class="info-msg">No active registrations.</div>'; return; }
+  $('rosters-output').innerHTML = rosters.map((r) => `
+    <div class="roster-church">
+      <h3>${escapeHtml(r.church)} <span class="roster-sub">— ${escapeHtml(r.registrationCount)} reg / ${escapeHtml(r.attendeeCount)} attendees</span></h3>
+      <ul>${r.members.map((m) => `<li>${escapeHtml(m.primaryName)} <span class="roster-sub">${escapeHtml(m.email || '')}${m.phone ? ' • ' + escapeHtml(m.phone) : ''} • ${escapeHtml(m.paymentStatus || '')}</span>${m.attendees && m.attendees.length ? '<ul>' + m.attendees.map((a) => `<li>${escapeHtml(a.name)}${a.mealPreference ? ' <span class="roster-sub">(' + escapeHtml(a.mealPreference) + ')</span>' : ''}</li>`).join('') + '</ul>' : ''}</li>`).join('')}</ul>
+    </div>`).join('');
+}
+
+function populateSeminarSlots() {
+  const select = $('seminar-slot');
+  if (!select || select.options.length) return;
+  select.innerHTML = Object.entries(SEMINAR_SLOT_LABELS).map(([slot, label]) => `<option value="${slot}">${escapeHtml(label)}</option>`).join('');
+}
+
+async function loadSeminars() {
+  populateSeminarSlots();
+  const payload = await api('/api/seminars');
+  const seminars = payload.seminars || [];
+  if (!seminars.length) { $('seminars-output').innerHTML = '<div class="info-msg">No breakouts defined yet. Add them below.</div>'; return; }
+  const bySlot = {};
+  seminars.forEach((s) => { (bySlot[s.slot] = bySlot[s.slot] || []).push(s); });
+  $('seminars-output').innerHTML = Object.keys(SEMINAR_SLOT_LABELS).filter((slot) => bySlot[slot]).map((slot) => `
+    <div class="roster-church"><h3>${escapeHtml(SEMINAR_SLOT_LABELS[slot])}</h3>
+    ${bySlot[slot].map((s) => { const cap = Number(s.capacity || 0); const full = cap > 0 && Number(s.assignedCount || 0) >= cap; return `<div class="seminar-row ${full ? 'full' : ''}"><span>${escapeHtml(s.title)}${s.active ? '' : ' (inactive)'}</span><span class="seminar-fill">${escapeHtml(s.assignedCount || 0)}${cap > 0 ? ' / ' + escapeHtml(cap) : ' / ∞'}</span></div>`; }).join('')}
+    </div>`).join('');
+}
+
+async function saveSeminar() {
+  const slot = $('seminar-slot').value;
+  const title = $('seminar-title').value.trim();
+  if (!title) return showToast('Enter a breakout title.');
+  await api('/api/seminars', { method: 'POST', body: { slot, title, capacity: Number($('seminar-capacity').value || 0) } });
+  $('seminar-title').value = '';
+  showToast('Breakout saved.');
+  await loadSeminars();
+}
+
+async function runAssignment(dryRun) {
+  const payload = await api('/api/seminars/assign', { method: 'POST', body: { dryRun } });
+  const summary = (payload.summary || []).slice().sort((a, b) => (a.slot + a.title).localeCompare(b.slot + b.title));
+  $('assign-output').innerHTML = `<div class="info-msg">${dryRun ? 'Preview' : 'Assigned'}: ${escapeHtml(payload.assignmentCount || 0)} attendee-slot placements.</div>` +
+    (summary.length ? `<div class="roster-church">${summary.map((s) => { const full = s.capacity > 0 && s.assigned >= s.capacity; return `<div class="seminar-row ${full ? 'full' : ''}"><span>${escapeHtml(SEMINAR_SLOT_LABELS[s.slot] || s.slot)}: ${escapeHtml(s.title)}</span><span class="seminar-fill">${escapeHtml(s.assigned)}${s.capacity > 0 ? ' / ' + escapeHtml(s.capacity) : ''}</span></div>`; }).join('')}</div>` : '');
+  if (!dryRun) { showToast('Seminar assignment complete.'); logActivity('Ran seminar assignment'); await loadSeminars(); }
+}
+
+async function runReminders(dryRun) {
+  const payload = await api('/api/reminders/pending-charges', { method: 'POST', body: { dryRun } });
+  if (dryRun) {
+    $('reminders-output').innerHTML = `<div class="info-msg">${escapeHtml(payload.owing || 0)} registration(s) still owe a balance${payload.skipped ? `; ${escapeHtml(payload.skipped)} have no valid email` : ''}.</div>`;
+  } else {
+    $('reminders-output').innerHTML = `<div class="info-msg">Sent ${escapeHtml(payload.sent || 0)} reminder(s). Skipped ${escapeHtml(payload.skipped || 0)}, failed ${escapeHtml(payload.failed || 0)}.</div>`;
+    showToast(`Sent ${payload.sent || 0} reminder(s).`);
+    logActivity(`Sent ${payload.sent || 0} payment reminder(s)`);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('online', updateOnlineStatus);
   window.addEventListener('offline', updateOnlineStatus);
@@ -408,6 +546,8 @@ document.addEventListener('DOMContentLoaded', () => {
   $('results').addEventListener('click', (event) => { const card = event.target.closest('.result-card'); if (card) selectRegistration(card.dataset.id).catch((error) => showToast(error.message)); });
   $('detail').addEventListener('click', (event) => {
     if (event.target.id === 'save-detail') saveDetail().catch((error) => showToast(error.message));
+    if (event.target.id === 'goto-transfer') switchTab('transfer');
+    if (event.target.id === 'goto-refund') switchTab('payments');
     if (event.target.id === 'add-attendee') {
       const count = document.querySelectorAll('#detail .attendee-card').length;
       if (count >= 5) return showToast('Maximum 5 attendees.');
@@ -415,7 +555,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   $('save-payment').addEventListener('click', () => savePayment().catch((error) => showToast(error.message)));
+  $('save-refund').addEventListener('click', () => saveRefund().catch((error) => showToast(error.message)));
+  $('save-transfer').addEventListener('click', () => saveTransfer().catch((error) => showToast(error.message)));
   $('checkin-btn').addEventListener('click', () => checkInSelected().catch((error) => showToast(error.message)));
   $('send-magic').addEventListener('click', () => sendMagicLink().catch((error) => { $('magic-status').textContent = error.message; }));
+  $('load-rosters').addEventListener('click', () => loadRosters().catch((error) => showToast(error.message)));
+  $('print-rosters').addEventListener('click', () => window.print());
+  $('load-seminars').addEventListener('click', () => loadSeminars().catch((error) => showToast(error.message)));
+  $('save-seminar').addEventListener('click', () => saveSeminar().catch((error) => showToast(error.message)));
+  $('preview-assign').addEventListener('click', () => runAssignment(true).catch((error) => showToast(error.message)));
+  $('run-assign').addEventListener('click', () => runAssignment(false).catch((error) => showToast(error.message)));
+  $('preview-reminders').addEventListener('click', () => runReminders(true).catch((error) => showToast(error.message)));
+  $('send-reminders').addEventListener('click', () => runReminders(false).catch((error) => showToast(error.message)));
+  populateSeminarSlots();
   restoreSession();
 });

@@ -53,6 +53,7 @@
         <button data-tab="payments" class="tab-btn">Payment</button>
         <button data-tab="checkin" class="tab-btn">Check-In</button>
         <button data-tab="magic" class="tab-btn">Link</button>
+        <button data-tab="tools" class="tab-btn">Tools</button>
       </div>
 
       <section id="tab-registrations" class="tab active">
@@ -81,6 +82,7 @@
       <section id="tab-payments" class="tab"><p class="tab-note">Open a registration first, then record cash, check, Square, or other payments below.</p></section>
       <section id="tab-checkin" class="tab"><p class="tab-note">Open a registration first, then check in the selected registration below.</p></section>
       <section id="tab-magic" class="tab"><p class="tab-note">Send a secure edit link to the registrant email.</p></section>
+      <section id="tab-tools" class="tab"><p class="tab-note">Church rosters, seminar capacity &amp; assignment, and payment reminders.</p></section>
     </section>
 
     <div id="reader" style="display:none;"></div>
@@ -102,12 +104,73 @@
           <label>Notes<input id="pay-notes"></label>
         </div>
         <button id="save-payment" class="btn btn-primary full-width">Save Payment</button>
+
+        <div class="panel-divider"></div>
+        <h2>Record Refund</h2>
+        <p class="meta">Use when someone cancels or gives up a spot. Sets the registration to refunded / partial refund.</p>
+        <div class="form-grid compact-form">
+          <label>Method<select id="refund-method"><option value="cash">Cash</option><option value="check">Check</option><option value="square">Square</option><option value="other">Other</option></select></label>
+          <label>Amount<input id="refund-amount" type="number" step="0.01"></label>
+          <label>Reason<input id="refund-reason"></label>
+          <label>Notes<input id="refund-notes"></label>
+        </div>
+        <button id="save-refund" class="btn btn-white full-width">Record Refund</button>
       </div>
 
       <div id="checkin-panel" class="card" hidden>
         <h2>Check In</h2>
         <p id="checkin-target" class="meta">Select a registration first.</p>
+        <div id="checkin-balance" class="balance-box" hidden></div>
         <button id="checkin-btn" class="btn btn-primary full-width">✅ Check In Selected Registration</button>
+      </div>
+
+      <div id="transfer-panel" class="card" hidden>
+        <h2>Transfer / Swap Registration</h2>
+        <p id="transfer-target" class="meta">Select a registration first.</p>
+        <p class="meta">The original registration is kept and marked transferred; a new registration is created for the person taking their place, linked back to the original.</p>
+        <div class="form-grid compact-form">
+          <label>New First Name<input id="transfer-first"></label>
+          <label>New Last Name<input id="transfer-last"></label>
+          <label>New Email<input id="transfer-email" type="email"></label>
+          <label>New Phone<input id="transfer-phone" type="tel"></label>
+          <label>New Church<input id="transfer-church"></label>
+          <label>Reason<input id="transfer-reason"></label>
+          <label>Refund Notes<input id="transfer-refund-notes"></label>
+        </div>
+        <button id="save-transfer" class="btn btn-primary full-width">Transfer Registration</button>
+        <p id="transfer-status" class="meta"></p>
+      </div>
+
+      <div id="tools-panel" class="card" hidden>
+        <h2>Church Rosters</h2>
+        <div class="action-row"><button id="load-rosters" class="btn btn-white full-width">Load Church Rosters</button><button id="print-rosters" class="btn btn-white">Print</button></div>
+        <div id="rosters-output" class="tools-output"></div>
+
+        <div class="panel-divider"></div>
+        <h2>Seminars</h2>
+        <p class="meta">8 breakouts across 4 time slots. Set a capacity per breakout (0 = unlimited), then assign attendees from their ranked preferences.</p>
+        <div class="action-row"><button id="load-seminars" class="btn btn-white full-width">Load Seminars</button></div>
+        <div id="seminars-output" class="tools-output"></div>
+        <div class="form-grid compact-form">
+          <label>Slot<select id="seminar-slot"></select></label>
+          <label>Breakout Title<input id="seminar-title"></label>
+          <label>Capacity (0 = unlimited)<input id="seminar-capacity" type="number" min="0" step="1" value="0"></label>
+        </div>
+        <button id="save-seminar" class="btn btn-white full-width">Save Breakout</button>
+        <div class="action-row">
+          <button id="preview-assign" class="btn btn-white full-width">Preview Assignment</button>
+          <button id="run-assign" class="btn btn-primary full-width">Run Assignment</button>
+        </div>
+        <div id="assign-output" class="tools-output"></div>
+
+        <div class="panel-divider"></div>
+        <h2>Payment Reminders</h2>
+        <p class="meta">Email pay-later registrants who still owe a balance.</p>
+        <div class="action-row">
+          <button id="preview-reminders" class="btn btn-white full-width">Preview Who Owes</button>
+          <button id="send-reminders" class="btn btn-primary full-width">Send Reminders</button>
+        </div>
+        <div id="reminders-output" class="tools-output"></div>
       </div>
 
       <div id="magic-panel" class="card" hidden>
