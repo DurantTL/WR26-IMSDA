@@ -11,14 +11,16 @@
     ['emergencyContactPhone', 'Emergency Contact Phone', 'tel'],
     ['specialNeeds', 'Special Needs', 'textarea'],
   ];
+  // 'select' fields pull their options from the shared WR26_OPTIONS module so the
+  // portal matches the Fluent Form dropdowns.
   const ATTENDEE_FIELDS = [
     ['first_name', 'First Name', 'text'],
     ['last_name', 'Last Name', 'text'],
     ['phone', 'Phone', 'tel'],
-    ['attendee_type', 'Attendee Type', 'text'],
-    ['meal_preference', 'Meal Preference', 'text'],
+    ['attendee_type', 'Attendee Type', 'select', 'ATTENDEE_TYPE_OPTIONS'],
+    ['meal_preference', 'Meal Preference', 'select', 'MEAL_OPTIONS'],
     ['dietary_needs', 'Dietary Needs', 'textarea'],
-    ['childcare_needed', 'Childcare Needed', 'text'],
+    ['childcare_needed', 'Childcare Needed', 'select', 'CHILDCARE_OPTIONS'],
   ];
 
   const state = {
@@ -84,10 +86,22 @@
     const removeButton = state.attendees.length > 1
       ? `<button class="btn btn-sm btn-white portal-remove-attendee" type="button" data-remove-attendee="${index}">Remove</button>`
       : '';
-    const fields = ATTENDEE_FIELDS.map(([name, label, type]) => {
+    const O = window.WR26_OPTIONS;
+    const fields = ATTENDEE_FIELDS.map(([name, label, type, optionKey]) => {
       const value = attendee[name] || '';
       if (type === 'textarea') return `<label>${escapeHtml(label)}<textarea data-attendee-field="${escapeHtml(name)}" rows="2">${escapeHtml(value)}</textarea></label>`;
+      if (type === 'select') return `<label>${escapeHtml(label)}${O.selectHtml(`data-attendee-field="${escapeHtml(name)}"`, value, O[optionKey])}</label>`;
       return `<label>${escapeHtml(label)}<input data-attendee-field="${escapeHtml(name)}" type="${escapeHtml(type)}" value="${escapeHtml(value)}"></label>`;
+    }).join('');
+    const prefs = attendee.seminar_preferences || attendee.seminarPreferences || {};
+    const seminarFields = O.SEMINAR_SLOTS.map((slotDef) => {
+      const out = [];
+      for (let r = 1; r <= slotDef.ranks; r += 1) {
+        const label = slotDef.ranks > 1 ? `${slotDef.label} — Pref ${r}` : slotDef.label;
+        const current = (prefs[slotDef.slot] && prefs[slotDef.slot][`pref_${r}`]) || '';
+        out.push(`<label>${escapeHtml(label)}${O.selectHtml(`data-attendee-pref="${slotDef.slot}.pref_${r}"`, current, O.seminarOptions(slotDef.slot), '- None -')}</label>`);
+      }
+      return out.join('');
     }).join('');
     return `<div class="attendee-card portal-attendee-card" data-attendee-index="${index}">
       <div class="portal-attendee-heading">
@@ -96,6 +110,8 @@
       </div>
       <input type="hidden" data-attendee-field="attendee_id" value="${escapeHtml(attendee.attendee_id || attendee.attendeeId || '')}">
       <div class="form-grid compact-form">${fields}</div>
+      <h4>Seminar Preferences</h4>
+      <div class="form-grid compact-form">${seminarFields}</div>
     </div>`;
   }
 
@@ -131,6 +147,28 @@
     list.innerHTML = `<ul class="portal-seminar-list">${prefs.map((pref) => `<li>${escapeHtml(formatSeminarPreference(pref))}</li>`).join('')}</ul>`;
   }
 
+  function renderPaymentNotice(registration = {}) {
+    const box = $('portal-balance');
+    if (!box) return;
+    const status = String(registration.paymentStatus || '').toLowerCase();
+    const billed = Number(registration.finalAmount || 0);
+    const collected = Number(registration.amountPaid != null && registration.amountPaid !== '' ? registration.amountPaid : 0);
+    const balance = Math.round((billed - collected) * 100) / 100;
+    if (status === 'paid' || status === 'paid_onsite' || (billed > 0 && balance <= 0)) {
+      box.className = 'balance-box paid';
+      box.innerHTML = '<span class="balance-amount">Paid in full</span><span class="balance-sub">Thank you! No balance is due.</span>';
+      box.hidden = false;
+      return;
+    }
+    if (balance > 0) {
+      box.className = 'balance-box';
+      box.innerHTML = `<span class="balance-amount">Balance due: $${escapeHtml(balance.toFixed(2))}</span><span class="balance-sub">Pay online or mail a check payable to IMSDA. Your confirmation email contains your payment link.</span>`;
+      box.hidden = false;
+      return;
+    }
+    box.hidden = true;
+  }
+
   function renderBundle(bundle) {
     const registration = bundle.registration || {};
     const attendees = Array.isArray(bundle.attendees) ? bundle.attendees : [];
@@ -139,9 +177,12 @@
     $('registration-heading').textContent = `${registration.firstName || ''} ${registration.lastName || ''}`.trim() || 'Manage Registration';
     $('registration-meta').textContent = [registration.registrationId, registration.email].filter(Boolean).join(' • ');
     $('registration-status').textContent = registration.paymentStatus || registration.status || 'Open';
+    renderPaymentNotice(registration);
     renderRegistrationFields(registration);
     renderAttendees();
-    renderSeminarSummary(bundle);
+    // Seminar prefs are now editable inline per attendee; hide the old read-only summary.
+    const summary = $('seminar-summary');
+    if (summary) summary.hidden = true;
     showStatus('', 'info');
     showOnly('edit-panel');
   }
@@ -153,10 +194,17 @@
       const previous = state.attendees[index] || {};
       const attendee = {
         attendee_id: previous.attendee_id || previous.attendeeId || '',
-        seminar_preferences: previous.seminar_preferences || previous.seminarPreferences || {},
+        seminar_preferences: {},
       };
       card.querySelectorAll('[data-attendee-field]').forEach((field) => {
         attendee[field.dataset.attendeeField] = field.value;
+      });
+      // Capture seminar preference dropdowns into the nested structure GAS expects.
+      card.querySelectorAll('[data-attendee-pref]').forEach((field) => {
+        const [slot, key] = field.dataset.attendeePref.split('.');
+        if (!field.value) return;
+        attendee.seminar_preferences[slot] = attendee.seminar_preferences[slot] || {};
+        attendee.seminar_preferences[slot][key] = field.value;
       });
       next.push(attendee);
     });
@@ -207,6 +255,8 @@
     showOnly('loading-panel');
     showStatus('', 'info');
     try {
+      // Load live seminar titles so dropdowns match what's assignable (non-fatal).
+      await window.WR26_OPTIONS.loadSeminars('/api/seminars/public').catch(() => {});
       const bundle = await api('/api/magic-link/registration', { token: state.token });
       // Remove the token from the URL so it isn't cached in browser history or exposed to referrers.
       if (window.history && window.history.replaceState) {

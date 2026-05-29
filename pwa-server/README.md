@@ -273,9 +273,65 @@ GET  /api/scan/:value
 
 ```text
 POST /api/payment
+POST /api/refund
+POST /api/transfer
 POST /api/check-in
 POST /api/offline-actions
 ```
+
+### Seminars, rosters & reminders
+
+```text
+GET  /api/seminars
+POST /api/seminars                  (upsert a breakout: slot, title, capacity)
+POST /api/seminars/assign           ({dryRun} for a preview)
+GET  /api/seminars/roster?slot=&title=
+GET  /api/church-rosters            (grouped from the live cache; printable)
+POST /api/reminders/pending-charges ({dryRun} previews who owes)
+```
+
+The staff app's **Tools** tab uses these for printable church rosters, seminar
+capacity + ranked-preference assignment, and pay-later reminders. The
+**Transfer/Swap** and **Refund** panels use `/api/transfer` and `/api/refund`;
+the check-in screen shows the balance due plus the Square card total
+(base + 2.9% + $0.30). Writes require `registrar` (or `payments` for refunds).
+
+### Workers (non-paying)
+
+```text
+POST /api/worker/register     (public, rate-limited; self-serve worker page)
+POST /api/worker/add          (staff; registrar role)
+GET  /worker/                 (public worker registration page)
+GET  /api/seminars/public     (public; active seminar titles for dropdowns)
+```
+
+Workers register for free into the same sheets as paid attendees (so they show
+in rosters / meal counts / seminar assignment) at `finalAmount` 0 / status
+`worker_no_charge`. The public `/worker/` page replaces the external Google Form,
+and staff can copy a shareable worker link from the Tools tab.
+
+### Form dropdowns (match the Fluent Form)
+
+`public/wr26-options.js` is a shared module that renders `<select>` dropdowns for
+meal preference, attendee type, childcare, and seminar preferences across the
+**staff attendee editor**, the **registrant portal**, the **worker page**, and
+**Add Worker** — using the same values as the Fluent Form. Seminar dropdowns are
+populated from the live `Seminars` sheet (via `/api/seminars/public`) so the
+choices always equal what's assignable, falling back to built-in option values
+until the sheet is populated. Editing preserves any unknown/legacy stored value
+so a dropdown never silently drops existing data.
+
+### Staff management (admin only)
+
+```text
+GET  /api/staff
+POST /api/staff               (add/update; password bcrypt-hashed here)
+POST /api/staff/deactivate
+```
+
+Powers the admin-only **Staff** tab. Accounts come from `WR26_AUTH_USERS`
+(bootstrap admins, read-only in the UI) plus the GAS `Staff` sheet. New
+passwords are bcrypt-hashed by this server before being sent to GAS.
 
 ### Magic-link helper routes
 
@@ -289,9 +345,22 @@ POST /api/magic-link/save
 
 ## Magic-link registration management
 
-The staff PWA is at `/app/`. The registrant self-service portal is at `/portal/` (also available as `/portal.html`; `/manage/` redirects to `/portal/`). WordPress registration confirmation and edit emails should point users to `/portal/` for magic-link management, or include generated magic links from GAS.
+**The PWA is the single registrant self-service surface.** The staff PWA is at
+`/app/`; the registrant portal is at `/portal/` (also `/portal.html`; `/manage/`
+redirects to `/portal/`).
 
-Staff can select/open a registration and use the **Link** tab to send a secure edit link to the registrant email. Registrants can also request their own privacy-safe management link from `/portal/`.
+Registrants reach the portal two ways, both fully supported:
+
+1. **From a GAS email** — confirmation, transfer, waitlist-promotion, and
+   payment-reminder emails embed a real PWA magic link (a `MagicLinks` token
+   appended to `PORTAL_URL`). Set the `PORTAL_URL` Config key to your deployed
+   `/portal/` address so these links work.
+2. **Self-service** — at `/portal/` a registrant enters their email and receives
+   a privacy-safe management link.
+
+Staff can also open a registration and use the **Link** tab to send a secure
+edit link on demand. The optional WordPress companion portal is legacy; for new
+deployments use the PWA portal as the only registrant-edit surface.
 
 ---
 
@@ -307,9 +376,12 @@ Staff can select/open a registration and use the **Link** tab to send a secure e
 - Attendee editor, up to 5 attendees
 - Seminar preference editor for all 4 sessions
 - QR scanner tab
-- Record payment panel
-- Check-in button
+- Record payment panel + refund panel
+- Transfer / swap registration panel (keeps the original + linkage)
+- Check-in button with balance due + Square card total
 - Magic-link sender
+- Tools tab: printable church rosters, seminar capacity + assignment, reminders
+- Staff tab (admin only): add/update/disable staff logins
 - Offline queue bar
 - Manual cache refresh
 - Recent activity log

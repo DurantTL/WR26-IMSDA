@@ -168,9 +168,51 @@ Audit ID, Timestamp, Action, Registration ID, Actor, Details, Source IP
 ```
 
 The `AuditLog` tab records staff/admin mutations (admin edits, payments,
-check-ins, transfers, waitlist promotions/removals, and registrant self-service
-edits). Writing to it is best-effort: if the tab is absent, the action still
-succeeds and logging is skipped.
+refunds, check-ins, transfers, waitlist promotions/removals, seminar
+assignment, and registrant self-service edits). Writing to it is best-effort:
+if the tab is absent, the action still succeeds and logging is skipped.
+
+**Refunds**
+
+```text
+Refund ID, Timestamp, Registration ID, Name, Amount, Method, Reason, Status, Refunded By, Notes
+```
+
+Refunds are recorded here (additive — the `Registrations` column map is
+unchanged). Recording a refund sets the registration's payment status to
+`refunded` or `partial_refund` (based on how much was collected) and appends a
+dated note to `Admin Notes`. Multiple partial refunds accumulate.
+
+**Seminars**
+
+```text
+Slot, Slot Label, Seminar Title, Capacity, Assigned Count, Active, Notes
+```
+
+Defines the 8 breakouts across the 4 time slots (`Slot` values `session_1`–
+`session_4`). `Capacity` of `0` means unlimited. The assignment engine reads
+this sheet, places each attendee by ranked preference within capacity, and
+writes the result back to `SeminarPreferences` (`Assigned Seminar` /
+`Assignment Status`) and the live `Assigned Count` here. When a seminar is full
+the behavior follows Config `SEMINAR_FULL_BEHAVIOR` (`allow_with_review`
+over-fills the top choice and flags it `full_review`; otherwise the attendee is
+left `unassigned_full`).
+
+Both `Refunds` and `Seminars` are created automatically by
+`wr26EnsureSheetSetup()`.
+
+**Staff**
+
+```text
+Username, Password Hash, Roles, Active, Created At, Created By, Updated At, Notes
+```
+
+Staff PWA logins, managed from the app's **Staff** tab (admin only). Passwords
+are **bcrypt-hashed by the Node server before they reach GAS** — this sheet never
+stores plaintext. The `WR26_AUTH_USERS` env var remains the bootstrap admin set
+and always works even if this sheet is empty, so an operator can't be locked out;
+bootstrap admins are shown in the UI but can't be edited or disabled there.
+Created automatically by `wr26EnsureSheetSetup()`.
 
 ### Setup helpers
 
@@ -204,6 +246,8 @@ EARLY_BIRD_END_DATE=2026-08-14
 REGULAR_END_DATE=2026-09-17
 OPEN_CAMP_MEETING_DATE=2026-06-03
 EDIT_PAGE_URL
+PORTAL_URL
+PORTAL_LINK_TTL_DAYS=60
 PAYMENT_DEFAULT=pay_later
 WORKER_REGISTRATION_URL
 CHILDCARE_ENABLED=true
@@ -223,7 +267,8 @@ MAGIC_LINK_COOLDOWN_SECONDS=60
 Important:
 
 - `SECRET` must match the WordPress plugin secret and the PWA server `WR26_GAS_SECRET`.
-- `CHECKIN_PIN` and `CHECKIN_TOKEN` are still available for legacy check-in flows, but the new IMSDA Registration PWA uses server-side staff login with `WR26_AUTH_USERS`.
+- **`PORTAL_URL` is the public address of the PWA registrant portal** (e.g. `https://registration.imsda.org/portal/`). Set this so GAS emails (confirmation, transfer, waitlist promotion, payment reminder) embed a **real PWA magic link** that opens the portal. Each emailed link mints a `MagicLinks` token valid for `PORTAL_LINK_TTL_DAYS` (default 60). If `PORTAL_URL` is blank, emails fall back to the legacy `EDIT_PAGE_URL` + edit-token link.
+- `CHECKIN_PIN` and `CHECKIN_TOKEN` are still available for legacy check-in flows, but the new IMSDA Registration PWA uses server-side staff login. Staff accounts come from `WR26_AUTH_USERS` (bootstrap admins) **plus** the `Staff` sheet managed in-app from the **Staff** tab (admin only).
 - `SQUARE_FEE_*` controls passing card processing fees to registrants. WR26 passes Square fees, so these default to enabled (`2.9% + $0.30`). The online registration form already adds this surcharge on the card path; these Config keys apply the same fee to on-site Square payments recorded through the PWA. Set `SQUARE_FEE_ENABLED=false` to stop passing fees.
 - `MAGIC_LINK_COOLDOWN_SECONDS` throttles repeat magic-link requests per email (anti-spam). `MAGIC_LINK_ENFORCE_IP` is **off by default**; set it to `true` only if you want to reject a magic link used from a different network than it was requested from (this can lock out mobile/forwarded users, so leave off unless needed).
 
@@ -481,9 +526,49 @@ GET  /api/scan/:value
 
 ```text
 POST /api/payment
+POST /api/refund
+POST /api/transfer
 POST /api/check-in
 POST /api/offline-actions
 ```
+
+### Seminars, rosters & reminders
+
+```text
+GET  /api/seminars
+POST /api/seminars                  (upsert a breakout: slot, title, capacity)
+POST /api/seminars/assign           ({dryRun} for a preview)
+GET  /api/seminars/roster?slot=&title=
+GET  /api/church-rosters            (grouped from the live cache; printable)
+POST /api/reminders/pending-charges ({dryRun} previews who owes)
+```
+
+### Workers (non-paying)
+
+```text
+POST /api/worker/register           (public, rate-limited — self-serve worker page)
+POST /api/worker/add                (staff; registrar role)
+GET  /worker/                       (public worker registration page)
+GET  /api/seminars/public           (public; active seminar titles for dropdowns)
+```
+
+Staff can copy the **worker registration link** (to `/worker/`) from the Tools
+tab and send it to volunteers.
+
+### Staff management (admin only)
+
+```text
+GET  /api/staff                     (list bootstrap + sheet users)
+POST /api/staff                     (add/update; password bcrypt-hashed here)
+POST /api/staff/deactivate          (soft-disable a sheet user)
+```
+
+These power the staff app's **Tools** tab (rosters, seminar capacity +
+assignment, payment reminders), the **Transfer/Swap** and **Refund** panels,
+and the balance-due display at check-in (which also shows the Square card total,
+base + 2.9% + $0.30, for collection in the Square app). `/api/refund`,
+`/api/transfer`, `/api/seminars` (POST), and `/api/seminars/assign` require the
+`registrar` (or `payments` for refunds) role; reads require any staff role.
 
 ### Magic-link helper routes
 
@@ -535,21 +620,34 @@ Important: full offline editing of registration/attendee details is not implemen
 
 ## Magic-link registration management
 
-The staff PWA is at `/app/`. The registrant self-service portal is at `/portal/` (also available as `/portal.html`; `/manage/` redirects to `/portal/`). WordPress registration confirmation and edit emails should point users to `/portal/` for magic-link management, or include generated magic links from GAS.
+**The PWA is the single registrant self-service surface.** The staff app is at
+`/app/` and the registrant portal is at `/portal/` (also `/portal.html`;
+`/manage/` redirects to `/portal/`). Set the `PORTAL_URL` Config key to your
+deployed `/portal/` address so GAS emails link there.
 
-There are two ways to use the magic-link system.
+There are three ways a registrant reaches the portal — all open the same PWA:
 
-### 1. From the IMSDA Registration PWA
+### 1. From a GAS email (automatic)
 
-Staff can select/open a registration and use the **Link** tab to send a secure edit link to the registrant email.
+Confirmation, transfer, waitlist-promotion, and payment-reminder emails embed a
+real PWA magic link (a `MagicLinks` token appended to `PORTAL_URL`). This is the
+primary path and requires only that `PORTAL_URL` is set.
 
-### 2. Optional WordPress companion plugin
+### 2. Self-service request
 
-Activate the optional companion plugin only if you want WordPress-hosted magic-link request/edit pages:
+A registrant visits `/portal/`, enters their email, and receives a privacy-safe
+management link.
 
-```text
-plugin/wr26-registration-portal.php
-```
+### 3. Staff-initiated
+
+Staff open a registration and use the **Link** tab to email a secure edit link on
+demand.
+
+### Optional WordPress companion plugin (legacy)
+
+`plugin/wr26-registration-portal.php` provides WordPress-hosted magic-link pages.
+It is **legacy** — for new deployments, standardize on the PWA portal above and
+keep the WordPress plugin doing registration *intake* only. If you do run it:
 
 Shortcodes:
 
@@ -625,13 +723,27 @@ CHILDCARE_MESSAGE
 
 ## Worker / non-paying attendee registration
 
-Workers/non-paying attendees should not use the standard paid registration flow unless explicitly instructed.
+Workers (volunteers, presenters, staff) register for **free**, built natively
+into the PWA — no external Google Form needed.
 
-Store the worker form URL in Config:
+Two entry points, both calling GAS `workerRegister` through the Node server:
 
-```text
-WORKER_REGISTRATION_URL
-```
+- **Public self-serve page** at `/worker/` — anyone can register as a worker
+  (rate-limited, validated; the browser never holds the GAS secret). Route:
+  `POST /api/worker/register` (no auth).
+- **Staff "Add Worker"** in the app's Tools tab — `POST /api/worker/add`
+  (`registrar` role).
+
+Workers are written to the same `Registrations` / `Attendees` /
+`SeminarPreferences` sheets, so they appear in church rosters, meal counts, and
+seminar assignment — but with `finalAmount` 0 and payment status
+`worker_no_charge`. They are excluded from the paid `CAPACITY` check, payment
+reminders, and revenue totals, and are tagged `[worker]` in `Admin Notes`. They
+receive a confirmation email with a check-in QR code and a portal magic link.
+
+`WORKER_REGISTRATION_URL` (Config) remains available if you still want to link
+out to an external form instead, but the built-in `/worker/` page is the
+recommended path.
 
 ---
 

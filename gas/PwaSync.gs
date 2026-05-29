@@ -70,9 +70,13 @@ function portalGetCacheSnapshot(payload){
     var waitlist=[];
     var stats={};
     var paymentStats={};
+    var refunds=[];
+    var seminars=[];
     try{waitlist=(getWaitlist().waitlist)||[];}catch(e){waitlist=[];}
     try{stats=getCheckInStats();}catch(e){stats={success:false,message:e.message};}
     try{paymentStats=getPaymentStats();}catch(e){paymentStats={};}
+    try{refunds=(getRefunds().refunds)||[];}catch(e){refunds=[];}
+    try{seminars=(getSeminars().seminars)||[];}catch(e){seminars=[];}
     registrations=portalAttachCounts_(registrations,attendees,seminarPreferences);
     return {
       success:true,
@@ -82,7 +86,9 @@ function portalGetCacheSnapshot(payload){
       seminarPreferences:seminarPreferences,
       waitlist:waitlist,
       stats:stats,
-      paymentStats:paymentStats
+      paymentStats:paymentStats,
+      refunds:refunds,
+      seminars:seminars
     };
   }catch(e){return {success:false,message:e.message};}
 }

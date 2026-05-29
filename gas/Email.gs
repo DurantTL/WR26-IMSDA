@@ -2,7 +2,11 @@ function bccObj(){var b=getConfig().NOTIFICATION_EMAIL;return b?{bcc:b}:{};}
 function sendConfirmationEmail(reg,edit,context){
   var isPaid=reg.paymentStatus==='paid'||reg.paymentStatus==='paid_onsite';
   var sub=isPaid?"Women's Retreat 2026 – Registration & Payment Confirmed":"Women's Retreat 2026 – Registration Received – Payment Required";
-  var editUrl=edit?String(edit)+'?token='+encodeURIComponent(String(reg.editToken||'')):'';
+  // Prefer a real PWA portal magic link (works with the portal's token
+  // validation). Fall back to the legacy edit_page_url+editToken only if no
+  // PORTAL_URL is configured.
+  var editUrl=portalMintLinkForRegistration_(reg,'confirmation');
+  if(!editUrl)editUrl=edit?String(edit)+'?token='+encodeURIComponent(String(reg.editToken||'')):'';
   // Build attendee list from context.attendees (populated from a{N}_* form fields).
   // reg.firstName is the primary contact; attendee names come from a{N}_first/last_name.
   var ctxAttendees=(context&&Array.isArray(context.attendees)&&context.attendees.length)?context.attendees:[];
@@ -27,6 +31,6 @@ function sendConfirmationEmail(reg,edit,context){
   return sendEmailSafe_(Object.assign({to:reg.email,subject:sub,htmlBody:body},bccObj()));
 }
 function sendWaitlistEmail(w){return sendEmailSafe_(Object.assign({to:w.email,subject:"Women's Retreat 2026 – You're on the Waitlist",htmlBody:'<p>You are currently #'+escapeHtml(w.position)+' on the waitlist. No payment will be charged until promoted.</p>'},bccObj()));}
-function sendWaitlistPromotionEmail(w,n,edit){var editUrl=String(edit||'')+'?token='+encodeURIComponent(String(n.editToken||''));return sendEmailSafe_(Object.assign({to:n.email,subject:"Women's Retreat 2026 – Your Spot is Confirmed!",htmlBody:'<p>Great news! A spot opened up.</p><p>'+escapeHtml(n.firstName)+' '+escapeHtml(n.lastName)+'</p><p><a href="'+escapeHtml(editUrl)+'">Edit Registration</a></p><p><img src="'+escapeHtml(generateQRUrl(n.qrToken))+'"/></p>'},bccObj()));}
-function sendTransferEmail(o,n,reason,refund,edit){var sub="Women's Retreat 2026 – Registration Transfer Confirmation";sendEmailSafe_(Object.assign({to:o.email,subject:sub,htmlBody:'<p>Your registration has been transferred out.</p><p>Reason: '+escapeHtml(reason||'')+'</p><p>Refund notes: '+escapeHtml(refund||'')+'</p>'},bccObj()));var editUrl=String(edit||'')+'?token='+encodeURIComponent(String(n.editToken||''));return sendEmailSafe_(Object.assign({to:n.email,subject:sub,htmlBody:'<p>Your transfer registration is confirmed.</p><p><a href="'+escapeHtml(editUrl)+'">Edit Registration</a></p><p><img src="'+escapeHtml(generateQRUrl(n.qrToken))+'"/></p>'},bccObj()));}
+function sendWaitlistPromotionEmail(w,n,edit){var editUrl=portalMintLinkForRegistration_(n,'waitlist_promotion')||(String(edit||'')+'?token='+encodeURIComponent(String(n.editToken||'')));return sendEmailSafe_(Object.assign({to:n.email,subject:"Women's Retreat 2026 – Your Spot is Confirmed!",htmlBody:'<p>Great news! A spot opened up.</p><p>'+escapeHtml(n.firstName)+' '+escapeHtml(n.lastName)+'</p><p><a href="'+escapeHtml(editUrl)+'">Edit Registration</a></p><p><img src="'+escapeHtml(generateQRUrl(n.qrToken))+'"/></p>'},bccObj()));}
+function sendTransferEmail(o,n,reason,refund,edit){var sub="Women's Retreat 2026 – Registration Transfer Confirmation";sendEmailSafe_(Object.assign({to:o.email,subject:sub,htmlBody:'<p>Your registration has been transferred out.</p><p>Reason: '+escapeHtml(reason||'')+'</p><p>Refund notes: '+escapeHtml(refund||'')+'</p>'},bccObj()));var editUrl=portalMintLinkForRegistration_(n,'transfer')||(String(edit||'')+'?token='+encodeURIComponent(String(n.editToken||'')));return sendEmailSafe_(Object.assign({to:n.email,subject:sub,htmlBody:'<p>Your transfer registration is confirmed.</p><p><a href="'+escapeHtml(editUrl)+'">Edit Registration</a></p><p><img src="'+escapeHtml(generateQRUrl(n.qrToken))+'"/></p>'},bccObj()));}
 function sendEditConfirmationEmail(reg){return sendEmailSafe_(Object.assign({to:reg.email,subject:"Women's Retreat 2026 – Registration Updated",htmlBody:'<p>Your registration details were updated.</p><p>'+escapeHtml(reg.firstName)+' '+escapeHtml(reg.lastName)+' | '+escapeHtml(reg.church)+'</p>'},bccObj()));}

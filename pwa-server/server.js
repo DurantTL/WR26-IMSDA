@@ -64,7 +64,39 @@ function loadAuthUsers() {
   }
 }
 
-const authUsers = loadAuthUsers();
+// Bootstrap admins from env — these always work even if the Staff sheet is empty,
+// so an operator can never be locked out. They cannot be edited/deleted via the API.
+const bootstrapUsers = loadAuthUsers();
+const bootstrapUsernames = new Set(bootstrapUsers.map((u) => u.username.toLowerCase()));
+
+// Staff loaded from the GAS Staff sheet (bcrypt hashes stored there). Refreshed
+// from GAS periodically and after any change. Merged with bootstrap admins at
+// lookup time, with bootstrap taking precedence.
+let sheetUsers = [];
+let sheetUsersLoadedAt = null;
+
+async function refreshStaffUsers() {
+  if (!gasUrl) return;
+  try {
+    const payload = await gasRequest('getStaffUsers');
+    if (payload && payload.success && Array.isArray(payload.users)) {
+      sheetUsers = payload.users
+        .filter((u) => u && u.username && u.passwordHash && u.active !== false)
+        .filter((u) => !bootstrapUsernames.has(String(u.username).toLowerCase()))
+        .map((u) => ({ username: String(u.username), password: String(u.passwordHash), roles: Array.isArray(u.roles) && u.roles.length ? u.roles.map(String) : ['readonly'] }));
+      sheetUsersLoadedAt = new Date().toISOString();
+    }
+  } catch (error) {
+    console.error('Failed to load staff users from GAS:', error.message);
+  }
+}
+
+function findAuthUser(username) {
+  const key = String(username || '').toLowerCase();
+  return bootstrapUsers.find((u) => u.username.toLowerCase() === key)
+    || sheetUsers.find((u) => u.username.toLowerCase() === key)
+    || null;
+}
 
 function parseCookies(req) {
   const header = req.headers.cookie || '';
@@ -367,8 +399,8 @@ function resolveScannedRegistration(scanValue) {
 app.post('/api/auth/login', noStore, loginRateLimiter, async (req, res) => {
   const username = String(req.body.username || '').trim();
   const password = String(req.body.password || '');
-  if (!authUsers.length) return res.status(503).json({ success: false, error: 'No IMSDA Registration users are configured on the server' });
-  const user = authUsers.find((candidate) => candidate.username === username);
+  if (!bootstrapUsers.length && !sheetUsers.length) return res.status(503).json({ success: false, error: 'No IMSDA Registration users are configured on the server' });
+  const user = findAuthUser(username);
   const passwordMatch = user ? await bcrypt.compare(password, user.password) : false;
   if (!user || !passwordMatch) return res.status(401).json({ success: false, error: 'Invalid username or password' });
   const token = createSession(user);
@@ -488,6 +520,276 @@ app.post('/api/payment', noStore, apiWriteLimiter, requireRole('payments', 'regi
   }
 });
 
+app.post('/api/refund', noStore, apiWriteLimiter, requireRole('payments', 'registrar'), async (req, res) => {
+  try {
+    if (!isNonEmptyString(req.body.registrationId)) return validationError(res, 'registrationId is required');
+    const amount = Number(req.body.amount);
+    if (!Number.isFinite(amount) || amount <= 0) return validationError(res, 'amount must be a positive number');
+    const payload = await gasRequest('recordRefund', {
+      registrationId: req.body.registrationId,
+      amount,
+      method: req.body.method || 'other',
+      reason: req.body.reason || '',
+      refundNotes: req.body.refundNotes || '',
+      adminUser: req.session.sub,
+    });
+    if (payload.success) await refreshCache(true);
+    res.status(payload.success ? 200 : 400).json({ ...payload, sync: getSyncMeta() });
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message, sync: getSyncMeta() });
+  }
+});
+
+app.post('/api/transfer', noStore, apiWriteLimiter, requireRole('registrar'), async (req, res) => {
+  try {
+    if (!isNonEmptyString(req.body.registrationId)) return validationError(res, 'registrationId is required');
+    if (!isNonEmptyString(req.body.newFirstName) || !isNonEmptyString(req.body.newLastName)) return validationError(res, 'newFirstName and newLastName are required');
+    if (!isValidEmail(req.body.newEmail)) return validationError(res, 'A valid newEmail is required');
+    const payload = await gasRequest('transferRegistration', {
+      registrationId: req.body.registrationId,
+      newFirstName: req.body.newFirstName,
+      newLastName: req.body.newLastName,
+      newEmail: req.body.newEmail,
+      newPhone: req.body.newPhone || '',
+      newChurch: req.body.newChurch || '',
+      reason: req.body.reason || '',
+      refundNotes: req.body.refundNotes || '',
+      adminUser: req.session.sub,
+    });
+    if (payload.success) await refreshCache(true);
+    res.status(payload.success ? 200 : 400).json({ ...payload, sync: getSyncMeta() });
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message, sync: getSyncMeta() });
+  }
+});
+
+// Public, unauthenticated list of active seminars (titles only) so the registrant
+// portal and worker page can build seminar dropdowns that match what's assignable.
+// Read-only and rate-limited; exposes no PII.
+app.get('/api/seminars/public', noStore, apiReadLimiter, async (_req, res) => {
+  try {
+    const payload = await gasRequest('getSeminars');
+    const seminars = (payload && Array.isArray(payload.seminars) ? payload.seminars : [])
+      .filter((s) => s && s.active !== false && String(s.title || '').trim())
+      .map((s) => ({ slot: s.slot, title: s.title }));
+    res.json({ success: true, seminars });
+  } catch (error) {
+    // Degrade gracefully — the client falls back to built-in option values.
+    res.json({ success: true, seminars: [] });
+  }
+});
+
+app.get('/api/seminars', noStore, apiReadLimiter, requireRole('registrar', 'checkin', 'payments', 'readonly'), async (_req, res) => {
+  try {
+    const payload = await gasRequest('getSeminars');
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/seminars', noStore, apiWriteLimiter, requireRole('registrar'), async (req, res) => {
+  try {
+    if (!isNonEmptyString(req.body.slot) || !isNonEmptyString(req.body.title)) return validationError(res, 'slot and title are required');
+    if (req.body.capacity !== undefined && !isFiniteNonNegative(req.body.capacity)) return validationError(res, 'capacity must be a non-negative number');
+    const payload = await gasRequest('saveSeminar', {
+      slot: req.body.slot,
+      title: req.body.title,
+      slotLabel: req.body.slotLabel || '',
+      capacity: Number(req.body.capacity || 0),
+      active: req.body.active === undefined ? true : req.body.active,
+      notes: req.body.notes || '',
+    });
+    if (payload.success) await refreshCache(true);
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/seminars/assign', noStore, apiWriteLimiter, requireRole('registrar'), async (req, res) => {
+  try {
+    const payload = await gasRequest('assignSeminars', { dryRun: !!req.body.dryRun, adminUser: req.session.sub });
+    if (payload.success && !req.body.dryRun) await refreshCache(true);
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/seminars/roster', noStore, apiReadLimiter, requireRole('registrar', 'checkin', 'readonly'), async (req, res) => {
+  try {
+    const payload = await gasRequest('getSeminarRoster', { slot: req.query.slot || '', title: req.query.title || '' });
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+// Per-church roster, grouped from the live cache (no extra GAS round-trip).
+app.get('/api/church-rosters', noStore, apiReadLimiter, requireRole('registrar', 'checkin', 'readonly'), async (_req, res) => {
+  try {
+    await ensureCacheReady();
+    const groups = new Map();
+    cache.registrations.forEach((r) => {
+      if (String(r.status || '').toLowerCase() !== 'active') return;
+      const church = (r.church && String(r.church).trim()) || 'Unspecified';
+      const id = String(r.registrationId);
+      const attendees = cache.attendeesByRegistrationId.get(id) || [];
+      const list = groups.get(church) || [];
+      list.push({
+        registrationId: r.registrationId,
+        primaryName: `${r.firstName || ''} ${r.lastName || ''}`.trim(),
+        email: r.email,
+        phone: r.phone,
+        paymentStatus: r.paymentStatus,
+        checkedIn: r.checkedIn,
+        attendees: attendees.map((a) => ({ name: `${a.first_name || ''} ${a.last_name || ''}`.trim(), mealPreference: a.meal_preference, phone: a.phone })),
+      });
+      groups.set(church, list);
+    });
+    const rosters = [...groups.keys()].sort().map((church) => ({
+      church,
+      registrationCount: groups.get(church).length,
+      attendeeCount: groups.get(church).reduce((sum, m) => sum + (m.attendees.length || 1), 0),
+      members: groups.get(church),
+    }));
+    res.json({ success: true, rosters, sync: getSyncMeta() });
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message, sync: getSyncMeta() });
+  }
+});
+
+app.post('/api/reminders/pending-charges', noStore, apiWriteLimiter, requireRole('payments', 'registrar'), async (req, res) => {
+  try {
+    const payload = await gasRequest('sendPendingChargeReminders', {
+      dryRun: !!req.body.dryRun,
+      registrationId: req.body.registrationId || '',
+      adminUser: req.session.sub,
+    });
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+// Staff user management (admin only). Passwords are bcrypt-hashed here so the GAS
+// Staff sheet never receives plaintext. Bootstrap (env) admins are read-only.
+const STAFF_ROLES = ['admin', 'registrar', 'payments', 'checkin', 'readonly'];
+
+app.get('/api/staff', noStore, apiReadLimiter, requireRole('admin'), async (_req, res) => {
+  try {
+    await refreshStaffUsers();
+    const sheetList = sheetUsers.map((u) => ({ username: u.username, roles: u.roles, source: 'sheet', editable: true }));
+    const bootstrapList = bootstrapUsers.map((u) => ({ username: u.username, roles: u.roles, source: 'bootstrap', editable: false }));
+    res.json({ success: true, users: [...bootstrapList, ...sheetList], loadedAt: sheetUsersLoadedAt });
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/staff', noStore, apiWriteLimiter, requireRole('admin'), async (req, res) => {
+  try {
+    const username = String(req.body.username || '').trim().toLowerCase();
+    if (!/^[a-z0-9._-]{2,40}$/.test(username)) return validationError(res, 'username must be 2–40 chars: letters, numbers, . _ -');
+    if (bootstrapUsernames.has(username)) return validationError(res, 'That username is a server-configured admin and cannot be edited here');
+    const roles = Array.isArray(req.body.roles) ? req.body.roles.map((r) => String(r).toLowerCase()) : [];
+    const invalid = roles.filter((r) => !STAFF_ROLES.includes(r));
+    if (invalid.length) return validationError(res, `Unknown role(s): ${invalid.join(', ')}. Valid: ${STAFF_ROLES.join(', ')}`);
+    const password = req.body.password === undefined ? '' : String(req.body.password);
+    // Password required on create; optional on update (omit to keep existing).
+    let passwordHash;
+    if (password) {
+      if (password.length < 8) return validationError(res, 'Password must be at least 8 characters');
+      passwordHash = await bcrypt.hash(password, 10);
+    }
+    const payload = await gasRequest('saveStaffUser', {
+      username,
+      passwordHash,
+      roles: roles.length ? roles : ['readonly'],
+      active: req.body.active === undefined ? true : !!req.body.active,
+      notes: req.body.notes || '',
+      adminUser: req.session.sub,
+    });
+    if (payload.success) await refreshStaffUsers();
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/staff/deactivate', noStore, apiWriteLimiter, requireRole('admin'), async (req, res) => {
+  try {
+    const username = String(req.body.username || '').trim().toLowerCase();
+    if (!username) return validationError(res, 'username is required');
+    if (bootstrapUsernames.has(username)) return validationError(res, 'Server-configured admins cannot be deactivated here');
+    if (username === String(req.session.sub).toLowerCase()) return validationError(res, 'You cannot deactivate your own account');
+    const payload = await gasRequest('deactivateStaffUser', { username, adminUser: req.session.sub });
+    if (payload.success) await refreshStaffUsers();
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+// Normalize and bound a worker registration body from either the public page or
+// the staff panel. Returns { error } or { payload } ready for GAS.
+function buildWorkerPayload(body) {
+  const first = String(body.first_name || body.firstName || '').trim();
+  const last = String(body.last_name || body.lastName || '').trim();
+  const email = String(body.email || '').trim();
+  if (!first || !last) return { error: 'First and last name are required' };
+  if (!isValidEmail(email)) return { error: 'A valid email is required' };
+  let attendees = Array.isArray(body.attendees) ? body.attendees : [];
+  if (attendees.length > 5) return { error: 'A worker registration can have at most 5 attendees' };
+  attendees = attendees.slice(0, 5);
+  return {
+    payload: {
+      first_name: first,
+      last_name: last,
+      email,
+      phone: String(body.phone || '').trim(),
+      church: String(body.church || '').trim(),
+      worker_role: String(body.worker_role || body.role || '').trim(),
+      meal_preference: String(body.meal_preference || '').trim(),
+      dietary_needs: String(body.dietary_needs || '').trim(),
+      special_needs: String(body.special_needs || '').trim(),
+      emergency_contact_name: String(body.emergency_contact_name || '').trim(),
+      emergency_contact_phone: String(body.emergency_contact_phone || '').trim(),
+      seminar_preferences: body.seminar_preferences && typeof body.seminar_preferences === 'object' && !Array.isArray(body.seminar_preferences) ? body.seminar_preferences : {},
+      attendees,
+    },
+  };
+}
+
+// Public self-serve worker (non-paying) registration. No login — replaces the
+// external Google Form. Tightly rate-limited; the server holds the GAS secret so
+// the browser never talks to GAS directly.
+app.post('/api/worker/register', noStore, rateLimit({ windowMs: 60 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'Too many worker registrations from this network. Please try again later.' } }), async (req, res) => {
+  try {
+    const built = buildWorkerPayload(req.body || {});
+    if (built.error) return validationError(res, built.error);
+    const payload = await gasRequest('workerRegister', built.payload);
+    if (payload.success) await refreshCache(true).catch(() => {});
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+// Staff-added worker registration (signed in).
+app.post('/api/worker/add', noStore, apiWriteLimiter, requireRole('registrar'), async (req, res) => {
+  try {
+    const built = buildWorkerPayload(req.body || {});
+    if (built.error) return validationError(res, built.error);
+    const payload = await gasRequest('workerRegister', { ...built.payload, adminUser: req.session.sub });
+    if (payload.success) await refreshCache(true);
+    res.status(payload.success ? 200 : 400).json({ ...payload, sync: getSyncMeta() });
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message, sync: getSyncMeta() });
+  }
+});
+
 app.post('/api/check-in', noStore, apiWriteLimiter, requireRole('checkin', 'registrar'), async (req, res) => {
   try {
     if (!isNonEmptyString(req.body.registrationId)) return validationError(res, 'registrationId is required');
@@ -587,6 +889,13 @@ app.get(/^\/portal\/$/, sendPortalPage);
 app.get(/^\/portal$/, (_req, res) => res.redirect(302, '/portal/'));
 app.get(/^\/manage\/?$/, (_req, res) => res.redirect(302, '/portal/'));
 
+function sendWorkerPage(_req, res) {
+  htmlHeaders(res);
+  res.sendFile(path.join(__dirname, 'public', 'worker.html'));
+}
+app.get(/^\/worker\/$/, sendWorkerPage);
+app.get(/^\/worker$/, (_req, res) => res.redirect(302, '/worker/'));
+
 app.use('/app', express.static(path.join(__dirname, 'public'), { setHeaders: htmlHeaders }));
 app.use('/', express.static(path.join(__dirname, 'public'), { setHeaders: htmlHeaders }));
 
@@ -606,6 +915,9 @@ app.listen(port, async () => {
     } catch (error) {
       console.error('Initial IMSDA Registration sync failed:', error.message);
     }
+    await refreshStaffUsers();
+    console.log(`Staff users loaded: ${bootstrapUsers.length} bootstrap + ${sheetUsers.length} from sheet`);
     setInterval(() => refreshCache(false).catch((error) => console.error('Background IMSDA Registration sync failed:', error.message)), syncIntervalMs);
+    setInterval(() => refreshStaffUsers().catch(() => {}), Math.max(syncIntervalMs, 60000));
   }
 });
