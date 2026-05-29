@@ -6,7 +6,7 @@
 // the amount collected so far is less than the amount billed. Paid, refunded,
 // transferred, cancelled, and waitlist statuses are skipped.
 
-var WR26_REMINDER_SKIP_STATUSES={paid:true,paid_onsite:true,refunded:true,partial_refund:true,transferred:true,transferred_registration:true,cancelled:true};
+var WR26_REMINDER_SKIP_STATUSES={paid:true,paid_onsite:true,refunded:true,partial_refund:true,transferred:true,transferred_registration:true,cancelled:true,worker_no_charge:true};
 
 function registrationOwesBalance_(reg){
   var status=String(reg.paymentStatus||'').toLowerCase();

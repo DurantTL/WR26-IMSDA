@@ -539,6 +539,28 @@ async function runReminders(dryRun) {
   }
 }
 
+async function saveWorker() {
+  const first = $('worker-first').value.trim();
+  const last = $('worker-last').value.trim();
+  const email = $('worker-email').value.trim();
+  if (!first || !last || !email) return showToast('Worker first name, last name, and email are required.');
+  const body = {
+    first_name: first,
+    last_name: last,
+    email,
+    phone: $('worker-phone').value.trim(),
+    church: $('worker-church').value.trim(),
+    worker_role: $('worker-role').value.trim(),
+    meal_preference: $('worker-meal').value.trim(),
+    dietary_needs: $('worker-dietary').value.trim(),
+  };
+  const payload = await api('/api/worker/add', { method: 'POST', body });
+  $('worker-status').textContent = `Added worker ${first} ${last} (${payload.registrationId || ''}).`;
+  ['worker-first', 'worker-last', 'worker-email', 'worker-phone', 'worker-church', 'worker-role', 'worker-meal', 'worker-dietary'].forEach((id) => { $(id).value = ''; });
+  showToast('Worker added.');
+  logActivity(`Added worker ${first} ${last}`);
+}
+
 async function loadStaff() {
   const payload = await api('/api/staff');
   const users = payload.users || [];
@@ -614,6 +636,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('run-assign').addEventListener('click', () => runAssignment(false).catch((error) => showToast(error.message)));
   $('preview-reminders').addEventListener('click', () => runReminders(true).catch((error) => showToast(error.message)));
   $('send-reminders').addEventListener('click', () => runReminders(false).catch((error) => showToast(error.message)));
+  $('save-worker').addEventListener('click', () => saveWorker().catch((error) => showToast(error.message)));
   $('load-staff').addEventListener('click', () => loadStaff().catch((error) => showToast(error.message)));
   $('save-staff').addEventListener('click', () => saveStaff().catch((error) => showToast(error.message)));
   $('staff-output').addEventListener('click', (event) => {

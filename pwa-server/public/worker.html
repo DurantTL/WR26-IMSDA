@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2c6fb6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="WR26 Worker">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="stylesheet" href="/styles.css">
+  <title>Worker Registration — Women’s Retreat 2026</title>
+</head>
+<body class="portal-body">
+  <header class="topbar portal-topbar">
+    <div class="header-content">
+      <div class="header-title-row">
+        <h1>🌸 Women’s Retreat 2026</h1>
+      </div>
+    </div>
+    <div class="header-subtitle">
+      <span>Worker / volunteer registration — no payment required</span>
+    </div>
+  </header>
+
+  <main class="layout portal-layout">
+    <section id="worker-status" class="portal-alert" hidden></section>
+
+    <section id="worker-form-panel" class="card portal-card">
+      <h2>Worker Registration</h2>
+      <p class="meta">For volunteers, presenters, and staff serving at the retreat. There is <strong>no charge</strong>. You will receive a confirmation email with a QR code for check-in and a link to manage your registration.</p>
+      <form id="worker-form" class="portal-form">
+        <div class="form-grid compact-form">
+          <label>First Name<input id="w-first" autocomplete="given-name" required></label>
+          <label>Last Name<input id="w-last" autocomplete="family-name" required></label>
+          <label>Email<input id="w-email" type="email" autocomplete="email" required></label>
+          <label>Phone<input id="w-phone" type="tel" autocomplete="tel"></label>
+          <label>Church<input id="w-church"></label>
+          <label>Role / Title<input id="w-role" placeholder="e.g. Volunteer, Presenter, Childcare"></label>
+          <label>Meal Preference<input id="w-meal"></label>
+          <label>Dietary Needs<input id="w-dietary"></label>
+          <label>Emergency Contact Name<input id="w-ec-name"></label>
+          <label>Emergency Contact Phone<input id="w-ec-phone" type="tel"></label>
+        </div>
+
+        <section class="guest-list-section">
+          <h3>Seminar Preferences (optional)</h3>
+          <p class="meta">Rank up to two choices per session. We assign by preference where space allows.</p>
+          <div class="form-grid compact-form">
+            <label>Friday 4 PM — 1st<input data-pref="session_1.pref_1"></label>
+            <label>Friday 4 PM — 2nd<input data-pref="session_1.pref_2"></label>
+            <label>Saturday 2 PM — 1st<input data-pref="session_2.pref_1"></label>
+            <label>Saturday 2 PM — 2nd<input data-pref="session_2.pref_2"></label>
+            <label>Saturday 3:30 — 1st<input data-pref="session_3.pref_1"></label>
+            <label>Saturday 3:30 — 2nd<input data-pref="session_3.pref_2"></label>
+            <label>Sunday 8:15<input data-pref="session_4.pref_1"></label>
+          </div>
+        </section>
+
+        <div class="detail-actions">
+          <button id="worker-submit" class="btn btn-primary full-width" type="submit">Submit Worker Registration</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="worker-done-panel" class="card portal-card success-card" hidden>
+      <h2>✅ Worker registration received</h2>
+      <p style="font-size:1.15em;font-weight:bold;">Please check your email for your confirmation and check-in QR code.</p>
+      <p class="meta">No payment is required. You can register another worker below.</p>
+      <div class="detail-actions"><button id="worker-another" class="btn btn-white full-width" type="button">Register Another Worker</button></div>
+    </section>
+  </main>
+
+  <script src="/worker.js" defer></script>
+</body>
+</html>

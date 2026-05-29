@@ -296,6 +296,18 @@ capacity + ranked-preference assignment, and pay-later reminders. The
 the check-in screen shows the balance due plus the Square card total
 (base + 2.9% + $0.30). Writes require `registrar` (or `payments` for refunds).
 
+### Workers (non-paying)
+
+```text
+POST /api/worker/register     (public, rate-limited; self-serve worker page)
+POST /api/worker/add          (staff; registrar role)
+GET  /worker/                 (public worker registration page)
+```
+
+Workers register for free into the same sheets as paid attendees (so they show
+in rosters / meal counts / seminar assignment) at `finalAmount` 0 / status
+`worker_no_charge`. The public `/worker/` page replaces the external Google Form.
+
 ### Staff management (admin only)
 
 ```text

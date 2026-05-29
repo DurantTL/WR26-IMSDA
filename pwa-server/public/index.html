@@ -173,6 +173,22 @@
           <button id="send-reminders" class="btn btn-primary full-width">Send Reminders</button>
         </div>
         <div id="reminders-output" class="tools-output"></div>
+
+        <div class="panel-divider"></div>
+        <h2>Add Worker</h2>
+        <p class="meta">Register a non-paying worker / volunteer ($0). They appear in rosters, meal counts, and seminar assignment. Workers can also self-register at <code>/worker/</code>.</p>
+        <div class="form-grid compact-form">
+          <label>First Name<input id="worker-first"></label>
+          <label>Last Name<input id="worker-last"></label>
+          <label>Email<input id="worker-email" type="email"></label>
+          <label>Phone<input id="worker-phone" type="tel"></label>
+          <label>Church<input id="worker-church"></label>
+          <label>Role / Title<input id="worker-role" placeholder="e.g. Volunteer, Presenter"></label>
+          <label>Meal Preference<input id="worker-meal"></label>
+          <label>Dietary Needs<input id="worker-dietary"></label>
+        </div>
+        <button id="save-worker" class="btn btn-primary full-width">Add Worker</button>
+        <p id="worker-status" class="meta"></p>
       </div>
 
       <div id="staff-panel" class="card" hidden>

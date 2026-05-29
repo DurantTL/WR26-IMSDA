@@ -716,6 +716,64 @@ app.post('/api/staff/deactivate', noStore, apiWriteLimiter, requireRole('admin')
   }
 });
 
+// Normalize and bound a worker registration body from either the public page or
+// the staff panel. Returns { error } or { payload } ready for GAS.
+function buildWorkerPayload(body) {
+  const first = String(body.first_name || body.firstName || '').trim();
+  const last = String(body.last_name || body.lastName || '').trim();
+  const email = String(body.email || '').trim();
+  if (!first || !last) return { error: 'First and last name are required' };
+  if (!isValidEmail(email)) return { error: 'A valid email is required' };
+  let attendees = Array.isArray(body.attendees) ? body.attendees : [];
+  if (attendees.length > 5) return { error: 'A worker registration can have at most 5 attendees' };
+  attendees = attendees.slice(0, 5);
+  return {
+    payload: {
+      first_name: first,
+      last_name: last,
+      email,
+      phone: String(body.phone || '').trim(),
+      church: String(body.church || '').trim(),
+      worker_role: String(body.worker_role || body.role || '').trim(),
+      meal_preference: String(body.meal_preference || '').trim(),
+      dietary_needs: String(body.dietary_needs || '').trim(),
+      special_needs: String(body.special_needs || '').trim(),
+      emergency_contact_name: String(body.emergency_contact_name || '').trim(),
+      emergency_contact_phone: String(body.emergency_contact_phone || '').trim(),
+      seminar_preferences: body.seminar_preferences && typeof body.seminar_preferences === 'object' && !Array.isArray(body.seminar_preferences) ? body.seminar_preferences : {},
+      attendees,
+    },
+  };
+}
+
+// Public self-serve worker (non-paying) registration. No login — replaces the
+// external Google Form. Tightly rate-limited; the server holds the GAS secret so
+// the browser never talks to GAS directly.
+app.post('/api/worker/register', noStore, rateLimit({ windowMs: 60 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'Too many worker registrations from this network. Please try again later.' } }), async (req, res) => {
+  try {
+    const built = buildWorkerPayload(req.body || {});
+    if (built.error) return validationError(res, built.error);
+    const payload = await gasRequest('workerRegister', built.payload);
+    if (payload.success) await refreshCache(true).catch(() => {});
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+// Staff-added worker registration (signed in).
+app.post('/api/worker/add', noStore, apiWriteLimiter, requireRole('registrar'), async (req, res) => {
+  try {
+    const built = buildWorkerPayload(req.body || {});
+    if (built.error) return validationError(res, built.error);
+    const payload = await gasRequest('workerRegister', { ...built.payload, adminUser: req.session.sub });
+    if (payload.success) await refreshCache(true);
+    res.status(payload.success ? 200 : 400).json({ ...payload, sync: getSyncMeta() });
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message, sync: getSyncMeta() });
+  }
+});
+
 app.post('/api/check-in', noStore, apiWriteLimiter, requireRole('checkin', 'registrar'), async (req, res) => {
   try {
     if (!isNonEmptyString(req.body.registrationId)) return validationError(res, 'registrationId is required');
@@ -814,6 +872,13 @@ function sendPortalPage(_req, res) {
 app.get(/^\/portal\/$/, sendPortalPage);
 app.get(/^\/portal$/, (_req, res) => res.redirect(302, '/portal/'));
 app.get(/^\/manage\/?$/, (_req, res) => res.redirect(302, '/portal/'));
+
+function sendWorkerPage(_req, res) {
+  htmlHeaders(res);
+  res.sendFile(path.join(__dirname, 'public', 'worker.html'));
+}
+app.get(/^\/worker\/$/, sendWorkerPage);
+app.get(/^\/worker$/, (_req, res) => res.redirect(302, '/worker/'));
 
 app.use('/app', express.static(path.join(__dirname, 'public'), { setHeaders: htmlHeaders }));
 app.use('/', express.static(path.join(__dirname, 'public'), { setHeaders: htmlHeaders }));

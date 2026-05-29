@@ -543,6 +543,14 @@ GET  /api/church-rosters            (grouped from the live cache; printable)
 POST /api/reminders/pending-charges ({dryRun} previews who owes)
 ```
 
+### Workers (non-paying)
+
+```text
+POST /api/worker/register           (public, rate-limited — self-serve worker page)
+POST /api/worker/add                (staff; registrar role)
+GET  /worker/                       (public worker registration page)
+```
+
 ### Staff management (admin only)
 
 ```text
@@ -711,13 +719,27 @@ CHILDCARE_MESSAGE
 
 ## Worker / non-paying attendee registration
 
-Workers/non-paying attendees should not use the standard paid registration flow unless explicitly instructed.
+Workers (volunteers, presenters, staff) register for **free**, built natively
+into the PWA — no external Google Form needed.
 
-Store the worker form URL in Config:
+Two entry points, both calling GAS `workerRegister` through the Node server:
 
-```text
-WORKER_REGISTRATION_URL
-```
+- **Public self-serve page** at `/worker/` — anyone can register as a worker
+  (rate-limited, validated; the browser never holds the GAS secret). Route:
+  `POST /api/worker/register` (no auth).
+- **Staff "Add Worker"** in the app's Tools tab — `POST /api/worker/add`
+  (`registrar` role).
+
+Workers are written to the same `Registrations` / `Attendees` /
+`SeminarPreferences` sheets, so they appear in church rosters, meal counts, and
+seminar assignment — but with `finalAmount` 0 and payment status
+`worker_no_charge`. They are excluded from the paid `CAPACITY` check, payment
+reminders, and revenue totals, and are tagged `[worker]` in `Admin Notes`. They
+receive a confirmation email with a check-in QR code and a portal magic link.
+
+`WORKER_REGISTRATION_URL` (Config) remains available if you still want to link
+out to an external form instead, but the built-in `/worker/` page is the
+recommended path.
 
 ---
 

@@ -132,6 +132,7 @@ Still intentionally deferred (low value for this event):
 - [ ] Serve over HTTPS (scanner requires it); sign in, verify cache, a payment, a check-in, QR scan, and offline queue + sync.
 - [ ] As an admin, open the **Staff** tab and add at least one non-bootstrap staff login; confirm it persists (it lives in the `Staff` sheet) and can sign in.
 - [ ] Confirm a confirmation email's portal link opens `/portal/` and loads the registration (verifies `PORTAL_URL` + magic-link minting).
+- [ ] Submit a test worker at `/worker/` and add one from the staff Tools tab; confirm both land as `worker_no_charge` ($0), appear in church rosters, and are excluded from payment reminders.
 
 **Final**
 - [ ] Spot-check the `AuditLog` tab populates after a test admin edit/payment/check-in/refund/transfer/staff change.
