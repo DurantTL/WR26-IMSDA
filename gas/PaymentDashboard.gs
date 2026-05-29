@@ -35,7 +35,12 @@ function getPaymentStats() {
       stats.pendingOffline++;
       stats.pendingRevenue += billed;
     } else {
+      // Any other non-paid status (pending_square, pending_other, cash pay-later,
+      // partial_onsite, etc.) still carries a real outstanding balance. Count the
+      // amount still owed (billed minus anything already collected) toward
+      // pendingRevenue instead of reporting it as $0.
       stats.pendingOther++;
+      stats.pendingRevenue += Math.max(billed - (charged != null ? charged : 0), 0);
     }
 
     var disc = Number(r.discountAmount || 0);
