@@ -209,9 +209,9 @@ WORKER_REGISTRATION_URL
 CHILDCARE_ENABLED=true
 CHILDCARE_MINIMUM_CHILDREN=0
 CHILDCARE_MESSAGE
-SQUARE_FEE_ENABLED=false
-SQUARE_FEE_PERCENT=0
-SQUARE_FEE_FIXED=0
+SQUARE_FEE_ENABLED=true
+SQUARE_FEE_PERCENT=2.9
+SQUARE_FEE_FIXED=0.30
 SEMINAR_FULL_BEHAVIOR=allow_with_review
 SEMINAR_CAPACITY_DEFAULT=0
 CHECKIN_PIN
@@ -224,7 +224,7 @@ Important:
 
 - `SECRET` must match the WordPress plugin secret and the PWA server `WR26_GAS_SECRET`.
 - `CHECKIN_PIN` and `CHECKIN_TOKEN` are still available for legacy check-in flows, but the new IMSDA Registration PWA uses server-side staff login with `WR26_AUTH_USERS`.
-- `SQUARE_FEE_*` only matters if the retreat chooses to pass card fees to registrants.
+- `SQUARE_FEE_*` controls passing card processing fees to registrants. WR26 passes Square fees, so these default to enabled (`2.9% + $0.30`). The online registration form already adds this surcharge on the card path; these Config keys apply the same fee to on-site Square payments recorded through the PWA. Set `SQUARE_FEE_ENABLED=false` to stop passing fees.
 - `MAGIC_LINK_COOLDOWN_SECONDS` throttles repeat magic-link requests per email (anti-spam). `MAGIC_LINK_ENFORCE_IP` is **off by default**; set it to `true` only if you want to reject a magic link used from a different network than it was requested from (this can lock out mobile/forwarded users, so leave off unless needed).
 
 ---
@@ -637,7 +637,18 @@ WORKER_REGISTRATION_URL
 
 ## Promo code workflow
 
-Use the WR26 Promo tab in WordPress or the relevant GAS/admin workflow.
+Promo handling is split by payment path:
+
+- **Card / Pay Now discounts are handled by Fluent Forms' native coupon field.** The
+  coupon discounts the chargeable amount at checkout and the coupon code is reported
+  back through `fluentform_payment_success` into the Sheet (`Coupon Used`). The
+  registration form intentionally does **not** apply its own promo discount in
+  JavaScript, so a code never gets discounted twice.
+- **Pay-Later discounts** can be recorded via the GAS `PromoCodes` sheet: the
+  registrant enters a code in the `promo_code` field and GAS recomputes the owed
+  balance from the sheet. Use this for the occasional pay-later promo.
+
+To create a pay-later promo, use the WR26 Promo tab in WordPress or the GAS/admin workflow.
 
 Example half-off Early Bird promo:
 

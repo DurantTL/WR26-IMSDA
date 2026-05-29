@@ -179,6 +179,10 @@ const loginRateLimiter = rateLimit({
 // during check-in, but enough to blunt enumeration/brute-force or a runaway client.
 const apiReadLimiter = rateLimit({ windowMs: 60 * 1000, max: 240, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'Too many requests. Please slow down.' } });
 const apiWriteLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'Too many requests. Please slow down.' } });
+// Magic-link token resolution returns full registration PII keyed only by a bearer
+// token, so it gets a much tighter per-IP budget than the general read limiter to
+// curb token-guessing.
+const magicTokenLimiter = rateLimit({ windowMs: 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'Too many requests. Please slow down.' } });
 
 const ONSITE_PAYMENT_METHODS = ['cash', 'check', 'square_onsite', 'other'];
 const isNonEmptyString = (v) => typeof v === 'string' && v.trim().length > 0;
@@ -503,9 +507,15 @@ app.post('/api/offline-actions', noStore, apiWriteLimiter, requireRole('checkin'
   for (const action of actions) {
     try {
       if (action.type === 'check-in') {
+        if (!isNonEmptyString(action.registrationId)) { results.push({ clientId: action.clientId, success: false, error: 'registrationId is required' }); continue; }
         const payload = await gasRequest('checkinById', { registrationId: action.registrationId, adminUser: req.session.sub });
         results.push({ clientId: action.clientId, success: !!payload.success, response: payload });
       } else if (action.type === 'payment') {
+        // Mirror the same validation the online /api/payment route applies so a
+        // malformed queued action can't be forwarded to GAS unchecked.
+        if (!isNonEmptyString(action.registrationId)) { results.push({ clientId: action.clientId, success: false, error: 'registrationId is required' }); continue; }
+        if (!isFiniteNonNegative(action.amountPaid)) { results.push({ clientId: action.clientId, success: false, error: 'amountPaid must be a non-negative number' }); continue; }
+        if (action.paymentMethod && !ONSITE_PAYMENT_METHODS.includes(String(action.paymentMethod).toLowerCase())) { results.push({ clientId: action.clientId, success: false, error: `paymentMethod must be one of: ${ONSITE_PAYMENT_METHODS.join(', ')}` }); continue; }
         const payload = await gasRequest('recordPayment', { registrationId: action.registrationId, paymentMethod: action.paymentMethod, amountPaid: Number(action.amountPaid || 0), checkNumber: action.checkNumber || '', paymentNotes: action.paymentNotes || '', adminUser: req.session.sub });
         results.push({ clientId: action.clientId, success: !!payload.success, response: payload });
       } else {
@@ -535,7 +545,7 @@ app.post('/api/magic-link/request', noStore, rateLimit({ windowMs: 60 * 60 * 100
   }
 });
 
-app.post('/api/magic-link/registration', noStore, apiReadLimiter, async (req, res) => {
+app.post('/api/magic-link/registration', noStore, magicTokenLimiter, async (req, res) => {
   try {
     if (!isNonEmptyString(req.body.token)) return validationError(res, 'token is required');
     const payload = await gasRequest('portalGetRegistrationByMagicToken', { token: req.body.token, requestIp: req.ip }, false);

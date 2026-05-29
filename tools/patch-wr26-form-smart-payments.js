@@ -234,12 +234,13 @@ function paymentSummaryHtml() {
   var CARD_FEE_PERCENT = 0.029;
   var CARD_FEE_FIXED = 0.30;
 
-  // Edit this object if WR26 needs local form-side promo previews.
-  // GAS remains the final source of truth for promo validation.
-  var PROMO_CODES = {
-    'HALFRETREAT': { type: 'fixed', amount: 60 },
-    'HALF': { type: 'fixed', amount: 60 }
-  };
+  // Promo handling is intentionally NOT done here. Card discounts are applied by
+  // Fluent Forms' native coupon field at checkout (which discounts the chargeable
+  // amount and reports the coupon back to the plugin/GAS). Pay-later promos are
+  // validated and recorded by Google Apps Script from the PromoCodes sheet. Doing
+  // a discount in this script too would double-discount a card payment whenever a
+  // code exists both here and as an FF coupon, so the form total stays at the
+  // undiscounted subtotal + card fee and lets those two systems own discounts.
 
   function getForm(){ return $('.wr26-summary-box').closest('form'); }
   function money(n){ n = Number(n || 0); return '$' + n.toFixed(2); }
@@ -268,13 +269,6 @@ function paymentSummaryHtml() {
     if (count > 5) count = 5;
     return count;
   }
-  function discountFor(subtotal){
-    var code = String(getVal('promo_code')).trim().toUpperCase();
-    var promo = PROMO_CODES[code];
-    if (!promo) return 0;
-    var amount = promo.type === 'percent' ? subtotal * (Number(promo.amount) / 100) : Number(promo.amount || 0);
-    return Math.max(0, Math.min(subtotal, amount));
-  }
   function feeFor(amount){
     if (!amount || amount <= 0) return 0;
     var totalWithFee = (amount + CARD_FEE_FIXED) / (1 - CARD_FEE_PERCENT);
@@ -284,32 +278,31 @@ function paymentSummaryHtml() {
     var count = attendeeCount();
     var price = currentPrice();
     var registrationSubtotal = count * price;
-    var discount = discountFor(registrationSubtotal);
-    var netSubtotal = Math.max(0, registrationSubtotal - discount);
-    var fee = isCard() ? feeFor(netSubtotal) : 0;
-    var total = netSubtotal + fee;
+    // No promo discount applied here — see note above. Any coupon discount is
+    // applied by Fluent Forms (card) or recomputed by GAS (pay-later).
+    var fee = isCard() ? feeFor(registrationSubtotal) : 0;
+    var total = registrationSubtotal + fee;
 
     setHidden('registration_price_each', price.toFixed(2));
     setHidden('registration_subtotal', registrationSubtotal.toFixed(2));
-    setHidden('discount_amount', discount.toFixed(2));
+    setHidden('discount_amount', '0.00');
     setHidden('processing_fee', fee.toFixed(2));
     setHidden('registration_total', total.toFixed(2));
     setHidden('total_amount', total.toFixed(2));
     setHidden('custom_payment_amount', total.toFixed(2));
 
     $('#wr26-sum-registration').text(money(registrationSubtotal));
-    $('#wr26-sum-discount').text('-' + money(discount));
-    $('#wr26-sum-subtotal').text(money(netSubtotal));
+    $('#wr26-sum-subtotal').text(money(registrationSubtotal));
     $('#wr26-sum-fee').text(money(fee));
     $('#wr26-sum-total').text(money(total));
-    $('#wr26-sum-discount-row').toggle(discount > 0);
+    $('#wr26-sum-discount-row').hide();
     $('#wr26-sum-fee-row').toggle(isCard());
     $('#wr26-pay-note').text(isCard()
-      ? 'Credit/debit card is selected. The processing fee is included in the total above.'
-      : 'Pay Later is selected. No card fee is added. Your confirmation email will include payment instructions.'
+      ? 'Credit/debit card is selected. The processing fee is included in the total above. Any promo code you enter is applied at checkout.'
+      : 'Pay Later is selected. No card fee is added. Your confirmation email will include payment instructions and any promo discount.'
     );
   }
-  $(document).on('change input', '[name="attendee_count"], [name="payment_method"], [name="promo_code"]', recalc);
+  $(document).on('change input', '[name="attendee_count"], [name="payment_method"]', recalc);
   $(document).ready(function(){ setTimeout(recalc, 250); setTimeout(recalc, 900); });
 })(jQuery);
 </script>`;
