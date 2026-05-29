@@ -1,78 +1,151 @@
-# IMSDA Registration Engine — Review & Roadmap
+# WR26 / IMSDA Registration — Review, Function Map & Hardening Roadmap
 
-_Last updated: 2026-05-29_
+**Date:** 2026-05-28
+**Scope:** Fluent Forms form, WordPress plugin layer, Google Apps Script (GAS)
+backend, and the staff PWA — reviewed end to end.
 
-## Summary
+This document is the living companion to `AUDIT-REPORT.md`. The earlier audit
+verified individual bug fixes; this one steps back to the **architecture and
+end-to-end flow**, records the canonical-path decisions, and tracks the
+hardening work.
 
-This document captures the current state of the IMSDA Women's Retreat 2026
-registration platform and the prioritized plan toward a production-ready release.
+---
 
-- **Requirements (authoritative):** [`IMPORTANT-INSTURCTIONS.txt`](IMPORTANT-INSTURCTIONS.txt)
-- **Gap analysis:** [`AUDIT-REPORT.md`](AUDIT-REPORT.md)
-- **Primary deployment:** [`imsda-registration-engine/`](imsda-registration-engine/README.md)
+## 1. Architecture decision (canonical path)
 
-## Current State
+The repo currently contains **two of several things**, with docs pointing in
+different directions. The decisions below resolve that.
 
-The `imsda-registration-engine` is a functional MVP. Working today: multi-attendee
-registration, early-bird/regular pricing, promo validation, magic-link registrant
-portal, admin dashboard, private notes, QR check-in, and PWA install/offline.
+| Layer | Canonical (use this) | De-emphasized (future/experimental) |
+|---|---|---|
+| Intake plugin | `plugin/wr26-registration.php` (+ `wr26-registration-portal.php`) — **Option A** | `imsda-registration-engine/` (multi-event; keep parked) |
+| Staff app (PWA) | `pwa-server/` (full search/edit/pay/check-in/QR/offline) | `imsda-registration-engine/pwa/imsda-checkin.html` (check-in only) |
+| Registration form | `form/wr26-registration-fluentforms.smart-payments.json` | base `…-fluentforms.json` (no payment item — generator input only) |
+| Backend | `gas/*.gs` (single source of truth — shared by all of the above) | — |
 
-Partial or missing: per-attendee phone/meal/seminar data, pay-later default,
-half-off-early-bird promo rule, seminar registration, attendee move/swap, refunds
-workflow, church roster view, Google email confirmations + pay-later link +
-pending-charge reminders, check-in balance/Square collection, childcare, shirts,
-and worker registration.
+**Why Option A:** the legacy WR26 plugin is the lower-risk production base for
+the 2026 event and, on review, is already healthy — it parses all four seminar
+sessions and attendee types, sends correct camelCase keys to GAS, gates the
+admin script enqueue, ships a real token-based edit form, and handles Square via
+Fluent Forms' native `fluentform_payment_success/_failed` hooks. The IMSDA
+engine's blocking bugs are genuinely fixed in code too, but it stays parked until
+there is a need for multi-event support.
 
-## Goal
+**Payment model:** **server-authoritative.** The form still charges via Square,
+but GAS recomputes the owed amount from the Config sheet and the `PromoCodes`
+sheet and owns the recorded balance. The form's client-side calculation is a
+display/charge convenience only; drift is *flagged* by GAS, not silently charged.
 
-Make the PWA fully able to **edit attendees, add details to them, and move their
-registrations** — alongside seminar sign-up, pay-later-by-default, Google email,
-and QR check-in with balance collection.
+---
 
-## Roadmap
+## 2. End-to-end function map
 
-Each phase is independently shippable. Tasks marked ✅ exist, ⚠️ partial, ❌ new.
+```
+Registrant → Fluent Forms (smart-payments.json)
+  ├─ Pay Later  → fluentform/submission_inserted ──┐
+  └─ Square     → fluentform_payment_success ──────┤
+                                                    ▼
+        wr26_queue_entry()              plugin/wr26-registration.php:115
+                                                    ▼  (WP cron, every 5 min)
+        wr26_process_dispatch_queue() :317 → wr26_build_and_send() :283
+                                                    ▼  HTTPS POST {secret, ...}
+        GAS doPost() router             gas/Code.gs:2  → handleRegister / handleWaitlist
+                                                    ▼
+        Google Sheets  (Registrations / Attendees / SeminarPreferences / Waitlist / …)
+                                                    ▲  cached snapshot (60s)
+        portalGetCacheSnapshot (gas/PwaSync.gs) ◄── pwa-server/server.js
+                                                    ▼
+        Staff PWA (pwa-server/public/app.js): search, edit, pay, check-in, QR,
+        magic-link, offline queue (localStorage `imsda_registration_queue`)
+```
 
-### Phase 1 — Core correctness & data model
-- ⚠️ Add per-attendee fields: **phone**, **meal preference**, seminar preferences.
-- ⚠️ Make **Pay Later the default** payment method (UI + server default).
-- ⚠️ Promo codes = **half off the early-bird price**; make rule explicit + tested.
-- ⚠️ Per-attendee validation (required phone, valid email, meal selected).
-- ❌ Extend the registration data model (see engine README "Data Model (target)").
+Staff/admin write paths reuse `wr26_gas_request()` (`wr26-registration.php:415`)
+→ the same GAS router actions (`recordPayment`, `checkinById`,
+`adminEditRegistration`, `getPromoCodes`, …).
 
-### Phase 2 — Seminars / breakouts
-- ❌ Define 8 breakouts across 4 slots (Fri 1×2, Sat 2×3 + 3:30×2, Sun 1×1).
-- ❌ Per-attendee **ranked preferences** per slot.
-- ❌ Per-seminar **capacity** + assignment by rank; graceful "full" handling.
-- ❌ Show assignments in confirmation, portal, admin, and check-in views.
+**GAS response shapes** are flat and consumed directly by the plugin/PWA, e.g.
+`{success, registrations:[…]}`, `{success, waitlist:[…]}`,
+`{success, rosters:[…]}`, `{success, promoCodes:[…]}`,
+`{success, stats:{…}, byChurch:[…]}`. Keep these stable when editing GAS.
 
-### Phase 3 — Attendee management (the core ask)
-- ⚠️ **Edit attendees** after registration (admin + self-service portal).
-- ❌ **Move / swap** a registration: one person takes another's place, keeping the
-  **original registration record** and a **"taking place of"** linkage.
-- ⚠️ **Refunds** workflow (record amount, reason, link to replacement).
-- ✅ Private **notes** (keep info safe) — extend coverage to portal.
-- ⚠️ **Church roster** — dedicated per-church individual list view.
+---
 
-### Phase 4 — Communications (Google email)
-- ⚠️ Google SMTP **confirmation email** with QR code.
-- ❌ **Pay-later** email includes a **payment link/option**.
-- ❌ **Pending-charge reminder** email ("did you forget the following?").
-- ⚠️ In-app **loading + confirmation** state on submit.
-- ⚠️ **Large reminder** to check email after registering.
+## 3. Findings & status (canonical path)
 
-### Phase 5 — Check-in & payments
-- ✅ QR check-in.
-- ⚠️ Show **amount owed** at check-in.
-- ⚠️ Support **Square app** card collection (show amount incl. card fee).
+### P0 — correctness / data integrity
+| # | Finding | Status |
+|---|---|---|
+| 1 | **No lock around capacity-check + write** in `handleRegister` / `promoteWaitlist` → concurrent submissions could exceed `CAPACITY`. | **Fixed** — `withScriptLock_()` (`gas/Utils.gs`) wraps the dup-check + capacity + write critical sections. Promo counter already locked in `validateAndApplyPromoCode`. |
+| 2 | **Silent email failures** on blank/invalid address (`MailApp.sendEmail({to:''})` throws; magic-link returned success anyway). | **Fixed** — `isValidEmail_()` + `sendEmailSafe_()` (`gas/Utils.gs`); all sends in `Email.gs`/`Portal.gs` routed through it; registration is never aborted by an email error and a warning is surfaced in `register`'s `warnings[]`. |
+| 3 | **Payment not server-authoritative** — form's hardcoded JS decided the charge; GAS trusted it. | **Fixed** — `handleRegister` now computes the owed amount from Config pricing × attendee count (`resolveRegistrationAmount(…, preferConfig=true)`); for paid registrations it records the actual charge and writes a `[reconcile]` note to `adminNotes` when it differs from the expected base. |
 
-### Phase 6 — Polish / optional
-- ❌ **Childcare** opt-in (conditional program if enough children).
-- ❌ **Shirts** opt-in (optional — may be removed).
-- ❌ **Worker registration** for non-paying attendees via a separate Google Form
-  (see `form/`).
-- Confirm: **no boxed dinners**; Open Camp Meeting Wed June 3.
+### P1 — important
+| # | Finding | Status |
+|---|---|---|
+| 4 | Base form lacks a chargeable payment item → Square can't charge. | **Fixed** — `smart-payments.json` is the canonical form (has the payment item + `a1_*` fields); validator passes. |
+| 5 | Form pricing/promo hardcoded in JS, can drift. | **Mitigated** — GAS is now authoritative and flags drift; generator constants documented as "must match GAS Config" (`tools/patch-wr26-form-smart-payments.js`). `attendee_count` is a fixed 1–5 dropdown, so no numeric min/max is needed. |
+| 6 | Attendee/seminar writes silently no-op if the tab is missing. | **Fixed** — warnings now surfaced through `handleRegister`'s response `warnings[]`. |
+| 7 | On-site partial payment marked fully paid; owed amount overwritten. | **Fixed** — `recordPayment` now records `amountPaid`, preserves the owed `finalAmount`, and sets `partial_onsite` vs `paid_onsite` with a balance note. |
 
-## License
+### P2 — docs / consistency
+| # | Finding | Status |
+|---|---|---|
+| 8 | Engine README listed long-fixed bugs as "open"; audit summary table all zeros; canonical paths unstated. | **Fixed** — `imsda-registration-engine/README.md` marked future/experimental; `AUDIT-REPORT.md` table/preamble corrected; `README.md` states the canonical plugin/PWA/form. |
 
-Proprietary — IMSDA internal use.
+### P3 — defense-in-depth / hardening (done — go-live pass)
+| Item | Status |
+|---|---|
+| GAS: per-email cooldown on `portalRequestMagicLink` (`MAGIC_LINK_COOLDOWN_SECONDS`). | **Done** |
+| GAS: optional IP binding on magic-link redemption (`MAGIC_LINK_ENFORCE_IP`, default off). | **Done** |
+| GAS: TTL (30 s) on the in-execution Config cache. | **Done** |
+| GAS: `AuditLog` sheet + best-effort `logAudit_()` on admin edits, payments, check-ins, transfers, waitlist promote/remove, token/portal edits. | **Done** |
+| PWA: input validation on all write endpoints (amount/method, attendee counts, required IDs, tokens, email). | **Done** |
+| PWA: per-IP rate limiting on reads/writes/magic-link (login already limited). | **Done** |
+| PWA: server-side session revocation on logout (`jti` + in-memory revoked set). | **Done** |
+| PWA: fail fast if `SESSION_SECRET` unset in production; `trust proxy` for correct client IP. | **Done** |
+| Cleanup: `imsda-registration-engine/pwa/imsda-checkin.html` marked deprecated. | **Done** |
+
+Still intentionally deferred (low value for this event):
+- **Engine:** if ever promoted to canonical, re-verify the token-edit path forwards
+  attendees/seminars (today it forwards contact fields only).
+- **PWA persistent cache:** the in-memory cache re-syncs from GAS within seconds of
+  a restart and the offline queue is client-side, so a persistent store is optional.
+
+---
+
+## 5. Go-live checklist (next week)
+
+**Google Sheet / GAS**
+- [ ] Push all `gas/*.gs`; run `wr26EnsureSheetSetup()` then `wr26SetupCheck()` (creates/checks the new **AuditLog** tab and `MAGIC_LINK_*` Config rows).
+- [ ] Confirm Config: `SECRET`, prices, `*_END_DATE`, `CAPACITY`, `CHECKIN_PIN`/`CHECKIN_TOKEN`, `NOTIFICATION_EMAIL`.
+- [ ] Deploy the Web App (Execute as Me; Anyone, even anonymous) and copy the URL.
+
+**WordPress (Option A)**
+- [ ] `plugin/wr26-registration.php` active; WR26 → Settings has GAS URL, Fluent Form ID, Edit Page URL; WP secret copied to Config `SECRET`.
+- [ ] Import `form/wr26-registration-fluentforms.smart-payments.json`; in the Fluent Forms editor confirm the notification trigger is **form submission** (not payment_success) so Pay-Later registrants are emailed.
+- [ ] Submit a Pay-Later test and a Square test; confirm `Registrations`/`Attendees`/`SeminarPreferences` rows and that Final Amount/Payment Status reflect the GAS recompute.
+
+**PWA server**
+- [ ] Set env incl. `NODE_ENV=production`, a strong `SESSION_SECRET`, `WR26_GAS_URL`/`WR26_GAS_SECRET`, `WR26_AUTH_USERS` (bcrypt), and `TRUST_PROXY` for your proxy.
+- [ ] Serve over HTTPS (scanner requires it); sign in, verify cache, a payment, a check-in, QR scan, and offline queue + sync.
+
+**Final**
+- [ ] Spot-check the `AuditLog` tab populates after a test admin edit/payment/check-in.
+- [ ] Confirm `node tools/validate-wr26-form-json.js form/wr26-registration-fluentforms.smart-payments.json` passes.
+
+---
+
+## 4. Verification
+
+- **GAS (Apps Script editor):** run `wr26SetupCheck()`; exercise `handleRegister`
+  with (a) a blank email → row still written + warning returned, (b) an
+  early-bird vs after-deadline date to confirm the Config-computed `finalAmount`,
+  (c) a `payment_status:'paid'` payload whose `amount_paid` differs from the
+  expected base → confirm the `[reconcile]` note; record a short on-site payment
+  and confirm `partial_onsite`.
+- **Form:** `node tools/validate-wr26-form-json.js form/wr26-registration-fluentforms.smart-payments.json` → PASS.
+- **Plugin → GAS:** submit a Pay-Later and a Square test entry; confirm
+  `Registrations` / `Attendees` / `SeminarPreferences` rows and that Final Amount
+  / Payment Status reflect the GAS recompute.
+- **PWA:** `cd pwa-server && npm install && npm start`; sign in; verify cache,
+  search, a payment record, a check-in, and the offline queue + sync.
