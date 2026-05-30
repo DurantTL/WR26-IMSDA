@@ -83,7 +83,7 @@ async function refreshStaffUsers() {
       sheetUsers = payload.users
         .filter((u) => u && u.username && u.passwordHash && u.active !== false)
         .filter((u) => !bootstrapUsernames.has(String(u.username).toLowerCase()))
-        .map((u) => ({ username: String(u.username), password: String(u.passwordHash), roles: Array.isArray(u.roles) && u.roles.length ? u.roles.map(String) : ['readonly'] }));
+        .map((u) => ({ username: String(u.username), password: String(u.passwordHash), roles: Array.isArray(u.roles) && u.roles.length ? u.roles.map(String) : ['readonly'], email: String(u.email || '').trim().toLowerCase() }));
       sheetUsersLoadedAt = new Date().toISOString();
     }
   } catch (error) {
@@ -215,6 +215,7 @@ const apiWriteLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, standardHeader
 // token, so it gets a much tighter per-IP budget than the general read limiter to
 // curb token-guessing.
 const magicTokenLimiter = rateLimit({ windowMs: 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'Too many requests. Please slow down.' } });
+const staffMagicLinkLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'Too many login link requests. Try again later.' } });
 
 const ONSITE_PAYMENT_METHODS = ['cash', 'check', 'square_onsite', 'other'];
 const isNonEmptyString = (v) => typeof v === 'string' && v.trim().length > 0;
@@ -419,6 +420,33 @@ app.post('/api/auth/logout', noStore, (req, res) => {
   if (session) revokeSession(session);
   clearSessionCookie(res);
   res.json({ success: true });
+});
+
+app.post('/api/auth/magic-link/request', noStore, staffMagicLinkLimiter, async (req, res) => {
+  try {
+    if (!isValidEmail(req.body.email)) return validationError(res, 'A valid email address is required');
+    const appUrl = `${req.protocol}://${req.get('host')}/app/`;
+    await gasRequest('staffRequestMagicLink', { email: req.body.email, appUrl, requestIp: req.ip });
+    res.json({ success: true, message: 'If a staff account exists for that email, a login link has been sent.' });
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/auth/magic-link/verify', noStore, magicTokenLimiter, async (req, res) => {
+  try {
+    if (!isNonEmptyString(req.body.token)) return validationError(res, 'token is required');
+    const gasPayload = await gasRequest('staffValidateMagicToken', { token: req.body.token, requestIp: req.ip });
+    if (!gasPayload.success) return res.status(400).json({ success: false, error: gasPayload.message || 'Invalid or expired login link.' });
+    await refreshStaffUsers();
+    const user = findAuthUser(gasPayload.username);
+    if (!user) return res.status(400).json({ success: false, error: 'Staff account not found.' });
+    const token = createSession(user);
+    setSessionCookie(res, token);
+    res.json({ success: true, user: { username: user.username, roles: user.roles } });
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
 });
 
 app.get('/api/sync/status', noStore, requireAuthenticated, async (_req, res) => {
@@ -680,8 +708,8 @@ const STAFF_ROLES = ['admin', 'registrar', 'payments', 'checkin', 'readonly'];
 app.get('/api/staff', noStore, apiReadLimiter, requireRole('admin'), async (_req, res) => {
   try {
     await refreshStaffUsers();
-    const sheetList = sheetUsers.map((u) => ({ username: u.username, roles: u.roles, source: 'sheet', editable: true }));
-    const bootstrapList = bootstrapUsers.map((u) => ({ username: u.username, roles: u.roles, source: 'bootstrap', editable: false }));
+    const sheetList = sheetUsers.map((u) => ({ username: u.username, roles: u.roles, email: u.email || '', source: 'sheet', editable: true }));
+    const bootstrapList = bootstrapUsers.map((u) => ({ username: u.username, roles: u.roles, email: '', source: 'bootstrap', editable: false }));
     res.json({ success: true, users: [...bootstrapList, ...sheetList], loadedAt: sheetUsersLoadedAt });
   } catch (error) {
     res.status(503).json({ success: false, error: error.message });
@@ -697,6 +725,8 @@ app.post('/api/staff', noStore, apiWriteLimiter, requireRole('admin'), async (re
     const invalid = roles.filter((r) => !STAFF_ROLES.includes(r));
     if (invalid.length) return validationError(res, `Unknown role(s): ${invalid.join(', ')}. Valid: ${STAFF_ROLES.join(', ')}`);
     const password = req.body.password === undefined ? '' : String(req.body.password);
+    const email = String(req.body.email || '').trim().toLowerCase();
+    if (email && !isValidEmail(email)) return validationError(res, 'Invalid email address');
     // Password required on create; optional on update (omit to keep existing).
     let passwordHash;
     if (password) {
@@ -709,6 +739,7 @@ app.post('/api/staff', noStore, apiWriteLimiter, requireRole('admin'), async (re
       roles: roles.length ? roles : ['readonly'],
       active: req.body.active === undefined ? true : !!req.body.active,
       notes: req.body.notes || '',
+      email: email || undefined,
       adminUser: req.session.sub,
     });
     if (payload.success) await refreshStaffUsers();

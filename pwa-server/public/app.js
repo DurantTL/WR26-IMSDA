@@ -85,10 +85,29 @@ function setSync(sync) {
   $('sync-status').textContent = `Cached ${label} • ${sync.registrationsCached || 0} regs`;
 }
 
+function showMagicLogin() {
+  $('login-magic-section').hidden = false;
+  $('login-form').hidden = true;
+  $('login-error').hidden = true;
+}
+
+function showPasswordLogin() {
+  $('login-magic-section').hidden = true;
+  $('login-form').hidden = false;
+  $('login-error').hidden = true;
+}
+
 function showAuth(message = '') {
   currentUser = null;
   $('auth').classList.add('visible');
   $('user-display').textContent = 'Staff sign-in required';
+  const emailEl = $('login-email');
+  const sendBtn = $('send-login-link');
+  const sentMsg = $('login-magic-sent');
+  if (emailEl) { emailEl.disabled = false; emailEl.value = ''; }
+  if (sendBtn) sendBtn.disabled = false;
+  if (sentMsg) sentMsg.hidden = true;
+  showMagicLogin();
   if (message) {
     $('login-error').textContent = message;
     $('login-error').hidden = false;
@@ -100,9 +119,45 @@ function hideAuth() {
   $('login-error').hidden = true;
 }
 
+async function requestStaffMagicLink() {
+  const email = $('login-email').value.trim();
+  if (!email) {
+    $('login-error').textContent = 'Enter your email address.';
+    $('login-error').hidden = false;
+    return;
+  }
+  $('login-error').hidden = true;
+  $('send-login-link').disabled = true;
+  try {
+    await api('/api/auth/magic-link/request', { method: 'POST', body: { email } });
+    $('login-magic-sent').textContent = 'Check your email for a login link. It expires in 30 minutes.';
+    $('login-magic-sent').hidden = false;
+    $('login-email').disabled = true;
+  } catch (error) {
+    $('login-error').textContent = error.message;
+    $('login-error').hidden = false;
+    $('send-login-link').disabled = false;
+  }
+}
+
 async function restoreSession() {
   updateQueueUI();
   updateOnlineStatus();
+  const params = new URLSearchParams(window.location.search);
+  const staffToken = params.get('staff_token');
+  if (staffToken) {
+    window.history.replaceState({}, '', window.location.pathname);
+    try {
+      const payload = await api('/api/auth/magic-link/verify', { method: 'POST', body: { token: staffToken } });
+      currentUser = payload.user;
+      $('user-display').textContent = `Signed in as ${currentUser.username}`;
+      hideAuth();
+      await bootstrap();
+    } catch (error) {
+      showAuth(error.message === 'UNAUTHORIZED' ? 'Login link is invalid or expired.' : error.message);
+    }
+    return;
+  }
   try {
     const payload = await api('/api/auth/me');
     currentUser = payload.user;
@@ -448,7 +503,7 @@ async function processOfflineQueue() {
 
 async function sendMagicLink() {
   const email = $('magic-email').value.trim();
-  const portalUrl = $('magic-url').value.trim();
+  const portalUrl = `${window.location.origin}/portal/`;
   const payload = await api('/api/magic-link/request', { method: 'POST', body: { email, portalUrl } });
   $('magic-status').textContent = payload.message || 'Link request processed.';
   logActivity(`Magic link requested for ${email}`);
@@ -580,8 +635,8 @@ async function loadStaff() {
   if (!users.length) { $('staff-output').innerHTML = '<div class="info-msg">No staff users yet.</div>'; return; }
   $('staff-output').innerHTML = users.map((u) => `
     <div class="seminar-row">
-      <span><strong>${escapeHtml(u.username)}</strong> <span class="roster-sub">${escapeHtml((u.roles || []).join(', '))}${u.source === 'bootstrap' ? ' • server admin' : ''}</span></span>
-      <span class="seminar-fill">${u.editable ? `<button class="btn btn-sm btn-white staff-edit" data-user="${escapeHtml(u.username)}" data-roles="${escapeHtml((u.roles || []).join(','))}">Edit</button> <button class="btn btn-sm btn-white staff-deactivate" data-user="${escapeHtml(u.username)}">Disable</button>` : '<span class="roster-sub">read-only</span>'}</span>
+      <span><strong>${escapeHtml(u.username)}</strong> <span class="roster-sub">${escapeHtml((u.roles || []).join(', '))}${u.source === 'bootstrap' ? ' • server admin' : ''}${u.email ? ' • ' + escapeHtml(u.email) : ''}</span></span>
+      <span class="seminar-fill">${u.editable ? `<button class="btn btn-sm btn-white staff-edit" data-user="${escapeHtml(u.username)}" data-roles="${escapeHtml((u.roles || []).join(','))}" data-email="${escapeHtml(u.email || '')}">Edit</button> <button class="btn btn-sm btn-white staff-deactivate" data-user="${escapeHtml(u.username)}">Disable</button>` : '<span class="roster-sub">read-only</span>'}</span>
     </div>`).join('');
 }
 
@@ -595,11 +650,13 @@ async function saveStaff() {
   if (!username) return showToast('Enter a username.');
   const roles = [...document.querySelectorAll('.staff-roles .role-check input:checked')].map((cb) => cb.value);
   const password = $('staff-password').value;
+  const email = $('staff-email').value.trim();
   const body = { username, roles };
   if (password) body.password = password;
+  if (email) body.email = email;
   await api('/api/staff', { method: 'POST', body });
   $('staff-status').textContent = `Saved ${username}.`;
-  $('staff-username').value = ''; $('staff-password').value = ''; setStaffRoleChecks('');
+  $('staff-username').value = ''; $('staff-email').value = ''; $('staff-password').value = ''; setStaffRoleChecks('');
   showToast('Staff user saved.');
   logActivity(`Saved staff user ${username}`);
   await loadStaff();
@@ -617,6 +674,9 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('online', updateOnlineStatus);
   window.addEventListener('offline', updateOnlineStatus);
   $('login-form').addEventListener('submit', handleLogin);
+  $('send-login-link').addEventListener('click', () => requestStaffMagicLink().catch((error) => { $('login-error').textContent = error.message; $('login-error').hidden = false; }));
+  $('use-password-link').addEventListener('click', (e) => { e.preventDefault(); showPasswordLogin(); });
+  $('use-magic-link').addEventListener('click', (e) => { e.preventDefault(); showMagicLogin(); });
   $('logout-btn').addEventListener('click', async () => { await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {}); showAuth('Signed out.'); });
   $('refresh-btn').addEventListener('click', async () => { await api('/api/sync/refresh', { method: 'POST' }); await bootstrap(); showToast('Cache refreshed.'); });
   $('sync-btn').addEventListener('click', () => processOfflineQueue().catch((error) => showToast(error.message)));
@@ -661,7 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('save-staff').addEventListener('click', () => saveStaff().catch((error) => showToast(error.message)));
   $('staff-output').addEventListener('click', (event) => {
     const editBtn = event.target.closest('.staff-edit');
-    if (editBtn) { $('staff-username').value = editBtn.dataset.user; setStaffRoleChecks(editBtn.dataset.roles); $('staff-password').value = ''; $('staff-status').textContent = `Editing ${editBtn.dataset.user} — leave password blank to keep it.`; }
+    if (editBtn) { $('staff-username').value = editBtn.dataset.user; $('staff-email').value = editBtn.dataset.email || ''; setStaffRoleChecks(editBtn.dataset.roles); $('staff-password').value = ''; $('staff-status').textContent = `Editing ${editBtn.dataset.user} — leave password blank to keep it.`; }
     const offBtn = event.target.closest('.staff-deactivate');
     if (offBtn) deactivateStaff(offBtn.dataset.user).catch((error) => showToast(error.message));
   });

@@ -32,14 +32,23 @@
   </header>
 
   <div id="auth" class="auth-screen visible">
-    <form id="login-form" class="auth-card">
+    <div class="auth-card">
       <h2>Staff Login</h2>
-      <p>Sign in to access the cached IMSDA registration manager and protected actions.</p>
-      <input id="login-username" placeholder="Username" autocomplete="username" required>
-      <input id="login-password" type="password" placeholder="Access Code" autocomplete="current-password" required>
-      <button class="btn btn-primary full-width" type="submit">Sign In</button>
+      <p>Sign in to the IMSDA Registration Manager.</p>
+      <div id="login-magic-section">
+        <input id="login-email" type="email" placeholder="Your staff email" autocomplete="email">
+        <button id="send-login-link" class="btn btn-primary full-width" type="button">Send Login Link</button>
+        <p id="login-magic-sent" class="meta" hidden></p>
+        <p class="meta"><a href="#" id="use-password-link">Sign in with password instead</a></p>
+      </div>
+      <form id="login-form" hidden>
+        <input id="login-username" placeholder="Username" autocomplete="username" required>
+        <input id="login-password" type="password" placeholder="Access Code" autocomplete="current-password" required>
+        <button class="btn btn-primary full-width" type="submit">Sign In</button>
+        <p class="meta"><a href="#" id="use-magic-link">Use magic link instead</a></p>
+      </form>
       <div id="login-error" class="error-msg auth-error" hidden></div>
-    </form>
+    </div>
   </div>
 
   <main class="layout">
@@ -209,6 +218,7 @@
         <h3>Add / Update User</h3>
         <div class="form-grid compact-form">
           <label>Username<input id="staff-username" autocomplete="off" placeholder="e.g. registrar2"></label>
+          <label>Email<input id="staff-email" type="email" autocomplete="off" placeholder="for magic link login"></label>
           <label>Password<input id="staff-password" type="password" autocomplete="new-password" placeholder="min 8 chars (blank = keep)"></label>
         </div>
         <fieldset class="staff-roles">
@@ -228,7 +238,6 @@
         <p class="meta">This sends a secure edit link to the email on the registration.</p>
         <div class="form-grid compact-form">
           <label>Email<input id="magic-email" type="email"></label>
-          <label>Portal URL<input id="magic-url" placeholder="https://example.org/wr26-portal"></label>
         </div>
         <button id="send-magic" class="btn btn-primary full-width">Send Link</button>
         <p id="magic-status" class="meta"></p>
