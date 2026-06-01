@@ -79,38 +79,57 @@ node tools/validate-wr26-form-json.js form/wr26-registration-fluentforms.smart-p
 
 ---
 
-## Part 2 — Pay-later card payments (decision needed)
+## Part 2 — Pay-later card payments (BUILT)
 
-Today, **Pay Later collects no card.** The registrant gets status
-`pending_pay_later`, and the portal/email tells them to pay online or mail a
-check (`pwa-server/public/portal.js`). There is **no online card capture in the
-PWA** — there is no Square SDK, access token, or payments endpoint anywhere in
-GAS or the PWA (only the `SQUARE_FEE_*` fee config). So letting pay-later people
-pay by card later requires one of two approaches:
+Pay Later no longer dead-ends at "mail a check." When a registrant owes a
+balance, GAS now creates a **Square-hosted payment link for the exact balance it
+computed** (promo discount already applied) and embeds a **"Pay by Card Now"**
+button in the confirmation and payment-reminder emails. Square hosts the card
+capture, so no card data touches GAS or the PWA — only a hosted URL is emailed.
 
-### Option A — Square hosted Payment Link in the email (recommended)
+This pairs with a guard added to the form (Part 1): because a promo code can't be
+applied to the *instant* card checkout, **anyone who enters a promo code is
+steered to Pay Later**, where this link charges the correct discounted amount.
+Card-with-no-promo still pays inline at registration.
 
-Put a **Square-hosted Checkout / Payment Link** in the confirmation and
-payment-reminder emails. Square's own page collects the card; the result is
-recorded back to the sheet (manually or via a Square webhook). Nothing in your
-PWA touches a card, so your servers stay out of PCI scope.
+### How it works
 
-- Effort: low — mostly Square dashboard config + a small change to the GAS email
-  templates (`gas/Email.gs`, `gas/Reminders.gs`) to include the link.
-- This matches the current architecture (all card charging stays on Square's
-  surfaces).
+| Path | What the registrant gets |
+|---|---|
+| Card, no promo | Pays inline via Fluent Forms Square at registration |
+| Card + promo code | Form steers to Pay Later → email has a Square link for the discounted balance |
+| Pay Later (any) | Confirmation + reminder emails include a Square "Pay by Card Now" button |
 
-### Option B — "Pay by card" button built into the public PWA portal
+Implementation: `gas/SquarePayments.gs` (`createSquarePaymentLink_`,
+`squarePaymentInfoForRegistration_`, `squarePayButtonHtml_`), wired into
+`gas/Email.gs` (confirmation, unpaid branch) and `gas/Reminders.gs`. The charged
+amount includes the card processing fee per the Config `SQUARE_FEE_*` keys, so
+it's consistent with the inline and on-site Square paths.
 
-Add card capture to `/portal/` using Square's **Web Payments SDK** (tokenizes the
-card in the browser) plus a **new PWA server endpoint** that calls the Square
-**Payments API** with a Square access token in the server env, then reconciles
-the result back to the sheet (ideally via a Square webhook).
+### What you must set (GAS Script Properties)
 
-- Effort: significant, net-new build. Brings the PWA server into **PCI SAQ-A**
-  scope and requires Square credentials + webhook handling.
-- Choose this only if an in-portal "Pay now" button is a hard requirement.
+Add these in the Apps Script editor → **Project Settings → Script properties**
+(secrets live here, never in the Config sheet or the repo):
 
-> Tell the team which option you want and that piece can be built next. Until
-> then, Part 1 (at-registration card payments) is fully functional once the
-> Square account is connected in WordPress.
+| Key | Value |
+|---|---|
+| `SQUARE_ACCESS_TOKEN` | Square access token (must match the environment below) |
+| `SQUARE_LOCATION_ID` | The Square location to attribute payments to |
+| `SQUARE_ENVIRONMENT` | `sandbox` while testing, `production` when live (defaults to `production`) |
+
+If these are unset, link creation is **skipped gracefully** — emails fall back to
+the edit/manage link and "mail a check" wording, so nothing breaks before you
+configure Square.
+
+### Notes / reconciliation
+
+- The link uses Square's **quick-pay** Payment Links API. A stable idempotency key
+  (registration ID + amount) means re-sending a reminder reuses the same link
+  rather than creating duplicates.
+- Marking the registration **paid** is not yet automatic for these links. Either
+  record the payment in the PWA after it lands, or (future enhancement) add a
+  Square **webhook** to flip status automatically. Until then, reconcile from the
+  Square dashboard.
+- Test with **sandbox** credentials first: register a pay-later (or card+promo)
+  entry, open the email, confirm the button charges the correct discounted amount
+  on Square's hosted page.

@@ -28,8 +28,9 @@ function sendPendingChargeReminderEmail_(reg,editPageUrl){
   var body='<p>Hello '+escapeHtml(reg.firstName)+',</p>';
   body+='<p style="font-size:1.15em;font-weight:bold;">This is a friendly reminder that your '+escapeHtml(cfg.EVENT_NAME||"Women's Retreat 2026")+' registration still has a balance due.</p>';
   body+='<p><b>Amount still due: $'+escapeHtml(String(balance))+'</b>'+(collected>0?(' (of $'+escapeHtml(String(billed))+' total; $'+escapeHtml(String(collected))+' received)'):'')+'</p>';
-  body+='<p>Did you forget to complete your payment? You can pay online using the link below, or mail a check payable to IMSDA.</p>';
-  if(editUrl)body+='<p><a href="'+escapeHtml(editUrl)+'" style="font-size:1.1em;font-weight:bold;">Pay Online / Manage Registration</a></p>';
+  body+='<p>Did you forget to complete your payment? You can pay securely by card using the button below, or mail a check payable to IMSDA.</p>';
+  body+=squarePayButtonHtml_(reg);
+  if(editUrl)body+='<p><a href="'+escapeHtml(editUrl)+'">Manage your registration</a></p>';
   body+='<p>If you have already paid, please disregard this message. Thank you!</p><p>IMSDA</p>';
   return sendEmailSafe_(Object.assign({to:reg.email,subject:(cfg.EVENT_NAME||"Women's Retreat 2026")+' – Payment Reminder: Balance Due',htmlBody:body},bccObj()));
 }

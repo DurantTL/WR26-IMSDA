@@ -22,9 +22,10 @@ function sendConfirmationEmail(reg,edit,context){
     if(editUrl)body+='<p><a href="'+escapeHtml(editUrl)+'">Edit your registration details</a></p>';
   }else{
     body+='<p>Your registration has been received. A balance of <b>$'+escapeHtml(String(amountDisplay))+'</b> is due.</p>';
-    body+='<p style="font-size:1.1em;font-weight:bold;">Please use the link below to pay your registration fee online, or mail a check payable to IMSDA.</p>';
+    body+='<p style="font-size:1.1em;font-weight:bold;">Please pay your registration fee using the secure card link below, or mail a check payable to IMSDA.</p>';
     body+=attendeeRows+detailsBlock;
-    if(editUrl)body+='<p><a href="'+escapeHtml(editUrl)+'" style="font-size:1.1em;font-weight:bold;">Pay Online / Edit Registration</a></p>';
+    body+=squarePayButtonHtml_(reg);
+    if(editUrl)body+='<p><a href="'+escapeHtml(editUrl)+'">Edit your registration details</a></p>';
   }
   if(ctxAttendees.some(function(a){return String(a.childcare_needed||'').toLowerCase()==='yes'||String(a.childcare_needed||'').toLowerCase()==='true';}))body+='<p>'+escapeHtml(getConfig().CHILDCARE_MESSAGE)+'</p>';
   body+='<p><img src="'+escapeHtml(generateQRUrl(reg.qrToken))+'"/></p><p>Show this QR code at check-in.</p><p>IMSDA</p>';
