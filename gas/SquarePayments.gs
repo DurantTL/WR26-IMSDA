@@ -94,3 +94,40 @@ function squarePayButtonHtml_(reg){
   return '<p><a href="'+escapeHtml(info.url)+'" style="display:inline-block;background:#7c3aed;color:#ffffff;padding:12px 22px;border-radius:8px;font-size:1.1em;font-weight:bold;text-decoration:none;">Pay $'+escapeHtml(info.total.toFixed(2))+' by Card Now</a></p>'+
     '<p style="font-size:0.9em;color:#5b6470;margin-top:4px;">Secure checkout hosted by Square'+feeNote+'. Or mail a check payable to IMSDA.</p>';
 }
+
+// Record a PAY-LATER Square payment-link payment as collected. Driven by the
+// Square webhook, which the PWA server verifies (HMAC signature) before forwarding
+// here — Apps Script web apps can't read the request headers needed to verify
+// Square's signature, so the PWA does that and calls this action with the SECRET.
+// Idempotent on the Square payment id, so Square's duplicate `payment.created` /
+// `payment.updated` deliveries and retries never double-count. payload:
+// {registrationId, amountPaid (USD), squarePaymentId, squareOrderId, source}.
+function recordSquareLinkPayment(payload){
+  try{
+    var registrationId=String((payload&&payload.registrationId)||'').trim();
+    if(!registrationId)return {success:false,message:'Registration not found'};
+    var paymentId=String((payload&&payload.squarePaymentId)||'').trim();
+    var amount=Math.round(Number((payload&&payload.amountPaid)||0)*100)/100;
+    if(!(amount>0))return {success:false,message:'Invalid payment amount'};
+    return withScriptLock_(function(){
+      var existing=getRegistrationById(registrationId);
+      if(!existing)return {success:false,message:'Registration not found'};
+      // Idempotency: a payment id we've already filed (in the Square ID column or a
+      // prior note) is a duplicate/retried delivery — acknowledge without re-applying.
+      if(paymentId&&(String(existing.squarePaymentId||'').indexOf(paymentId)>-1||String(existing.adminNotes||'').indexOf(paymentId)>-1))
+        return {success:true,alreadyRecorded:true,registration:existing};
+      var owed=Number(existing.finalAmount||0);
+      var priorPaid=Number(existing.amountPaid!=null?existing.amountPaid:0);
+      var totalCollected=Math.round((priorPaid+amount)*100)/100;
+      // The hosted link charges base+fee, so a full settlement lands at/above the
+      // owed base; only a deliberate underpayment stays 'partial'.
+      var status=(owed>0&&totalCollected<owed-0.01)?'partial':'paid';
+      var note='['+new Date().toISOString()+'] Square online payment received: $'+amount+'.'+(paymentId?(' Square payment '+paymentId+'.'):'')+' Total collected to date: $'+totalCollected+'.'+(status==='partial'?(' Balance remaining: $'+(Math.round((owed-totalCollected)*100)/100)+'.'):'');
+      var squareIds=existing.squarePaymentId?(String(existing.squarePaymentId)+(paymentId?(','+paymentId):'')):paymentId;
+      var updated=updateRegistration(registrationId,{paymentStatus:status,squarePaymentId:squareIds,amountPaid:totalCollected,adminNotes:(existing.adminNotes?existing.adminNotes+'\n':'')+note});
+      if(!updated.success)return updated;
+      logAudit_('squareLinkPayment',registrationId,(payload&&payload.source)||'square-webhook','Amount: $'+amount+', Total: $'+totalCollected+', Status: '+status+(paymentId?(', Payment: '+paymentId):''));
+      return {success:true,registration:getRegistrationById(registrationId),amountThisTransaction:amount,totalCollected:totalCollected,status:status};
+    });
+  }catch(e){return {success:false,message:e.message};}
+}

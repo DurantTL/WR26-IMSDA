@@ -22,6 +22,12 @@ const sessionCookieName = 'imsda_registration_session';
 const sessionTtlSeconds = parseInt(process.env.SESSION_TTL_SECONDS || '43200', 10);
 const syncIntervalMs = parseInt(process.env.PWA_SYNC_INTERVAL_MS || '60000', 10);
 const minSyncRegistrations = parseInt(process.env.SYNC_MIN_REGISTRATIONS || '1', 10);
+// Square webhook: lets a paid pay-later payment-link auto-mark the registration as
+// paid. The signature key is the one Square shows for the webhook subscription;
+// the notification URL must exactly match what's registered in Square (it's part
+// of the signed payload). Both unset → the webhook is disabled and returns 503.
+const squareWebhookSignatureKey = process.env.SQUARE_WEBHOOK_SIGNATURE_KEY || '';
+const squareWebhookUrl = process.env.SQUARE_WEBHOOK_NOTIFICATION_URL || '';
 
 if (!gasUrl) console.warn('WR26_GAS_URL is not set. API calls will fail.');
 if (!gasSecret) console.warn('WR26_GAS_SECRET is not set. GAS calls requiring secret will fail.');
@@ -32,6 +38,80 @@ app.disable('x-powered-by');
 // (used for rate limiting and optional magic-link IP binding) is the real client,
 // not the proxy. Override with TRUST_PROXY (integer hop count) if needed.
 app.set('trust proxy', process.env.TRUST_PROXY != null ? Number(process.env.TRUST_PROXY) : (isProduction ? 1 : 0));
+
+// Square's HMAC signature is computed over (notificationUrl + raw request body),
+// so this route must see the EXACT bytes Square sent — register it with a raw body
+// parser BEFORE express.json(), which would otherwise consume and re-serialize the
+// body and break verification.
+function verifySquareSignature(rawBody, signature, notificationUrl) {
+  if (!squareWebhookSignatureKey || !signature || !notificationUrl) return false;
+  const expected = crypto.createHmac('sha256', squareWebhookSignatureKey).update(notificationUrl + rawBody).digest('base64');
+  const a = Buffer.from(signature);
+  const b = Buffer.from(expected);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+// createSquarePaymentLink_ (GAS) tags each link with payment_note "Ref: <regId>",
+// which surfaces as the payment's `note`. Pull the registration id back out.
+function registrationIdFromNote(note) {
+  const match = String(note || '').match(/Ref:\s*([A-Za-z0-9._-]+)/);
+  return match ? match[1] : '';
+}
+
+app.post('/api/square/webhook', express.raw({ type: '*/*', limit: '1mb' }), async (req, res) => {
+  try {
+    if (!squareWebhookSignatureKey) {
+      console.error('[square-webhook] SQUARE_WEBHOOK_SIGNATURE_KEY not set; rejecting delivery.');
+      return res.status(503).json({ success: false, error: 'Webhook not configured' });
+    }
+    const rawBody = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : String(req.body || '');
+    const signature = req.get('x-square-hmacsha256-signature') || '';
+    const notificationUrl = squareWebhookUrl || `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+    if (!verifySquareSignature(rawBody, signature, notificationUrl)) {
+      console.warn('[square-webhook] signature verification failed; rejecting.');
+      return res.status(401).json({ success: false, error: 'Invalid signature' });
+    }
+    let event;
+    try { event = JSON.parse(rawBody || '{}'); } catch (_error) { return res.status(400).json({ success: false, error: 'Invalid JSON' }); }
+    // Act only on completed payments. Square sends payment.created then
+    // payment.updated for the same payment; GAS dedupes by payment id so either
+    // (or a retry) safely settles the balance exactly once.
+    const type = String(event.type || '');
+    const payment = event && event.data && event.data.object && event.data.object.payment;
+    if ((type === 'payment.created' || type === 'payment.updated') && payment) {
+      const status = String(payment.status || '').toUpperCase();
+      if (status === 'COMPLETED' || status === 'APPROVED') {
+        const registrationId = registrationIdFromNote(payment.note);
+        const cents = payment.amount_money && Number(payment.amount_money.amount);
+        const amountPaid = Number.isFinite(cents) ? cents / 100 : 0;
+        if (registrationId && amountPaid > 0) {
+          try {
+            const result = await gasRequest('recordSquareLinkPayment', {
+              registrationId,
+              amountPaid,
+              squarePaymentId: String(payment.id || ''),
+              squareOrderId: String(payment.order_id || ''),
+              source: 'square-webhook',
+            });
+            if (result && result.success && !result.alreadyRecorded) await refreshCache(true).catch(() => {});
+          } catch (error) {
+            // Let Square retry (its idempotency-safe on our side) rather than
+            // silently dropping a real payment on a transient GAS outage.
+            console.error('[square-webhook] recordSquareLinkPayment failed:', error.message);
+            return res.status(502).json({ success: false, error: 'Upstream error' });
+          }
+        } else {
+          console.warn('[square-webhook] completed payment missing registration ref or amount; nothing to reconcile.');
+        }
+      }
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[square-webhook] handler error:', error.message);
+    res.status(500).json({ success: false });
+  }
+});
+
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: false }));
 
