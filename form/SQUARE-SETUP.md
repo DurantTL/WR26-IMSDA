@@ -101,10 +101,12 @@ Card-with-no-promo still pays inline at registration.
 | Pay Later (any) | Confirmation + reminder emails include a Square "Pay by Card Now" button |
 
 Implementation: `gas/SquarePayments.gs` (`createSquarePaymentLink_`,
-`squarePaymentInfoForRegistration_`, `squarePayButtonHtml_`), wired into
-`gas/Email.gs` (confirmation, unpaid branch) and `gas/Reminders.gs`. The charged
-amount includes the card processing fee per the Config `SQUARE_FEE_*` keys, so
-it's consistent with the inline and on-site Square paths.
+`squarePaymentInfoForRegistration_`, `squarePayButtonHtml_`,
+`recordSquareLinkPayment`), wired into `gas/Email.gs` (confirmation, unpaid
+branch) and `gas/Reminders.gs`; the auto-reconcile webhook lives in
+`pwa-server/server.js` (`POST /api/square/webhook`). The charged amount includes
+the card processing fee per the Config `SQUARE_FEE_*` keys, so it's consistent
+with the inline and on-site Square paths.
 
 ### What you must set (GAS Script Properties)
 
@@ -121,15 +123,45 @@ If these are unset, link creation is **skipped gracefully** — emails fall back
 the edit/manage link and "mail a check" wording, so nothing breaks before you
 configure Square.
 
-### Notes / reconciliation
+### Auto-reconcile (Square webhook → marks the registration paid)
+
+When one of these hosted links is paid, a **Square webhook** now flips the
+registration to **paid** automatically — no manual step. The webhook is received
+by the **PWA server** (`POST /api/square/webhook`), which verifies Square's HMAC
+signature, then calls the GAS `recordSquareLinkPayment` action (GAS holds the
+balance and dedupes by Square payment id, so retries/duplicate deliveries never
+double-count). *(Apps Script web apps can't read request headers, so signature
+verification has to happen in the PWA, not GAS.)*
+
+How GAS knows which registration a payment is for: each link is tagged with the
+note `Ref: <registrationId>` (via `payment_note`), which Square echoes back on the
+payment; the PWA parses the id out and forwards it.
+
+**Set up the webhook (one time):**
+
+1. **PWA server env** — set these (secrets; never commit them):
+   | Key | Value |
+   |---|---|
+   | `SQUARE_WEBHOOK_SIGNATURE_KEY` | The signature key Square shows for the webhook subscription |
+   | `SQUARE_WEBHOOK_NOTIFICATION_URL` | The exact HTTPS URL you register below (it's part of the signed payload). E.g. `https://registration.imsda.org/api/square/webhook` |
+
+   If `SQUARE_WEBHOOK_SIGNATURE_KEY` is unset, the endpoint returns **503** and
+   ignores deliveries — nothing breaks, you just keep reconciling manually.
+2. **Square dashboard → Developer → Webhooks → Add endpoint.** URL =
+   `https://<your-pwa-host>/api/square/webhook`; subscribe to **`payment.created`**
+   and **`payment.updated`**. Use the **Sandbox** webhook while testing, **Live**
+   for production. Copy the **Signature Key** into `SQUARE_WEBHOOK_SIGNATURE_KEY`.
+3. Square's "Send test event" should return **200**; a real test payment should
+   move the matching registration to **paid** within a few seconds.
+
+If you ever run **without** the PWA server, the link still works — just record the
+payment manually in the PWA / reconcile from the Square dashboard.
+
+### Notes
 
 - The link uses Square's **quick-pay** Payment Links API. A stable idempotency key
   (registration ID + amount) means re-sending a reminder reuses the same link
   rather than creating duplicates.
-- Marking the registration **paid** is not yet automatic for these links. Either
-  record the payment in the PWA after it lands, or (future enhancement) add a
-  Square **webhook** to flip status automatically. Until then, reconcile from the
-  Square dashboard.
 - Test with **sandbox** credentials first: register a pay-later (or card+promo)
   entry, open the email, confirm the button charges the correct discounted amount
-  on Square's hosted page.
+  on Square's hosted page, then confirm the webhook marked the registration paid.

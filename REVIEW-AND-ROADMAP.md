@@ -193,6 +193,12 @@ Status of the WR26 planning requests on the canonical Option A stack
 - ✅ **Check-in balance** — shows amount owed and the Square card total
   (base + 2.9% + $0.30) so staff can collect in the Square app.
 - ✅ **Registrant portal** now shows balance due / paid-in-full.
+- ✅ **Pay-later Square links** — confirmation/reminder emails carry a "Pay by
+  Card Now" button charging the GAS-computed discounted balance + fee, and a
+  **webhook auto-marks the registration paid** when the link is paid
+  (`recordSquareLinkPayment`, signature-verified in `pwa-server`
+  `POST /api/square/webhook`, idempotent on the Square payment id). See
+  `form/SQUARE-SETUP.md` Part 2.
 
 ### Remaining (live UAT — cannot be exercised without a deployed GAS + Sheet)
 1. Run `wr26EnsureSheetSetup()` to create the new `Refunds` and `Seminars` tabs,
@@ -201,3 +207,7 @@ Status of the WR26 planning requests on the canonical Option A stack
    the staff Tools tab), then run a dry-run and a real assignment.
 3. Smoke-test refund, transfer, reminder, and check-in-balance flows end to end
    against live data; confirm `AuditLog` rows appear.
+4. Configure the Square webhook (`SQUARE_WEBHOOK_SIGNATURE_KEY` /
+   `SQUARE_WEBHOOK_NOTIFICATION_URL` on the PWA; subscribe `payment.created` +
+   `payment.updated` in the Square dashboard), then pay a sandbox pay-later link
+   and confirm the registration flips to `paid` with an `AuditLog` row.

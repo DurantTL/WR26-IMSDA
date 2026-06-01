@@ -93,6 +93,8 @@ PWA_SYNC_INTERVAL_MS=60000
 SYNC_MIN_REGISTRATIONS=1
 TRUST_PROXY=1
 WR26_AUTH_USERS='[{"username":"registrar","password":"$2b$10$...bcrypt...","roles":["registrar","payments","checkin"]}]'
+SQUARE_WEBHOOK_SIGNATURE_KEY=from_square_webhook_subscription
+SQUARE_WEBHOOK_NOTIFICATION_URL=https://registration.imsda.org/api/square/webhook
 ```
 
 Notes:
@@ -102,6 +104,7 @@ Notes:
 - `WR26_AUTH_USERS` must use bcrypt password hashes.
 - `SYNC_MIN_REGISTRATIONS` prevents replacing a good cache with a suspiciously empty snapshot.
 - `TRUST_PROXY` is the number of proxy hops in front of the app (e.g. `1` behind Cloudflare/Nginx) so per-IP rate limiting and magic-link IP binding see the real client IP. Defaults to `1` in production, `0` in development.
+- `SQUARE_WEBHOOK_SIGNATURE_KEY` / `SQUARE_WEBHOOK_NOTIFICATION_URL` enable the Square webhook at `POST /api/square/webhook`, which auto-marks paid pay-later payment links. The notification URL must exactly match the one registered in the Square dashboard (it's part of the signed payload). If the key is unset the endpoint is disabled (returns 503). See `form/SQUARE-SETUP.md` → Part 2 for the full setup.
 
 ### Hardening built in
 
