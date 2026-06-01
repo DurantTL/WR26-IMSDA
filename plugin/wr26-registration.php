@@ -743,6 +743,33 @@ add_action('admin_menu', function(){
     add_submenu_page('wr26-dashboard', 'GAS Tools', 'GAS Tools', 'manage_options', 'wr26-gas-tools', 'wr26_tools_page');
 });
 add_action('admin_enqueue_scripts', function($hook){ if(strpos((string)$hook,'wr26')===false) return; wp_enqueue_script('jquery'); wp_localize_script('jquery','wr26',array('ajax_url'=>admin_url('admin-ajax.php'),'nonce'=>wp_create_nonce('wr26_admin_nonce'))); });
+
+/**
+ * Enqueue the live payment-summary/recalc script on the front end.
+ *
+ * The script lives in plugin/assets so it is delivered as a real, executable
+ * asset. It cannot ship inside the Fluent Forms Custom HTML field: Fluent Forms
+ * sanitizes that markup and strips <script> tags, which left the JS rendering as
+ * visible text and the summary frozen at $0.00. The script self-gates on
+ * `.wr26-summary-box`, so it is a no-op on pages without the WR26 form.
+ */
+function wr26_enqueue_form_summary() {
+    wp_enqueue_script(
+        'wr26-form-summary',
+        plugins_url('assets/wr26-form-summary.js', __FILE__),
+        array('jquery'),
+        WR26_VERSION,
+        true
+    );
+    // Source of truth for the recorded balance is GAS; these only drive the
+    // on-screen preview / inline Square charge. Keep in sync with the Config sheet.
+    wp_add_inline_script('wr26-form-summary', 'window.WR26_FORM_PRICING=' . wp_json_encode(array(
+        'earlyPrice'   => floatval(apply_filters('wr26_early_price', 125)),
+        'regularPrice' => floatval(apply_filters('wr26_regular_price', 145)),
+        'earlyEnd'     => apply_filters('wr26_early_end', '2026-08-14T23:59:59'),
+    )) . ';', 'before');
+}
+add_action('wp_enqueue_scripts', 'wr26_enqueue_form_summary');
 function wr26_admin_header($title,$active){ echo '<div class="wrap"><h1>'.esc_html($title).'</h1><h2 class="nav-tab-wrapper">'; foreach(array('dashboard'=>'Dashboard','registrations'=>'Registrations','waitlist'=>'Waitlist','checkin'=>'Check-In','rosters'=>'Church Rosters','promo'=>'Promo Codes','settings'=>'Settings','gas-tools'=>'GAS Tools') as $slug=>$label){$page='wr26-'.$slug;echo '<a class="nav-tab '.($active===$slug?'nav-tab-active':'').'" href="'.esc_url(admin_url('admin.php?page='.$page)).'">'.esc_html($label).'</a>';} echo '</h2></div>'; }
 function wr26_page_dashboard(){
     wr26_admin_header('WR26 Dashboard','dashboard');
