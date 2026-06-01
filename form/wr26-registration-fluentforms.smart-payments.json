@@ -1459,7 +1459,7 @@
           "element": "custom_html",
           "attributes": [],
           "settings": {
-            "html_codes": "<div style='padding:12px;border-left:4px solid #1a7efb;background:#f6fbff;margin:8px 0'><strong>Seminar Sessions:</strong><br>Session 1 — Friday 4:00–5:00 PM: 2 options (choose 1st and 2nd preference)<br>Session 2 — Saturday 2:00–3:15 PM: 3 options<br>Session 3 — Saturday 3:30–4:45 PM: 2 options<br>Session 4 — Sunday 8:15–9:15 AM: 1 option<br><em>If a seminar is full your registration will still be accepted and placement reviewed manually.</em></div>",
+            "html_codes": "<div style='padding:12px;border-left:4px solid #1a7efb;background:#f6fbff;margin:8px 0'><p style='margin:0 0 8px'><strong>Breakout Session Descriptions</strong></p><details style='margin:6px 0'><summary style='cursor:pointer;font-weight:bold;color:#1a5cad'>&#9654; Friday 4:00–5:00 PM</summary><div style='padding:8px 0 4px'><p style='margin:0 0 8px'><strong>Session A: Color Me Golden: Embracing Life in Every Season</strong> &mdash; Panel Discussion<br>Every season of a woman’s life holds unique beauty, but later chapters often bring transitions that feel like winding down. God views this stage not as a time of fading, but as a vibrant season of deep impact and fruitfulness. <strong>Come hear real stories of faith and uncover fresh avenues for kingdom purpose while exploring practical ways to transform your life experience into a lasting legacy.</strong></p><p style='margin:0'><strong>Session B: Refined by Fire, Revealed in Beauty</strong><br>In this seminar we will learn how hard seasons shape strength, depth and resilience. <strong>We will learn how to walk through trials without losing our faith and how to find purpose in pain while developing a strength that comes only through surrender to God.</strong></p></div></details><details style='margin:6px 0'><summary style='cursor:pointer;font-weight:bold;color:#1a5cad'>&#9654; Sabbath 2:00–3:15 PM</summary><div style='padding:8px 0 4px'><p style='margin:0 0 8px'><strong>Session C: Repainted by Grace</strong> &mdash; Valerie Haveman<br>So many women carry the stains of past mistakes, shame, regret, or feelings of not being enough. But God does not define us by the colors of our past. In this breakout session, <strong>we’ll explore what it means to accept God’s forgiveness, stop condemning ourselves, and allow His grace to repaint our hearts with truth, freedom, and hope.</strong> Through Scripture and personal stories, we’ll discover how God makes broken things beautiful and invites us to see ourselves through His eyes instead of our own.</p><p style='margin:0 0 8px'><strong>Session D: Color Me Open</strong> &mdash; Mary Kendall<br>The door is open. Are you? And what does a root canal have to do with church hospitality? More than you’d think. Mary and her husband built Touchstone Endodontics around one mission: “Unforgettable care, start to finish” &mdash; and the same principles that turn nervous patients into raving fans can transform how we love our neighbors, our church family, and the stranger in our pew. <strong>Mary draws from business, home, and church ministry to share what she’s learning about what it means to truly see the people around us.</strong> She doesn’t have it all figured out &mdash; but she’s convinced the journey is worth taking, and she’d love some company.</p><p style='margin:0 0 8px'><strong>Session E: Nourished by Color</strong> &mdash; Stephanie Richards<br>This seminar explores simple, evidence-based ways to improve overall health by focusing on colorful nutrition, regular movement, and healthy sun exposure. <strong>Participants will learn how “eating the rainbow” &mdash; incorporating a variety of brightly colored fruits and vegetables &mdash; supports immunity, heart health, gut health, and energy.</strong> The session will also highlight how daily activity and safe sunshine exposure work together with nutrition to promote long-term wellness and healthy aging.</p><p style='margin:0'><strong>Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God</strong> &mdash; Shannon Pigsley<br>Prayer is powerful&mdash;an intimate, ongoing conversation with a God who listens, loves, and responds. In this session, <strong>we will explore why prayer matters so deeply in our relationship and discover the many beautiful ways we can communicate with our Heavenly Father.</strong> From kneeling in quiet surrender, to praying in community, to whispering private heart-conversations throughout the day, we’ll reflect on how the privilege of prayer draws us closer to God’s heart. Participants will also have the opportunity to visit interactive prayer stations, each designed to help you experience different forms of prayer in meaningful, hands-on ways. This is a space to learn, to practice, and to rediscover the joy of talking with God in every shade of life.</p></div></details><details style='margin:6px 0'><summary style='cursor:pointer;font-weight:bold;color:#1a5cad'>&#9654; Sabbath 4:15–5:30 PM</summary><div style='padding:8px 0 4px'><p style='margin:0 0 8px'><strong>Session G: Shades of Peace</strong> &mdash; Melissa Morris<br>This is a practical and encouraging seminar on letting go of anger and resentment while discovering the peace that comes through forgiveness in God. Together, <strong>we will explore how releasing past hurts can bring healing, restore relationships, and help us experience greater emotional and spiritual freedom.</strong></p><p style='margin:0 0 8px'><strong>Session H: Coloring Through the Chaos: Raising Children with Grace and Truth</strong> &mdash; Panel Discussion<br>Raising children today can feel unpredictable and overwhelming but God is still at work both in your child and in you. <strong>This season doesn’t require us to control every detail but does require us to guide, love and trust God with the outcome.</strong></p><p style='margin:0'><strong>Session I: Broken Crayons Still Color</strong><br>Domestic violence and alcohol use affect families inside and outside our church. This session is about awareness, growth and safety regarding domestic violence and alcohol use and empowering women to be the hands and feet of Jesus in our struggling world. Matthew 22: 37–39</p></div></details><details style='margin:6px 0'><summary style='cursor:pointer;font-weight:bold;color:#1a5cad'>&#9654; Sunday 8:15–9:15 AM</summary><div style='padding:8px 0 4px'><p style='margin:0'><strong>Session J: Brushstrokes of Leadership</strong> &mdash; Ami Cook<br>God uses ordinary women to create extraordinary ministry. In this practical and encouraging workshop, <strong>discover how small acts of faith, kindness, and leadership become beautiful brushstrokes in God’s masterpiece.</strong> Learn creative ways to build women’s ministry in your local church, encourage connection, and lead with both grace and purpose.</p></div></details><p style='margin:8px 0 0;color:#555;font-size:.9em'><em>If a seminar is full your registration will still be accepted and placement reviewed manually.</em></p></div>",
             "conditional_logics": [],
             "container_class": "",
             "visible": true
@@ -1891,14 +1891,14 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
-                "value": "fri_opt_1",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
-                "value": "fri_opt_2",
+                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
               }
@@ -1956,14 +1956,14 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
-                "value": "fri_opt_1",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
-                "value": "fri_opt_2",
+                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
               }
@@ -2013,30 +2013,36 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
+            "label": "Session 2 — Sabbath 2:00–3:15 PM (1st Choice)",
+            "admin_field_label": "Session 2 — Sabbath 2:00–3:15 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
-                "value": "sat_2pm_opt_1",
+                "label": "Session C: Repainted by Grace",
+                "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
-                "value": "sat_2pm_opt_2",
+                "label": "Session D: Color Me Open",
+                "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
-                "value": "sat_2pm_opt_3",
+                "label": "Session E: Nourished by Color",
+                "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
+              },
+              {
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "calc_value": "",
+                "id": 3
               }
             ],
             "validation_rules": {
@@ -2084,30 +2090,36 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
+            "label": "Session 2 — Sabbath 2:00–3:15 PM (2nd Choice)",
+            "admin_field_label": "Session 2 — Sabbath 2:00–3:15 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
-                "value": "sat_2pm_opt_1",
+                "label": "Session C: Repainted by Grace",
+                "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
-                "value": "sat_2pm_opt_2",
+                "label": "Session D: Color Me Open",
+                "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
-                "value": "sat_2pm_opt_3",
+                "label": "Session E: Nourished by Color",
+                "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
+              },
+              {
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "calc_value": "",
+                "id": 3
               }
             ],
             "validation_rules": {
@@ -2155,24 +2167,30 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
+            "label": "Session 3 — Sabbath 4:15–5:30 PM (1st Choice)",
+            "admin_field_label": "Session 3 — Sabbath 4:15–5:30 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
-                "value": "sat_330_opt_1",
+                "label": "Session G: Shades of Peace",
+                "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
-                "value": "sat_330_opt_2",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
+              },
+              {
+                "label": "Session I: Broken Crayons Still Color",
+                "value": "Broken Crayons Still Color",
+                "calc_value": "",
+                "id": 2
               }
             ],
             "validation_rules": {
@@ -2220,24 +2238,30 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
+            "label": "Session 3 — Sabbath 4:15–5:30 PM (2nd Choice)",
+            "admin_field_label": "Session 3 — Sabbath 4:15–5:30 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
-                "value": "sat_330_opt_1",
+                "label": "Session G: Shades of Peace",
+                "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
-                "value": "sat_330_opt_2",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
+              },
+              {
+                "label": "Session I: Broken Crayons Still Color",
+                "value": "Broken Crayons Still Color",
+                "calc_value": "",
+                "id": 2
               }
             ],
             "validation_rules": {
@@ -2293,8 +2317,8 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sunday Option A — title TBD",
-                "value": "sun_opt_1",
+                "label": "Session J: Brushstrokes of Leadership",
+                "value": "Brushstrokes of Leadership",
                 "calc_value": "",
                 "id": 0
               }
@@ -2927,14 +2951,14 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
-                "value": "fri_opt_1",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
-                "value": "fri_opt_2",
+                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
               }
@@ -3013,14 +3037,14 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
-                "value": "fri_opt_1",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
-                "value": "fri_opt_2",
+                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
               }
@@ -3091,30 +3115,36 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
+            "label": "Session 2 — Sabbath 2:00–3:15 PM (1st Choice)",
+            "admin_field_label": "Session 2 — Sabbath 2:00–3:15 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
-                "value": "sat_2pm_opt_1",
+                "label": "Session C: Repainted by Grace",
+                "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
-                "value": "sat_2pm_opt_2",
+                "label": "Session D: Color Me Open",
+                "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
-                "value": "sat_2pm_opt_3",
+                "label": "Session E: Nourished by Color",
+                "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
+              },
+              {
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "calc_value": "",
+                "id": 3
               }
             ],
             "validation_rules": {
@@ -3183,30 +3213,36 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
+            "label": "Session 2 — Sabbath 2:00–3:15 PM (2nd Choice)",
+            "admin_field_label": "Session 2 — Sabbath 2:00–3:15 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
-                "value": "sat_2pm_opt_1",
+                "label": "Session C: Repainted by Grace",
+                "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
-                "value": "sat_2pm_opt_2",
+                "label": "Session D: Color Me Open",
+                "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
-                "value": "sat_2pm_opt_3",
+                "label": "Session E: Nourished by Color",
+                "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
+              },
+              {
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "calc_value": "",
+                "id": 3
               }
             ],
             "validation_rules": {
@@ -3275,24 +3311,30 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
+            "label": "Session 3 — Sabbath 4:15–5:30 PM (1st Choice)",
+            "admin_field_label": "Session 3 — Sabbath 4:15–5:30 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
-                "value": "sat_330_opt_1",
+                "label": "Session G: Shades of Peace",
+                "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
-                "value": "sat_330_opt_2",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
+              },
+              {
+                "label": "Session I: Broken Crayons Still Color",
+                "value": "Broken Crayons Still Color",
+                "calc_value": "",
+                "id": 2
               }
             ],
             "validation_rules": {
@@ -3361,24 +3403,30 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
+            "label": "Session 3 — Sabbath 4:15–5:30 PM (2nd Choice)",
+            "admin_field_label": "Session 3 — Sabbath 4:15–5:30 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
-                "value": "sat_330_opt_1",
+                "label": "Session G: Shades of Peace",
+                "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
-                "value": "sat_330_opt_2",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
+              },
+              {
+                "label": "Session I: Broken Crayons Still Color",
+                "value": "Broken Crayons Still Color",
+                "calc_value": "",
+                "id": 2
               }
             ],
             "validation_rules": {
@@ -3455,8 +3503,8 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sunday Option A — title TBD",
-                "value": "sun_opt_1",
+                "label": "Session J: Brushstrokes of Leadership",
+                "value": "Brushstrokes of Leadership",
                 "calc_value": "",
                 "id": 0
               }
@@ -4110,14 +4158,14 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
-                "value": "fri_opt_1",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
-                "value": "fri_opt_2",
+                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
               }
@@ -4196,14 +4244,14 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
-                "value": "fri_opt_1",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
-                "value": "fri_opt_2",
+                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
               }
@@ -4274,30 +4322,36 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
+            "label": "Session 2 — Sabbath 2:00–3:15 PM (1st Choice)",
+            "admin_field_label": "Session 2 — Sabbath 2:00–3:15 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
-                "value": "sat_2pm_opt_1",
+                "label": "Session C: Repainted by Grace",
+                "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
-                "value": "sat_2pm_opt_2",
+                "label": "Session D: Color Me Open",
+                "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
-                "value": "sat_2pm_opt_3",
+                "label": "Session E: Nourished by Color",
+                "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
+              },
+              {
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "calc_value": "",
+                "id": 3
               }
             ],
             "validation_rules": {
@@ -4366,30 +4420,36 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
+            "label": "Session 2 — Sabbath 2:00–3:15 PM (2nd Choice)",
+            "admin_field_label": "Session 2 — Sabbath 2:00–3:15 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
-                "value": "sat_2pm_opt_1",
+                "label": "Session C: Repainted by Grace",
+                "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
-                "value": "sat_2pm_opt_2",
+                "label": "Session D: Color Me Open",
+                "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
-                "value": "sat_2pm_opt_3",
+                "label": "Session E: Nourished by Color",
+                "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
+              },
+              {
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "calc_value": "",
+                "id": 3
               }
             ],
             "validation_rules": {
@@ -4458,24 +4518,30 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
+            "label": "Session 3 — Sabbath 4:15–5:30 PM (1st Choice)",
+            "admin_field_label": "Session 3 — Sabbath 4:15–5:30 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
-                "value": "sat_330_opt_1",
+                "label": "Session G: Shades of Peace",
+                "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
-                "value": "sat_330_opt_2",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
+              },
+              {
+                "label": "Session I: Broken Crayons Still Color",
+                "value": "Broken Crayons Still Color",
+                "calc_value": "",
+                "id": 2
               }
             ],
             "validation_rules": {
@@ -4544,24 +4610,30 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
+            "label": "Session 3 — Sabbath 4:15–5:30 PM (2nd Choice)",
+            "admin_field_label": "Session 3 — Sabbath 4:15–5:30 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
-                "value": "sat_330_opt_1",
+                "label": "Session G: Shades of Peace",
+                "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
-                "value": "sat_330_opt_2",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
+              },
+              {
+                "label": "Session I: Broken Crayons Still Color",
+                "value": "Broken Crayons Still Color",
+                "calc_value": "",
+                "id": 2
               }
             ],
             "validation_rules": {
@@ -4638,8 +4710,8 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sunday Option A — title TBD",
-                "value": "sun_opt_1",
+                "label": "Session J: Brushstrokes of Leadership",
+                "value": "Brushstrokes of Leadership",
                 "calc_value": "",
                 "id": 0
               }
@@ -5293,14 +5365,14 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
-                "value": "fri_opt_1",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
-                "value": "fri_opt_2",
+                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
               }
@@ -5379,14 +5451,14 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
-                "value": "fri_opt_1",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
-                "value": "fri_opt_2",
+                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
               }
@@ -5457,30 +5529,36 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
+            "label": "Session 2 — Sabbath 2:00–3:15 PM (1st Choice)",
+            "admin_field_label": "Session 2 — Sabbath 2:00–3:15 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
-                "value": "sat_2pm_opt_1",
+                "label": "Session C: Repainted by Grace",
+                "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
-                "value": "sat_2pm_opt_2",
+                "label": "Session D: Color Me Open",
+                "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
-                "value": "sat_2pm_opt_3",
+                "label": "Session E: Nourished by Color",
+                "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
+              },
+              {
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "calc_value": "",
+                "id": 3
               }
             ],
             "validation_rules": {
@@ -5549,30 +5627,36 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
+            "label": "Session 2 — Sabbath 2:00–3:15 PM (2nd Choice)",
+            "admin_field_label": "Session 2 — Sabbath 2:00–3:15 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
-                "value": "sat_2pm_opt_1",
+                "label": "Session C: Repainted by Grace",
+                "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
-                "value": "sat_2pm_opt_2",
+                "label": "Session D: Color Me Open",
+                "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
-                "value": "sat_2pm_opt_3",
+                "label": "Session E: Nourished by Color",
+                "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
+              },
+              {
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "calc_value": "",
+                "id": 3
               }
             ],
             "validation_rules": {
@@ -5641,24 +5725,30 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
+            "label": "Session 3 — Sabbath 4:15–5:30 PM (1st Choice)",
+            "admin_field_label": "Session 3 — Sabbath 4:15–5:30 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
-                "value": "sat_330_opt_1",
+                "label": "Session G: Shades of Peace",
+                "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
-                "value": "sat_330_opt_2",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
+              },
+              {
+                "label": "Session I: Broken Crayons Still Color",
+                "value": "Broken Crayons Still Color",
+                "calc_value": "",
+                "id": 2
               }
             ],
             "validation_rules": {
@@ -5727,24 +5817,30 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
+            "label": "Session 3 — Sabbath 4:15–5:30 PM (2nd Choice)",
+            "admin_field_label": "Session 3 — Sabbath 4:15–5:30 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
-                "value": "sat_330_opt_1",
+                "label": "Session G: Shades of Peace",
+                "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
-                "value": "sat_330_opt_2",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
+              },
+              {
+                "label": "Session I: Broken Crayons Still Color",
+                "value": "Broken Crayons Still Color",
+                "calc_value": "",
+                "id": 2
               }
             ],
             "validation_rules": {
@@ -5821,8 +5917,8 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sunday Option A — title TBD",
-                "value": "sun_opt_1",
+                "label": "Session J: Brushstrokes of Leadership",
+                "value": "Brushstrokes of Leadership",
                 "calc_value": "",
                 "id": 0
               }
@@ -6476,14 +6572,14 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
-                "value": "fri_opt_1",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
-                "value": "fri_opt_2",
+                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
               }
@@ -6562,14 +6658,14 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Friday Option A — title TBD",
-                "value": "fri_opt_1",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Friday Option B — title TBD",
-                "value": "fri_opt_2",
+                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
               }
@@ -6640,30 +6736,36 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (1st Choice)",
+            "label": "Session 2 — Sabbath 2:00–3:15 PM (1st Choice)",
+            "admin_field_label": "Session 2 — Sabbath 2:00–3:15 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
-                "value": "sat_2pm_opt_1",
+                "label": "Session C: Repainted by Grace",
+                "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
-                "value": "sat_2pm_opt_2",
+                "label": "Session D: Color Me Open",
+                "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
-                "value": "sat_2pm_opt_3",
+                "label": "Session E: Nourished by Color",
+                "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
+              },
+              {
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "calc_value": "",
+                "id": 3
               }
             ],
             "validation_rules": {
@@ -6732,30 +6834,36 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
-            "admin_field_label": "Session 2 — Saturday 2:00–3:15 PM (2nd Choice)",
+            "label": "Session 2 — Sabbath 2:00–3:15 PM (2nd Choice)",
+            "admin_field_label": "Session 2 — Sabbath 2:00–3:15 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 2PM Option A — title TBD",
-                "value": "sat_2pm_opt_1",
+                "label": "Session C: Repainted by Grace",
+                "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 2PM Option B — title TBD",
-                "value": "sat_2pm_opt_2",
+                "label": "Session D: Color Me Open",
+                "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Sat 2PM Option C — title TBD",
-                "value": "sat_2pm_opt_3",
+                "label": "Session E: Nourished by Color",
+                "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
+              },
+              {
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "calc_value": "",
+                "id": 3
               }
             ],
             "validation_rules": {
@@ -6824,24 +6932,30 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (1st Choice)",
+            "label": "Session 3 — Sabbath 4:15–5:30 PM (1st Choice)",
+            "admin_field_label": "Session 3 — Sabbath 4:15–5:30 PM (1st Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
-                "value": "sat_330_opt_1",
+                "label": "Session G: Shades of Peace",
+                "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
-                "value": "sat_330_opt_2",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
+              },
+              {
+                "label": "Session I: Broken Crayons Still Color",
+                "value": "Broken Crayons Still Color",
+                "calc_value": "",
+                "id": 2
               }
             ],
             "validation_rules": {
@@ -6910,24 +7024,30 @@
           },
           "settings": {
             "dynamic_default_value": "",
-            "label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
-            "admin_field_label": "Session 3 — Saturday 3:30–4:45 PM (2nd Choice)",
+            "label": "Session 3 — Sabbath 4:15–5:30 PM (2nd Choice)",
+            "admin_field_label": "Session 3 — Sabbath 4:15–5:30 PM (2nd Choice)",
             "help_message": "",
             "container_class": "",
             "label_placement": "",
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sat 3:30PM Option A — title TBD",
-                "value": "sat_330_opt_1",
+                "label": "Session G: Shades of Peace",
+                "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Sat 3:30PM Option B — title TBD",
-                "value": "sat_330_opt_2",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
+              },
+              {
+                "label": "Session I: Broken Crayons Still Color",
+                "value": "Broken Crayons Still Color",
+                "calc_value": "",
+                "id": 2
               }
             ],
             "validation_rules": {
@@ -7004,8 +7124,8 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Sunday Option A — title TBD",
-                "value": "sun_opt_1",
+                "label": "Session J: Brushstrokes of Leadership",
+                "value": "Brushstrokes of Leadership",
                 "calc_value": "",
                 "id": 0
               }
@@ -7299,7 +7419,7 @@
           "element": "custom_html",
           "attributes": [],
           "settings": {
-            "html_codes": "\n<div class=\"wr26-summary-box\" style=\"background:#f7fafc;border:2px solid #7c3aed;border-radius:10px;padding:20px;margin:15px 0;font-family:Arial,Helvetica,sans-serif;\">\n  <h3 style=\"color:#4c1d95;margin:0 0 12px 0;\">Your Registration Summary</h3>\n  <table style=\"width:100%;border-collapse:collapse;\">\n    <tbody>\n      <tr><td>Registration</td><td id=\"wr26-sum-registration\" style=\"text-align:right;font-weight:bold;\">$0.00</td></tr>\n      <tr id=\"wr26-sum-discount-row\"><td>Promo Discount</td><td id=\"wr26-sum-discount\" style=\"text-align:right;color:#166534;\">-$0.00</td></tr>\n      <tr style=\"border-top:1px solid #ddd;\"><td>Subtotal</td><td id=\"wr26-sum-subtotal\" style=\"text-align:right;\">$0.00</td></tr>\n      <tr id=\"wr26-sum-fee-row\"><td>Credit/Debit Card Processing Fee (2.9% + $0.30)</td><td id=\"wr26-sum-fee\" style=\"text-align:right;\">$0.00</td></tr>\n      <tr style=\"border-top:2px solid #7c3aed;font-size:1.2em;font-weight:bold;\"><td>Total</td><td id=\"wr26-sum-total\" style=\"text-align:right;color:#7c3aed;\">$0.00</td></tr>\n    </tbody>\n  </table>\n  <p id=\"wr26-pay-note\" style=\"font-size:0.9em;color:#5b6470;margin:10px 0 0 0;\">Pay Later is selected. No card fee is added.</p>\n</div>\n<script>\n(function($){\n  // NOTE: These constants drive only the on-screen preview and the amount Square\n  // charges at checkout. Google Apps Script independently recomputes the owed\n  // amount from the Config sheet (EARLY_BIRD_PRICE / REGULAR_PRICE / *_END_DATE)\n  // and the PromoCodes sheet, and is the source of truth for the recorded balance.\n  // Keep these in sync with the GAS Config sheet; any drift is flagged by GAS\n  // reconciliation rather than silently mischarging.\n  var EARLY_PRICE = 120;\n  var REGULAR_PRICE = 140;\n  var EARLY_END = '2026-08-14T23:59:59';\n  var CARD_FEE_PERCENT = 0.029;\n  var CARD_FEE_FIXED = 0.30;\n\n  // Promo handling is intentionally NOT done here. Card discounts are applied by\n  // Fluent Forms' native coupon field at checkout (which discounts the chargeable\n  // amount and reports the coupon back to the plugin/GAS). Pay-later promos are\n  // validated and recorded by Google Apps Script from the PromoCodes sheet. Doing\n  // a discount in this script too would double-discount a card payment whenever a\n  // code exists both here and as an FF coupon, so the form total stays at the\n  // undiscounted subtotal + card fee and lets those two systems own discounts.\n\n  function getForm(){ return $('.wr26-summary-box').closest('form'); }\n  function money(n){ n = Number(n || 0); return '$' + n.toFixed(2); }\n  function getVal(name){\n    var $field = getForm().find('[name=\"' + name + '\"]');\n    if (!$field.length) return '';\n    if ($field.is(':radio')) return getForm().find('[name=\"' + name + '\"]:checked').val() || '';\n    return $field.val() || '';\n  }\n  function setHidden(name, value){\n    var $field = getForm().find('[name=\"' + name + '\"]');\n    if ($field.length) $field.val(value).trigger('input').trigger('change');\n  }\n  function isCard(){\n    var method = String(getVal('payment_method')).toLowerCase();\n    return method.indexOf('square') >= 0 || method.indexOf('card') >= 0 || method.indexOf('credit') >= 0;\n  }\n  function currentPrice(){\n    var now = new Date();\n    var earlyEnd = new Date(EARLY_END);\n    return now <= earlyEnd ? EARLY_PRICE : REGULAR_PRICE;\n  }\n  function attendeeCount(){\n    var count = parseInt(getVal('attendee_count'), 10);\n    if (!count || count < 1) count = 1;\n    if (count > 5) count = 5;\n    return count;\n  }\n  function feeFor(amount){\n    if (!amount || amount <= 0) return 0;\n    var totalWithFee = (amount + CARD_FEE_FIXED) / (1 - CARD_FEE_PERCENT);\n    return Math.max(0, totalWithFee - amount);\n  }\n  function recalc(){\n    var count = attendeeCount();\n    var price = currentPrice();\n    var registrationSubtotal = count * price;\n    // No promo discount applied here — see note above. Any coupon discount is\n    // applied by Fluent Forms (card) or recomputed by GAS (pay-later).\n    var fee = isCard() ? feeFor(registrationSubtotal) : 0;\n    var total = registrationSubtotal + fee;\n\n    setHidden('registration_price_each', price.toFixed(2));\n    setHidden('registration_subtotal', registrationSubtotal.toFixed(2));\n    setHidden('discount_amount', '0.00');\n    setHidden('processing_fee', fee.toFixed(2));\n    setHidden('registration_total', total.toFixed(2));\n    setHidden('total_amount', total.toFixed(2));\n    setHidden('custom_payment_amount', total.toFixed(2));\n\n    $('#wr26-sum-registration').text(money(registrationSubtotal));\n    $('#wr26-sum-subtotal').text(money(registrationSubtotal));\n    $('#wr26-sum-fee').text(money(fee));\n    $('#wr26-sum-total').text(money(total));\n    $('#wr26-sum-discount-row').hide();\n    $('#wr26-sum-fee-row').toggle(isCard());\n    $('#wr26-pay-note').text(isCard()\n      ? 'Credit/debit card is selected. The processing fee is included in the total above. Any promo code you enter is applied at checkout.'\n      : 'Pay Later is selected. No card fee is added. Your confirmation email will include payment instructions and any promo discount.'\n    );\n  }\n  $(document).on('change input', '[name=\"attendee_count\"], [name=\"payment_method\"]', recalc);\n  $(document).ready(function(){ setTimeout(recalc, 250); setTimeout(recalc, 900); });\n})(jQuery);\n</script>",
+            "html_codes": "\n<div class=\"wr26-summary-box\" style=\"background:#f7fafc;border:2px solid #7c3aed;border-radius:10px;padding:20px;margin:15px 0;font-family:Arial,Helvetica,sans-serif;\">\n  <h3 style=\"color:#4c1d95;margin:0 0 12px 0;\">Your Registration Summary</h3>\n  <table style=\"width:100%;border-collapse:collapse;\">\n    <tbody>\n      <tr><td>Registration</td><td id=\"wr26-sum-registration\" style=\"text-align:right;font-weight:bold;\">$0.00</td></tr>\n      <tr id=\"wr26-sum-discount-row\"><td>Promo Discount</td><td id=\"wr26-sum-discount\" style=\"text-align:right;color:#166534;\">-$0.00</td></tr>\n      <tr style=\"border-top:1px solid #ddd;\"><td>Subtotal</td><td id=\"wr26-sum-subtotal\" style=\"text-align:right;\">$0.00</td></tr>\n      <tr id=\"wr26-sum-fee-row\"><td>Credit/Debit Card Processing Fee (2.9% + $0.30)</td><td id=\"wr26-sum-fee\" style=\"text-align:right;\">$0.00</td></tr>\n      <tr style=\"border-top:2px solid #7c3aed;font-size:1.2em;font-weight:bold;\"><td>Total</td><td id=\"wr26-sum-total\" style=\"text-align:right;color:#7c3aed;\">$0.00</td></tr>\n    </tbody>\n  </table>\n  <p id=\"wr26-pay-note\" style=\"font-size:0.9em;color:#5b6470;margin:10px 0 0 0;\">Pay Later is selected. No card fee is added.</p>\n</div>\n<script>\n(function($){\n  // NOTE: These constants drive only the on-screen preview and the amount Square\n  // charges at checkout. Google Apps Script independently recomputes the owed\n  // amount from the Config sheet (EARLY_BIRD_PRICE / REGULAR_PRICE / *_END_DATE)\n  // and the PromoCodes sheet, and is the source of truth for the recorded balance.\n  // Keep these in sync with the GAS Config sheet; any drift is flagged by GAS\n  // reconciliation rather than silently mischarging.\n  var EARLY_PRICE = 120;\n  var REGULAR_PRICE = 140;\n  var EARLY_END = '2026-08-14T23:59:59';\n  var CARD_FEE_PERCENT = 0.029;\n  var CARD_FEE_FIXED = 0.30;\n\n  // Promo codes are NOT applied to the instant Square card charge. This form has\n  // no Fluent Forms coupon component, and promo codes are defined only in the GAS\n  // PromoCodes sheet (the source of truth). Discounting in this client-side script\n  // would be spoofable and could mischarge. Instead, if a promo code is present we\n  // steer the registrant to Pay Later (see recalc below); GAS then computes the\n  // discounted balance and emails a Square payment link for the correct amount.\n  // Card-with-no-promo pays the exact amount inline.\n\n  function getForm(){ return $('.wr26-summary-box').closest('form'); }\n  function money(n){ n = Number(n || 0); return '$' + n.toFixed(2); }\n  function getVal(name){\n    var $field = getForm().find('[name=\"' + name + '\"]');\n    if (!$field.length) return '';\n    if ($field.is(':radio')) return getForm().find('[name=\"' + name + '\"]:checked').val() || '';\n    return $field.val() || '';\n  }\n  function setHidden(name, value){\n    var $field = getForm().find('[name=\"' + name + '\"]');\n    if ($field.length) $field.val(value).trigger('input').trigger('change');\n  }\n  function isCard(){\n    var method = String(getVal('payment_method')).toLowerCase();\n    return method.indexOf('square') >= 0 || method.indexOf('card') >= 0 || method.indexOf('credit') >= 0;\n  }\n  function promoEntered(){ return String(getVal('promo_code')).trim().length > 0; }\n  function setMethod(value){\n    var $radios = getForm().find('[name=\"payment_method\"]');\n    if (!$radios.length) return;\n    if ($radios.is(':radio') || $radios.is(':checkbox')) {\n      $radios.prop('checked', false);\n      getForm().find('[name=\"payment_method\"][value=\"' + value + '\"]').prop('checked', true);\n    } else {\n      $radios.val(value);\n    }\n  }\n  function currentPrice(){\n    var now = new Date();\n    var earlyEnd = new Date(EARLY_END);\n    return now <= earlyEnd ? EARLY_PRICE : REGULAR_PRICE;\n  }\n  function attendeeCount(){\n    var count = parseInt(getVal('attendee_count'), 10);\n    if (!count || count < 1) count = 1;\n    if (count > 5) count = 5;\n    return count;\n  }\n  function feeFor(amount){\n    if (!amount || amount <= 0) return 0;\n    var totalWithFee = (amount + CARD_FEE_FIXED) / (1 - CARD_FEE_PERCENT);\n    return Math.max(0, totalWithFee - amount);\n  }\n  var steering = false;\n  function recalc(){\n    if (steering) return;\n    var count = attendeeCount();\n    var price = currentPrice();\n    var registrationSubtotal = count * price;\n    var card = isCard();\n    // Guard: a promo code can't discount the instant card charge, so steer card +\n    // promo registrants to Pay Later instead of overcharging them the full amount.\n    var steeredToPayLater = false;\n    if (card && promoEntered()) {\n      steering = true;\n      setMethod('offline');\n      getForm().find('[name=\"payment_method\"]').trigger('change');\n      steering = false;\n      card = false;\n      steeredToPayLater = true;\n    }\n    var fee = card ? feeFor(registrationSubtotal) : 0;\n    var total = registrationSubtotal + fee;\n\n    setHidden('registration_price_each', price.toFixed(2));\n    setHidden('registration_subtotal', registrationSubtotal.toFixed(2));\n    setHidden('discount_amount', '0.00');\n    setHidden('processing_fee', fee.toFixed(2));\n    setHidden('registration_total', total.toFixed(2));\n    setHidden('total_amount', total.toFixed(2));\n    setHidden('custom_payment_amount', total.toFixed(2));\n\n    $('#wr26-sum-registration').text(money(registrationSubtotal));\n    $('#wr26-sum-subtotal').text(money(registrationSubtotal));\n    $('#wr26-sum-fee').text(money(fee));\n    $('#wr26-sum-total').text(money(total));\n    $('#wr26-sum-discount-row').hide();\n    $('#wr26-sum-fee-row').toggle(card);\n    if (steeredToPayLater) {\n      $('#wr26-pay-note').html('A promo code is entered, so your payment has been set to <b>Pay Later</b>. Promo discounts can’t be applied to the instant card checkout — you’ll receive a secure Square payment link by email for the discounted amount.');\n    } else {\n      $('#wr26-pay-note').text(card\n        ? 'Credit/debit card is selected. The processing fee is included in the total above.'\n        : 'Pay Later is selected. No card fee is added. Your confirmation email will include payment instructions plus a secure Square payment link, with any promo discount applied.'\n      );\n    }\n  }\n  $(document).on('change input', '[name=\"attendee_count\"], [name=\"payment_method\"], [name=\"promo_code\"]', recalc);\n  $(document).ready(function(){ setTimeout(recalc, 250); setTimeout(recalc, 900); });\n})(jQuery);\n</script>",
             "conditional_logics": [],
             "container_class": "",
             "visible": true
