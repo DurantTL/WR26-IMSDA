@@ -17,7 +17,7 @@ function writeAttendeesForRegistration(reg,attendees){
       sh.appendRow([a.attendee_id,reg.registrationId,a.first_name,a.last_name,a.phone,a.email,a.church,a.attendee_type,a.meal_preference,a.dietary_needs,a.childcare_needed,a.seminar_preferences&&Object.keys(a.seminar_preferences).length?'yes':'no','']);
     });
     return {success:true};
-  }catch(e){return {success:true,warning:'Attendees write warning: '+e.message};}
+  }catch(e){return {success:false,warning:'Attendees write warning: '+e.message};}
 }
 function flattenSeminarPreferences(pref) {
   var out = [];
@@ -62,5 +62,5 @@ function writeSeminarPreferencesForRegistration(reg,attendees){
       });
     });
     return {success:true};
-  }catch(e){return {success:true,warning:'Seminar preference write warning: '+e.message};}
+  }catch(e){return {success:false,warning:'Seminar preference write warning: '+e.message};}
 }
