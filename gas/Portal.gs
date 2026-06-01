@@ -201,13 +201,42 @@ function deleteRowsByRegistrationId_(sheetName,registrationId,registrationColumn
   }
 }
 
+// Carry over attendee fields the registrant portal never submits (email, church)
+// from the existing rows, keyed by attendee_id, so a save does not blank them.
+// Must run BEFORE the old rows are deleted.
+function preserveExistingAttendeeFields_(registrationId,normalized){
+  try{
+    var existing=getAttendeesForRegistration_(registrationId);
+    if(!existing.length)return;
+    var byId={};
+    existing.forEach(function(a){byId[String(a.attendee_id||'')]=a;});
+    normalized.forEach(function(a){
+      var prev=byId[String(a.attendee_id||'')];
+      if(!prev)return;
+      if(!a.email)a.email=prev.email||'';
+      if(!a.church)a.church=prev.church||'';
+    });
+  }catch(e){Logger.log('preserveExistingAttendeeFields_ failed: '+e.message);}
+}
+
 function replaceAttendeesForRegistration_(reg,attendees){
-  deleteRowsByRegistrationId_('Attendees',reg.registrationId,2);
-  deleteRowsByRegistrationId_('SeminarPreferences',reg.registrationId,2);
+  var ss=getSS();
+  var attSh=ss.getSheetByName('Attendees');
+  var semSh=ss.getSheetByName('SeminarPreferences');
+  var warnings=[];
   var normalized=normalizePortalAttendees_(reg.registrationId,attendees);
-  var attendeeResult=writeAttendeesForRegistration(reg,normalized);
-  var seminarResult=writeSeminarPreferencesForRegistration(reg,normalized);
-  return {success:true,attendees:normalized,warnings:[attendeeResult.warning,seminarResult.warning].filter(Boolean)};
+  // Preserve non-submitted fields before we delete anything.
+  preserveExistingAttendeeFields_(reg.registrationId,normalized);
+  // Only clear rows from sheets we can actually rewrite, so a missing/renamed tab
+  // never wipes data without writing a replacement.
+  if(attSh){deleteRowsByRegistrationId_('Attendees',reg.registrationId,2);}
+  else{warnings.push('Attendees tab missing; attendee changes were NOT saved.');}
+  if(semSh){deleteRowsByRegistrationId_('SeminarPreferences',reg.registrationId,2);}
+  else{warnings.push('SeminarPreferences tab missing; seminar choices were NOT saved.');}
+  var ok=true;
+  if(attSh){var attendeeResult=writeAttendeesForRegistration(reg,normalized);if(attendeeResult.warning)warnings.push(attendeeResult.warning);if(attendeeResult.success===false)ok=false;}
+  if(semSh){var seminarResult=writeSeminarPreferencesForRegistration(reg,normalized);if(seminarResult.warning)warnings.push(seminarResult.warning);if(seminarResult.success===false)ok=false;}
+  return {success:ok,attendees:normalized,warnings:warnings};
 }
 
 function portalAllowedRegistrationFields_(fields,actor){

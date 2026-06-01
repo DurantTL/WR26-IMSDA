@@ -980,7 +980,9 @@ app.post('/api/magic-link/save', noStore, apiWriteLimiter, async (req, res) => {
       fields: req.body.fields || {},
       attendees: Array.isArray(req.body.attendees) ? req.body.attendees : [],
     }, false);
-    if (payload.success) await refreshCache(true).catch(() => {});
+    // Refresh the staff cache in the background so the registrant gets their
+    // confirmation immediately instead of waiting on a full re-sync of all data.
+    if (payload.success) refreshCache(true).catch(() => {});
     res.status(payload.success ? 200 : 400).json(payload);
   } catch (error) {
     res.status(503).json({ success: false, error: error.message });

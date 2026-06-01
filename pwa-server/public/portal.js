@@ -43,7 +43,12 @@
   function setBusy(button, busy, label) {
     if (!button) return;
     button.disabled = busy;
-    if (label) button.textContent = busy ? 'Please wait…' : label;
+    button.classList.toggle('is-busy', busy);
+    if (label) {
+      button.innerHTML = busy
+        ? '<span class="btn-spinner" aria-hidden="true"></span>Please wait…'
+        : escapeHtml(label);
+    }
   }
 
   function showOnly(panelId) {
@@ -298,7 +303,8 @@
     event.preventDefault();
     const button = $('save-registration');
     setBusy(button, true, 'Save Changes');
-    showStatus('', 'info');
+    showStatus('Saving your changes… Please keep this page open and wait for the confirmation below. Do not refresh or close the tab.', 'saving');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     try {
       const saved = await api('/api/magic-link/save', collectPayload());
       const reg = (saved && saved.registration) || {};
@@ -308,8 +314,14 @@
         reg.registrationId ? `Registration ID: ${reg.registrationId}` : '',
         reg.paymentStatus ? `Payment: ${reg.paymentStatus}` : '',
       ].filter(Boolean).join('\n') || 'Your registration was updated.';
-      showStatus('Registration saved successfully.', 'success');
+      // renderBundle clears the status, so set the final message after it.
       renderBundle(saved);
+      const warnings = Array.isArray(saved.warnings) ? saved.warnings.filter(Boolean) : [];
+      if (warnings.length) {
+        showStatus(`Saved — but some items may not have been written: ${warnings.join(' ')} Please contact us if your seminar choices are missing.`, 'warning');
+      } else {
+        showStatus('✓ Registration saved successfully. Your changes are confirmed.', 'success');
+      }
       $('saved-panel').hidden = false;
       $('saved-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (error) {

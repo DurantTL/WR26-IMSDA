@@ -11,6 +11,11 @@
 .portal-alert.info{background:var(--secondary);color:var(--muted);}
 .portal-alert.success{background:var(--success-light);color:var(--success);border-color:#bddfc9;}
 .portal-alert.error{background:var(--danger-light);color:var(--danger);border-color:#f0c2b8;}
+.portal-alert.warning{background:var(--warn-light);color:#744210;border-color:#e6c48a;}
+.portal-alert.saving{background:var(--warn-light);color:#744210;border-color:#e6c48a;display:flex;align-items:center;justify-content:center;gap:10px;}
+.portal-alert.saving::before{content:'';width:18px;height:18px;flex:none;border-radius:50%;border:3px solid rgba(116,66,16,.25);border-top-color:#744210;animation:portal-spin .7s linear infinite;}
+.btn-spinner{display:inline-block;width:15px;height:15px;margin-right:8px;flex:none;border-radius:50%;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;animation:portal-spin .7s linear infinite;vertical-align:-2px;}
+@keyframes portal-spin{to{transform:rotate(360deg);}}
 .portal-attendees-section .meta{margin:3px 0 0;}
 .portal-attendee-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
 .portal-attendee-heading h3{margin:0;}
