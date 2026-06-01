@@ -11,6 +11,33 @@ system. Only two files are part of WR26:
 > The old `wr26-registration-gas-tools.php` shim was removed — GAS Tools is built
 > into the main plugin (**WR26 → GAS Tools**), so no separate plugin is needed.
 
+## Troubleshooting: "GAS returned a non-JSON response" (HTTP 400)
+
+If **WR26 → GAS Tools** (Ping or Send Fake Registration) returns something like:
+
+```json
+{ "success": false, "message": "...", "http_code": 400,
+  "raw_body": "<!DOCTYPE html> ... Error 400 (Bad Request)!!1 ..." }
+```
+
+the HTML in `raw_body` is **Google's front-end error page**, not a reply from the
+script. The request never reached Apps Script. This is almost always a
+configuration problem, not a code bug:
+
+1. **GAS URL is wrong or stale.** Open **WR26 → Settings → GAS URL**. It must be
+   the deployed *Web app* URL ending in **`/exec`**
+   (`https://script.google.com/macros/s/<DEPLOYMENT_ID>/exec`). The editor URL,
+   a `/dev` URL, or a truncated value all produce a Google 400. The GAS Tools
+   **Connection Summary** now flags a URL that doesn't match this shape.
+2. **Deployment is out of date.** In Apps Script: **Deploy → Manage deployments**,
+   edit the Web app deployment, pick a **New version**, and deploy. Copy the
+   resulting `/exec` URL back into Settings.
+3. **Access too restricted.** Deploy with **Execute as: Me** and
+   **Who has access: Anyone** (a sign-in page instead of JSON means this is wrong).
+
+After fixing the URL/deployment, re-run **Ping GAS / Cache Snapshot** — a healthy
+backend returns JSON with `"success": true`.
+
 ## `archive/` — other events (not WR26)
 
 `archive/` contains full, unrelated plugins for **other IMSDA events**, kept here

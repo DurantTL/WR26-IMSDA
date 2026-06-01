@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WR26 Registration
  * Description: Women's Retreat 2026 registration + waitlist + check-in bridge for Fluent Forms and Google Apps Script.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: IMSDA
  */
 
@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WR26_VERSION', '1.0.0');
+define('WR26_VERSION', '1.0.1');
 
 function wr26_default_options() {
     return array(
@@ -433,6 +433,51 @@ function wr26_tools_sanitize_secret($value) {
     return preg_replace('/[^A-Za-z0-9_\-.]/', '', (string) $value);
 }
 
+/**
+ * A correctly deployed Apps Script web app URL looks like:
+ *   https://script.google.com/macros/s/<DEPLOYMENT_ID>/exec
+ * (Google Workspace domains may use /a/macros/<domain>/s/<ID>/exec.)
+ *
+ * Anything else — the editor URL, the /dev URL, a bare script.google.com
+ * link, or a truncated value — will be rejected by Google's front end with
+ * an HTML error page long before the script runs.
+ */
+function wr26_gas_url_looks_valid($url) {
+    $url = trim((string) $url);
+    if ($url === '') return false;
+    return (bool) preg_match('#^https://script\.google\.com/(a/)?macros/(s/[^/]+|[^/]+/s/[^/]+)/exec$#', $url);
+}
+
+/**
+ * Turn a non-JSON GAS reply into an actionable diagnosis.
+ *
+ * When the body is Google's "Error 400 (Bad Request)" robot page (or a login
+ * / quota page) it means the request never reached the Apps Script: Google's
+ * front end answered instead. That is almost always a misconfigured GAS URL
+ * or a web app that isn't deployed/shared correctly — not a bug in the script.
+ */
+function wr26_gas_diagnose_non_json($code, $raw_body) {
+    $raw = (string) $raw_body;
+    $is_google_html = (stripos($raw, '<!DOCTYPE html') !== false || stripos($raw, '<html') !== false)
+        && (stripos($raw, 'google.com') !== false || stripos($raw, 'That') !== false);
+
+    if ($code === 400 && $is_google_html) {
+        return 'Google rejected the request with HTTP 400 before Apps Script ran — the request never reached your script. '
+            . 'This almost always means the GAS URL is wrong, truncated, or points to an old/undeployed version. '
+            . 'Fix it in WR26 → Settings → GAS URL: paste the current Web app URL ending in /exec from Apps Script → Deploy → Manage deployments, '
+            . 'then redeploy (New deployment or Edit → new version) with "Who has access: Anyone", and retest.';
+    }
+    if (($code === 401 || $code === 403) || stripos($raw, 'accounts.google.com') !== false || stripos($raw, 'sign in') !== false) {
+        return 'Google returned a sign-in/authorization page instead of JSON (HTTP ' . intval($code) . '). '
+            . 'Redeploy the Apps Script web app with "Execute as: Me" and "Who has access: Anyone", then use the fresh /exec URL.';
+    }
+    if ($is_google_html) {
+        return 'Google returned an HTML page (HTTP ' . intval($code) . ') instead of JSON — the request did not reach Apps Script. '
+            . 'Verify the GAS URL ends in /exec and the web app deployment is current and shared with "Anyone".';
+    }
+    return 'GAS returned a non-JSON response (HTTP ' . intval($code) . '). See raw_body below.';
+}
+
 function wr26_tools_post_to_gas($payload, $timeout = 45) {
     $url = esc_url_raw(get_option('wr26_gas_url', ''));
     if (!$url) {
@@ -459,11 +504,13 @@ function wr26_tools_post_to_gas($payload, $timeout = 45) {
     $body = json_decode($raw_body, true);
 
     if (!is_array($body)) {
+        $trimmed = (strlen($raw_body) > 600) ? substr($raw_body, 0, 600) . '… [truncated]' : $raw_body;
         return array(
             'success' => false,
-            'message' => 'GAS returned a non-JSON response.',
+            'message' => wr26_gas_diagnose_non_json($code, $raw_body),
             'http_code' => $code,
-            'raw_body' => $raw_body,
+            'gas_url_valid' => wr26_gas_url_looks_valid(get_option('wr26_gas_url', '')),
+            'raw_body' => $trimmed,
         );
     }
 
@@ -598,7 +645,16 @@ function wr26_tools_page() {
 
     echo '<h2>Connection Summary</h2>';
     echo '<table class="widefat striped" style="max-width:900px"><tbody>';
-    echo '<tr><th style="width:220px">GAS URL</th><td>' . ($gas_url ? esc_html($gas_url) : '<strong style="color:#b32d2e">Missing</strong>') . '</td></tr>';
+    if (!$gas_url) {
+        $gas_url_cell = '<strong style="color:#b32d2e">Missing</strong>';
+    } elseif (wr26_gas_url_looks_valid($gas_url)) {
+        $gas_url_cell = esc_html($gas_url);
+    } else {
+        $gas_url_cell = esc_html($gas_url) . '<br><strong style="color:#b32d2e">⚠ This does not look like a deployed web-app URL.</strong> '
+            . 'It should end in <code>/exec</code> (Apps Script → Deploy → Manage deployments → Web app). '
+            . 'A wrong URL is the usual cause of a Google "Error 400" / non-JSON response.';
+    }
+    echo '<tr><th style="width:220px">GAS URL</th><td>' . $gas_url_cell . '</td></tr>';
     echo '<tr><th>Fluent Form ID</th><td>' . esc_html((string) $form_id) . '</td></tr>';
     echo '<tr><th>Current GAS Secret</th><td><code>' . esc_html($secret) . '</code></td></tr>';
     echo '<tr><th>Queue Count</th><td>' . intval(is_array($queue) ? count($queue) : 0) . '</td></tr>';
