@@ -16,6 +16,9 @@
 .portal-attendee-heading h3{margin:0;}
 .portal-remove-attendee{flex:none;}
 .portal-seminar-list{margin:8px 0 0;padding-left:18px;color:var(--muted);line-height:1.55;}
+.seminar-desc-box{margin-top:6px;padding:10px 12px;background:var(--secondary);border-left:3px solid var(--primary);border-radius:0 8px 8px 0;font-size:.88rem;line-height:1.55;color:var(--text);}
+.seminar-desc-box .seminar-desc-presenter{display:block;font-size:.8rem;font-weight:700;color:var(--primary);margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em;}
+.seminar-desc-box strong{color:var(--text);}
 .success-card{border-color:#bddfc9;}
 .bundle-preview{max-height:360px;overflow:auto;white-space:pre-wrap;background:#102033;color:#eef7ff;border-radius:12px;padding:12px;font-size:.82rem;line-height:1.45;}
 @media(max-width:540px){.portal-topbar .header-actions{width:100%;justify-content:flex-start}.portal-alert{margin:10px 12px 0}.portal-attendee-heading{align-items:flex-start;}.portal-remove-attendee{padding:6px 9px;font-size:.82rem;}}

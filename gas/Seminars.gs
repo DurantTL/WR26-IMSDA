@@ -12,8 +12,8 @@
 
 var WR26_SEMINAR_SLOTS=[
   {slot:'session_1',label:'Friday 4:00–5:00 PM',options:2},
-  {slot:'session_2',label:'Saturday 2:00–3:15 PM',options:3},
-  {slot:'session_3',label:'Saturday 3:30–4:45 PM',options:2},
+  {slot:'session_2',label:'Sabbath 2:00–3:15 PM',options:4},
+  {slot:'session_3',label:'Sabbath 4:15–5:30 PM',options:3},
   {slot:'session_4',label:'Sunday 8:15–9:15 AM',options:1}
 ];
 
