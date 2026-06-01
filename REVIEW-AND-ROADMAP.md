@@ -172,7 +172,7 @@ Status of the WR26 planning requests on the canonical Option A stack
 - ✅ Pay-Later **default** in the Fluent Form (`default_payment: offline`).
 - ✅ Big "check your email" confirmation message + payment-link mention + loading note.
 - ✅ Childcare capture + conditional message; worker (non-paying) Google Form URL.
-- ✅ Pricing $120/$140 and date cutoffs in Config.
+- ✅ Pricing $125/$145 and date cutoffs in Config.
 
 ### Built in this pass
 - ✅ **Refunds** — `Refunds` sheet + `recordRefund`; staff Refund panel; sets

@@ -58,10 +58,10 @@ Staff mobile/desktop PWA UI
 - **Boxed dinners**: no boxed dinners
 - **Shirts**: optional/TBD; do not treat shirts as a required core flow
 - **Pricing**:
-  - Early Bird: `$120`
-  - Regular: `$140`
+  - Early Bird: `$125`
+  - Regular: `$145`
 - **Promo guidance**:
-  - Half-off Early Bird should normally be a `$60` fixed discount unless intentionally configured differently.
+  - Half-off Early Bird should normally be a `$62.50` fixed discount unless intentionally configured differently.
 
 ---
 
@@ -240,8 +240,8 @@ EVENT_NAME=Women's Retreat 2026
 EVENT_DATES
 EVENT_LOCATION
 GAS_VERSION
-EARLY_BIRD_PRICE=120
-REGULAR_PRICE=140
+EARLY_BIRD_PRICE=125
+REGULAR_PRICE=145
 EARLY_BIRD_END_DATE=2026-08-14
 REGULAR_END_DATE=2026-09-17
 OPEN_CAMP_MEETING_DATE=2026-06-03

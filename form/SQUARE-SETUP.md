@@ -61,8 +61,8 @@ node tools/validate-wr26-form-json.js form/wr26-registration-fluentforms.smart-p
    auto-detect `custom_payment_amount` as the payment item because it is flagged
    `is_payment_field: yes` — confirm it's selected as the chargeable amount in the
    form's payment settings.
-5. **Keep prices in sync.** The in-form JS uses `EARLY_PRICE=120`,
-   `REGULAR_PRICE=140`, `EARLY_END=2026-08-14`. These must match the GAS Config
+5. **Keep prices in sync.** The in-form JS uses `EARLY_PRICE=125`,
+   `REGULAR_PRICE=145`, `EARLY_END=2026-08-14`. These must match the GAS Config
    sheet (`EARLY_BIRD_PRICE`, `REGULAR_PRICE`, `EARLY_BIRD_END_DATE`). GAS is the
    source of truth and re-checks the owed amount; drift is flagged, not silently
    charged. If you change prices, update both.

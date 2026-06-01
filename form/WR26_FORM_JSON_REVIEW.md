@@ -162,21 +162,21 @@ Recommended product options if using fixed pricing by attendee count:
 Early Bird version:
 
 ```text
-1 attendee — $120
-2 attendees — $240
-3 attendees — $360
-4 attendees — $480
-5 attendees — $600
+1 attendee — $125
+2 attendees — $250
+3 attendees — $375
+4 attendees — $500
+5 attendees — $625
 ```
 
 Regular version:
 
 ```text
-1 attendee — $140
-2 attendees — $280
-3 attendees — $420
-4 attendees — $560
-5 attendees — $700
+1 attendee — $145
+2 attendees — $290
+3 attendees — $435
+4 attendees — $580
+5 attendees — $725
 ```
 
 If you want one form to automatically switch between Early Bird and Regular, do that either with:
