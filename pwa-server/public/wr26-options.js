@@ -103,7 +103,7 @@
       presenter: '',
       slot: 'Sabbath 4:15–5:30 PM',
       summary: 'This session is about awareness, growth and safety regarding domestic violence and alcohol use and empowering women to be the hands and feet of Jesus in our struggling world.',
-      full: 'Domestic Violence and Alcohol Use affect families inside and outside our church. This session is about awareness, growth and safety regarding domestic violence and alcohol use and empowering women to be the hands and feet of Jesus in our struggling world. Matthew 22: 37–39',
+      full: 'Domestic violence and alcohol use affect families inside and outside our church. This session is about awareness, growth and safety regarding domestic violence and alcohol use and empowering women to be the hands and feet of Jesus in our struggling world. Matthew 22: 37–39',
     },
     'Brushstrokes of Leadership': {
       presenter: 'Ami Cook',
