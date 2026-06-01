@@ -543,8 +543,8 @@ async function saveTransfer() {
 
 const SEMINAR_SLOT_LABELS = {
   session_1: 'Friday 4:00–5:00 PM',
-  session_2: 'Saturday 2:00–3:15 PM',
-  session_3: 'Saturday 3:30–4:45 PM',
+  session_2: 'Sabbath 2:00–3:15 PM',
+  session_3: 'Sabbath 4:15–5:30 PM',
   session_4: 'Sunday 8:15–9:15 AM',
 };
 
