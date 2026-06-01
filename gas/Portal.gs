@@ -260,14 +260,20 @@ function portalSaveRegistrationByMagicToken(payload){
     if(!result.success)return result;
     reg=getRegistrationById(reg.registrationId);
     var warnings=[];
+    var repFailed=false;
     if(Array.isArray(payload.attendees)){
       var rep=replaceAttendeesForRegistration_(reg,payload.attendees);
       warnings=rep.warnings||[];
+      if(rep.success===false)repFailed=true;
     }
-    logAudit_('portalEdit',reg.registrationId,v.email||'registrant','Magic-link self-service edit',payload&&payload.requestIp);
-    try{sendEditConfirmationEmail(getRegistrationById(reg.registrationId));}catch(e){Logger.log('Portal edit confirmation failed: '+e.message);}
+    logAudit_('portalEdit',reg.registrationId,v.email||'registrant',repFailed?'Magic-link self-service edit FAILED (attendee/seminar write)':'Magic-link self-service edit',payload&&payload.requestIp);
+    // Only confirm "saved" by email when the attendee/seminar rewrite succeeded.
+    if(!repFailed){try{sendEditConfirmationEmail(getRegistrationById(reg.registrationId));}catch(e){Logger.log('Portal edit confirmation failed: '+e.message);}}
     var bundle=portalGetRegistrationBundle(reg.registrationId);
     bundle.warnings=warnings;
+    // A failed rewrite must not be reported as a successful save, even though the
+    // registrant fields above did persist. Surface it so the caller/UI shows an error.
+    if(repFailed){bundle.success=false;bundle.message='Your registrant details were saved, but attendee or seminar choices could not be written: '+warnings.join(' ')+' Please try again or contact us so nothing is lost.';}
     return bundle;
   }catch(e){return {success:false,message:e.message};}
   finally{lock.releaseLock();}
@@ -284,12 +290,16 @@ function portalAdminSaveRegistration(payload){
     if(!result.success)return result;
     reg=getRegistrationById(registrationId);
     var warnings=[];
+    var repFailed=false;
     if(Array.isArray(payload.attendees)){
       var rep=replaceAttendeesForRegistration_(reg,payload.attendees);
       warnings=rep.warnings||[];
+      if(rep.success===false)repFailed=true;
     }
     var bundle=portalGetRegistrationBundle(registrationId);
     bundle.warnings=warnings;
+    // A failed attendee/seminar rewrite must not be reported as a successful save.
+    if(repFailed){bundle.success=false;bundle.message='Registration fields saved, but attendee or seminar choices could not be written: '+warnings.join(' ')+' Please try again.';}
     return bundle;
   }catch(e){return {success:false,message:e.message};}
   finally{lock.releaseLock();}
