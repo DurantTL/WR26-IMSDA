@@ -99,7 +99,12 @@
       for (let r = 1; r <= slotDef.ranks; r += 1) {
         const label = slotDef.ranks > 1 ? `${slotDef.label} — Pref ${r}` : slotDef.label;
         const current = (prefs[slotDef.slot] && prefs[slotDef.slot][`pref_${r}`]) || '';
-        out.push(`<label>${escapeHtml(label)}${O.selectHtml(`data-attendee-pref="${slotDef.slot}.pref_${r}"`, current, O.seminarOptions(slotDef.slot), '- None -')}</label>`);
+        const descId = `sdesc-${index}-${slotDef.slot}-${r}`;
+        const desc = current && O.SEMINAR_DESCRIPTIONS && O.SEMINAR_DESCRIPTIONS[current];
+        const descHtml = desc
+          ? `<div id="${escapeHtml(descId)}" class="seminar-desc-box"><span class="seminar-desc-presenter">${escapeHtml(desc.presenter || '')}</span>${desc.full}</div>`
+          : `<div id="${escapeHtml(descId)}" class="seminar-desc-box" hidden></div>`;
+        out.push(`<label>${escapeHtml(label)}${O.selectHtml(`data-attendee-pref="${slotDef.slot}.pref_${r}" data-desc-target="${escapeHtml(descId)}"`, current, O.seminarOptions(slotDef.slot), '- None -')}</label>${descHtml}`);
       }
       return out.join('');
     }).join('');
@@ -115,6 +120,22 @@
     </div>`;
   }
 
+  function updateSeminarDesc(select) {
+    const targetId = select.dataset.descTarget;
+    if (!targetId) return;
+    const box = document.getElementById(targetId);
+    if (!box) return;
+    const O = window.WR26_OPTIONS;
+    const desc = select.value && O.SEMINAR_DESCRIPTIONS && O.SEMINAR_DESCRIPTIONS[select.value];
+    if (desc) {
+      box.innerHTML = `<span class="seminar-desc-presenter">${escapeHtml(desc.presenter || '')}</span>${desc.full}`;
+      box.hidden = false;
+    } else {
+      box.hidden = true;
+      box.innerHTML = '';
+    }
+  }
+
   function renderAttendees() {
     $('portal-attendee-list').innerHTML = state.attendees.map(attendeeCardHtml).join('');
     $('add-portal-attendee').disabled = state.attendees.length >= MAX_ATTENDEES;
@@ -126,6 +147,9 @@
         if (!state.attendees.length) state.attendees.push({});
         renderAttendees();
       });
+    });
+    document.querySelectorAll('[data-attendee-pref][data-desc-target]').forEach((select) => {
+      select.addEventListener('change', () => updateSeminarDesc(select));
     });
   }
 
