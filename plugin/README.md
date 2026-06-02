@@ -11,6 +11,45 @@ system. Only two files are part of WR26:
 > The old `wr26-registration-gas-tools.php` shim was removed — GAS Tools is built
 > into the main plugin (**WR26 → GAS Tools**), so no separate plugin is needed.
 
+## Front-end assets (`assets/`)
+
+Fluent Forms strips `<script>` from Custom HTML fields, so the interactive parts
+of the registration form ship as real plugin assets enqueued by
+`wr26-registration.php`. They self-gate (no-op on pages without the WR26 form).
+
+| Asset | What it does |
+|---|---|
+| `assets/wr26-roster.js` + `wr26-roster.css` | The **custom attendee roster + seminar-selection cards**. Renders a friendly multi-attendee UI into the form's `#wr26-roster` mount, with 1st/2nd-choice seminar cards and live availability badges/progress bars. Serializes everything into hidden fields: `attendees_json` (uncapped source of truth), `attendee_count`, `seminar_counts_json`, `registration_roster_preview`, and sets `roster_active=1`. |
+| `assets/wr26-form-summary.js` | Live registration-total recalc for the in-page summary box and the inline Square amount. Reads the attendee count from `attendees_json` (no cap). |
+
+### How the roster data flows
+
+```text
+wr26-roster.js  →  attendees_json (+ counts/totals)  →  Fluent Forms submit
+   →  wr26_parse_ff_entry() prefers attendees_json (decoded, sanitized, uncapped)
+   →  payload.attendees  →  GAS writes Registrations / Attendees / SeminarPreferences
+```
+
+The parser falls back to the legacy `a1_*`–`a5_*` fields only when `attendees_json`
+is absent (no-JS). Those legacy fields are required, so they're gated behind
+`roster_active` in the form's conditional logic — see `form/README.md`.
+
+### Seminar availability proxy
+
+The seminar cards show counts-only availability from GAS `getSeminarAvailability`.
+The plugin exposes a cached public proxy so the GAS secret never reaches the
+browser:
+
+```text
+wp_ajax_wr26_seminar_availability        (logged-in)
+wp_ajax_nopriv_wr26_seminar_availability (public form visitors)
+```
+
+It returns capacity, first/second-choice interest, assigned count, and a status
+per seminar — **never attendee names** — cached for 60 seconds. The card titles
+come from `wr26_seminar_catalog()` (mirrors `tools/seminars-seed.csv`); keep that
+list in sync with the GAS `Seminars` sheet titles.
+
 ## Troubleshooting: "GAS returned a non-JSON response" (HTTP 400)
 
 If **WR26 → GAS Tools** (Ping or Send Fake Registration) returns something like:
