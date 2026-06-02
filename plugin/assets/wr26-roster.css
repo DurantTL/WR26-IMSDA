@@ -5,6 +5,10 @@
  */
 .wr26-roster { font-family: Arial, Helvetica, sans-serif; margin: 15px 0; }
 
+.wr26-roster-intro { margin: 0 0 14px; }
+.wr26-roster-intro h3 { color: #4c1d95; margin: 0 0 4px; font-size: 1.2em; }
+.wr26-roster-intro p { color: #5b6470; margin: 0; font-size: 0.92em; }
+
 .wr26-attendee {
   border: 2px solid #e2d9f7;
   border-radius: 12px;
@@ -50,25 +54,49 @@
   box-sizing: border-box;
 }
 
-.wr26-seminars { margin-top: 18px; }
-.wr26-seminars h4 { color: #4c1d95; margin: 0 0 8px; }
-.wr26-slot { margin-bottom: 14px; }
-.wr26-slot-label { font-weight: bold; color: #333; margin-bottom: 8px; }
-.wr26-slot-hint { font-weight: normal; color: #6b7280; font-size: 0.9em; }
+.wr26-seminars {
+  margin-top: 18px;
+  border-top: 1px dashed #e2d9f7;
+  padding-top: 14px;
+}
+.wr26-seminars h4 { color: #4c1d95; margin: 0 0 10px; font-size: 1.05em; }
+.wr26-slot {
+  margin-bottom: 16px;
+  background: #f9f7ff;
+  border-radius: 10px;
+  padding: 12px;
+}
+.wr26-slot-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.wr26-slot-time {
+  font-weight: bold;
+  color: #4c1d95;
+  font-size: 0.98em;
+}
+.wr26-slot-hint { font-weight: normal; color: #6b7280; font-size: 0.82em; }
 
 .wr26-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 12px;
 }
 .wr26-card {
   position: relative;
+  display: flex;
+  flex-direction: column;
   border: 2px solid #e5e7eb;
   border-radius: 10px;
   padding: 14px;
   background: #fff;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
 }
+.wr26-card:hover { border-color: #c4b5e8; transform: translateY(-1px); }
 .wr26-card.is-rank-1 { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.18); }
 .wr26-card.is-rank-2 { border-color: #a78bdf; }
 .wr26-rank-badge {
@@ -86,6 +114,25 @@
 .wr26-card-title { font-weight: bold; color: #1f2937; line-height: 1.25; }
 .wr26-card-speaker { color: #6b21a8; font-size: 0.85em; margin-top: 2px; }
 
+.wr26-card-details { margin-top: 8px; }
+.wr26-card-details > summary {
+  cursor: pointer;
+  color: #6d28d9;
+  font-size: 0.8em;
+  font-weight: bold;
+  list-style: none;
+  outline: none;
+}
+.wr26-card-details > summary::-webkit-details-marker { display: none; }
+.wr26-card-details > summary::before { content: "\25B8 "; }
+.wr26-card-details[open] > summary::before { content: "\25BE "; }
+.wr26-card-details p {
+  margin: 6px 0 0;
+  font-size: 0.83em;
+  color: #4b5563;
+  line-height: 1.45;
+}
+
 .wr26-card-avail { margin-top: 8px; min-height: 18px; }
 .wr26-badge {
   display: inline-block;
@@ -101,7 +148,7 @@
 .wr26-bar { background: #eef0f3; border-radius: 5px; height: 6px; margin-top: 5px; overflow: hidden; }
 .wr26-bar span { display: block; height: 100%; background: #7c3aed; }
 
-.wr26-card-buttons { display: flex; gap: 6px; margin-top: 10px; }
+.wr26-card-buttons { display: flex; gap: 6px; margin-top: auto; padding-top: 10px; }
 .wr26-pick {
   flex: 1;
   border: 1px solid #c4b5e8;
