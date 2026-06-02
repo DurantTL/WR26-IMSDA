@@ -156,6 +156,59 @@ function assignSeminars(payload){
   });
 }
 
+// Public-safe availability snapshot for the registration form's seminar cards.
+// Returns COUNTS ONLY — never attendee names — so it can be proxied to the
+// public form. Per slot/seminar it reports capacity, how many registrants have
+// ranked it 1st/2nd, the assigned count, and a coarse availability status the
+// front end can render as a badge/progress bar. Reads existing data only; it
+// does not run assignment.
+function getSeminarAvailability(){try{
+  var seminarsResp=getSeminars();
+  var seminars=(seminarsResp&&seminarsResp.seminars)||[];
+  var pref=readSeminarPreferenceRows_();
+
+  // Tally ranked preferences per slot+normalizedTitle from SeminarPreferences.
+  var firstCounts={},secondCounts={};
+  Object.keys(pref.byAttendeeSlot).forEach(function(att){
+    Object.keys(pref.byAttendeeSlot[att]).forEach(function(slot){
+      pref.byAttendeeSlot[att][slot].forEach(function(p){
+        var key=slot+'||'+normalizeTitle_(p.title);
+        if(p.rank===1)firstCounts[key]=(firstCounts[key]||0)+1;
+        else secondCounts[key]=(secondCounts[key]||0)+1;
+      });
+    });
+  });
+
+  function statusFor(capacity,firstChoice,assigned){
+    if(!capacity||capacity<=0)return 'good_availability';
+    var load=Math.max(Number(assigned||0),Number(firstChoice||0));
+    var ratio=load/capacity;
+    if(ratio>=1)return 'full';
+    if(ratio>=0.75)return 'limited_availability';
+    return 'good_availability';
+  }
+
+  var slots=WR26_SEMINAR_SLOTS.map(function(slotDef){
+    var list=seminars.filter(function(s){return s.slot===slotDef.slot&&s.active;}).map(function(s){
+      var key=slotDef.slot+'||'+normalizeTitle_(s.title);
+      var firstChoice=firstCounts[key]||0;
+      var secondChoice=secondCounts[key]||0;
+      return {
+        title:s.title,
+        speaker:s.notes||'',
+        capacity:Number(s.capacity||0),
+        first_choice_count:firstChoice,
+        second_choice_count:secondChoice,
+        assigned_count:Number(s.assignedCount||0),
+        status:statusFor(s.capacity,firstChoice,s.assignedCount)
+      };
+    });
+    return {slot:slotDef.slot,label:slotDef.label,seminars:list};
+  });
+
+  return {success:true,slots:slots};
+}catch(e){return {success:false,message:e.message};}}
+
 // Roster of assigned attendees for a given slot (and optional title), for printing
 // seminar attendance sheets. Reads the already-written assignments.
 function getSeminarRoster(payload){try{
