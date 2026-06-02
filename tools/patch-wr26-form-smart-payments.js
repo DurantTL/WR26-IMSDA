@@ -319,44 +319,62 @@ function patchRoster(fields) {
 
   if (!additions.length) return 0;
 
-  // Mount the roster just before the payment block so the flow reads:
-  // contact → roster + seminars → payment summary.
+  // Mount the roster right before the "Payment & Promo Code" section so the flow
+  // reads: primary contact → (gated legacy block, hidden) → roster + seminars →
+  // payment summary. Fall back to the payment_method field, then end of form.
+  const paymentSectionIndex = fields.findIndex((field) =>
+    field.element === 'section_break' && /Payment\s*&?\s*Promo/i.test(String(field?.settings?.label || ''))
+  );
   const paymentMethodIndex = fields.findIndex((field) => fieldName(field) === 'payment_method');
-  const insertAt = paymentMethodIndex >= 0 ? paymentMethodIndex : fields.length;
+  const insertAt = paymentSectionIndex >= 0
+    ? paymentSectionIndex
+    : (paymentMethodIndex >= 0 ? paymentMethodIndex : fields.length);
   fields.splice(insertAt, 0, ...additions);
   return additions.length;
 }
 
 /**
- * Gate every legacy a{N}_* attendee/seminar field behind the roster.
+ * Merge a `roster_active != 1` condition into one field's conditional logic,
+ * preserving any existing conditions (combined with AND). Idempotent.
+ */
+function gateFieldBehindRoster(field) {
+  const rosterCondition = { field: 'roster_active', operator: '!=', value: '1' };
+  const existing = field.settings && field.settings.conditional_logics;
+  let conditions = [];
+  if (existing && !Array.isArray(existing) && Array.isArray(existing.conditions)) {
+    conditions = existing.conditions.slice();
+  }
+  if (conditions.some((c) => c && c.field === 'roster_active')) return false;
+  conditions.push(rosterCondition);
+  field.settings.conditional_logics = { status: true, type: 'all', conditions };
+  return true;
+}
+
+/**
+ * Gate the entire legacy attendee block behind the roster.
  *
- * The custom roster UI sets the hidden roster_active flag to "1". By adding a
- * `roster_active != 1` condition to each legacy field's conditional logic, Fluent
- * Forms hides them — and crucially SKIPS their (required) validation and excludes
- * them from the submission — whenever JavaScript/the roster is running. With JS
- * off, roster_active stays empty, the legacy fields show, and they remain the
+ * The custom roster UI sets the hidden roster_active flag to "1". Adding a
+ * `roster_active != 1` condition to each legacy field/section makes Fluent Forms
+ * hide them — and crucially SKIP their (required) validation and exclude them from
+ * the submission — whenever JavaScript/the roster is running. With JS off,
+ * roster_active stays empty, the legacy block shows, and it remains the
  * fully-required no-JS fallback the plugin parser reads from a{N}_*.
  *
- * Existing conditions (e.g. a2_* shown only when attendee_count >= 2) are
- * preserved and combined with AND (type: "all").
+ * This covers (a) the a{N}_* input fields, (b) the "Attendee N" section-break
+ * headers (so no orphaned heading shows), and (c) the legacy attendee_notes
+ * textarea (so the roster isn't shadowed by a stray notes box). Existing
+ * conditions (e.g. a2_* shown only when attendee_count >= 2) are preserved.
  */
 function gateLegacyBehindRoster(fields) {
-  const rosterCondition = { field: 'roster_active', operator: '!=', value: '1' };
   let gated = 0;
   for (const field of fields) {
     const name = fieldName(field);
-    if (!/^a[1-5]_/.test(String(name || ''))) continue;
-    const existing = field.settings && field.settings.conditional_logics;
-    let conditions = [];
-    if (existing && !Array.isArray(existing) && Array.isArray(existing.conditions)) {
-      conditions = existing.conditions.slice();
-    }
-    // Don't double-add the roster condition if the generator runs twice.
-    if (!conditions.some((c) => c && c.field === 'roster_active')) {
-      conditions.push(rosterCondition);
-    }
-    field.settings.conditional_logics = { status: true, type: 'all', conditions };
-    gated += 1;
+    const label = String((field.settings && field.settings.label) || '');
+    const isAttendeeInput = /^a[1-5]_/.test(String(name || ''));
+    const isAttendeeHeader = field.element === 'section_break' && /^Attendee\s/i.test(label);
+    const isAttendeeNotes = name === 'attendee_notes';
+    if (!isAttendeeInput && !isAttendeeHeader && !isAttendeeNotes) continue;
+    if (gateFieldBehindRoster(field)) gated += 1;
   }
   return gated;
 }

@@ -23,7 +23,33 @@
   'use strict';
 
   var CFG = (typeof window !== 'undefined' && window.WR26_ROSTER) || {};
-  var CATALOG = Array.isArray(CFG.catalog) ? CFG.catalog : [];
+
+  // Built-in seminar catalog. Mirrors tools/seminars-seed.csv and the plugin's
+  // wr26_seminar_catalog(). Used as a fallback so the seminar cards always render
+  // even if the localized WR26_ROSTER.catalog is missing (e.g. an older plugin
+  // build, or the script loaded without wp_localize_script data). Live counts are
+  // still overlaid from getSeminarAvailability when the proxy is reachable.
+  var DEFAULT_CATALOG = [
+    { slot: 'session_1', label: 'Friday 4:00–5:00 PM', picks: 2, seminars: [
+      { title: 'Color Me Golden: Embracing Life in Every Season', speaker: 'Panel Discussion' },
+      { title: 'Refined by Fire, Revealed in Beauty', speaker: 'Presenter TBD' }
+    ] },
+    { slot: 'session_2', label: 'Sabbath 2:00–3:15 PM', picks: 2, seminars: [
+      { title: 'Repainted by Grace', speaker: 'Valerie Haveman' },
+      { title: 'Color Me Open', speaker: 'Mary Kendall' },
+      { title: 'Nourished by Color', speaker: 'Stephanie Richards' },
+      { title: 'Color Me Prayerful: Discovering the Beautiful Ways We Talk With God', speaker: 'Shannon Pigsley' }
+    ] },
+    { slot: 'session_3', label: 'Sabbath 4:15–5:30 PM', picks: 2, seminars: [
+      { title: 'Shades of Peace', speaker: 'Melissa Morris' },
+      { title: 'Coloring Through the Chaos: Raising Children with Grace and Truth', speaker: 'Panel Discussion' },
+      { title: 'Broken Crayons Still Color', speaker: '' }
+    ] },
+    { slot: 'session_4', label: 'Sunday 8:15–9:15 AM', picks: 1, seminars: [
+      { title: 'Brushstrokes of Leadership', speaker: 'Ami Cook' }
+    ] }
+  ];
+  var CATALOG = (Array.isArray(CFG.catalog) && CFG.catalog.length) ? CFG.catalog : DEFAULT_CATALOG;
 
   var MEAL_OPTIONS = [
     { value: 'regular', label: 'Regular' },

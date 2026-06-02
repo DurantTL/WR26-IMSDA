@@ -44,7 +44,9 @@ Staff mobile/desktop PWA UI
 | `gas/*.gs` | Sheet writes, edits, check-in, payments, magic links, PWA cache snapshots. |
 | `pwa-server/` | Separate Node/Express cached PWA server. Browser talks to same-origin `/api/*`, not directly to GAS. |
 | `plugin/wr26-registration-portal.php` | Optional companion WordPress portal/magic-link fallback. Does not replace the PWA. |
-| `form/wr26-registration-fluentforms.smart-payments.json` | Canonical Fluent Forms import JSON (chargeable payment item + `a1_*` fields). Generated from the base JSON by `tools/patch-wr26-form-smart-payments.js`. |
+| `form/wr26-registration-fluentforms.smart-payments.json` | Canonical Fluent Forms import JSON (chargeable payment item + `a1_*` fields + the custom-roster mount and hidden fields). Generated from the base JSON by `tools/patch-wr26-form-smart-payments.js`. |
+| `plugin/assets/wr26-roster.js` + `wr26-roster.css` | Front-end attendee roster + seminar-selection cards. Collects an **uncapped** list of attendees into `attendees_json` and keeps `attendee_count` in sync. Enqueued by the plugin (Fluent Forms strips `<script>` from Custom HTML). |
+| `plugin/assets/wr26-form-summary.js` | Live registration-total recalc for the in-page summary box and the inline Square amount. |
 
 ---
 
@@ -80,6 +82,15 @@ gas/
 plugin/
   wr26-registration.php          Legacy production intake plugin
   wr26-registration-portal.php   Optional WordPress portal companion
+  assets/
+    wr26-roster.js               Front-end attendee roster + seminar cards
+    wr26-roster.css              Roster/seminar-card styling
+    wr26-form-summary.js         Live registration-total recalc
+
+tools/
+  patch-wr26-form-smart-payments.js  Generates the import JSON from the base form
+  validate-wr26-form-json.js         Validates the import JSON (field names, gating)
+  seminars-seed.csv                  Canonical seminar list (titles + presenters)
 
 docker-compose.yml        Docker Compose entrypoint for XCloud/Compose deployments
 
@@ -96,7 +107,8 @@ pwa-server/
   README.md
 
 form/
-  wr26-registration-fluentforms.json
+  wr26-registration-fluentforms.json                 Base form (generator source)
+  wr26-registration-fluentforms.smart-payments.json  Canonical import JSON (generated)
 ```
 
 ---
@@ -197,6 +209,15 @@ writes the result back to `SeminarPreferences` (`Assigned Seminar` /
 the behavior follows Config `SEMINAR_FULL_BEHAVIOR` (`allow_with_review`
 over-fills the top choice and flags it `full_review`; otherwise the attendee is
 left `unassigned_full`).
+
+The registration form's seminar cards read a **counts-only** snapshot of this
+sheet via the GAS `getSeminarAvailability` action (capacity, first/second-choice
+interest, assigned count, and a coarse status per seminar — never attendee
+names). The plugin proxies it through `wp_ajax_*_wr26_seminar_availability` so the
+GAS secret stays server-side, and the front-end card titles must match the
+`Seminar Title` values here (matching is case/space-insensitive). The seed list
+lives in `tools/seminars-seed.csv` and is mirrored by `wr26_seminar_catalog()` in
+the plugin — keep the two in sync if titles change.
 
 Both `Refunds` and `Seminars` are created automatically by
 `wr26EnsureSheetSetup()`.
@@ -354,9 +375,34 @@ worker_registration
 acknowledgment
 ```
 
-### Attendee fields
+### Custom roster fields (preferred path)
 
-Attendee 1 should now use the same attendee-level pattern as the other attendees. This avoids the old issue where attendee 1 was partly implied by the primary contact.
+The front-end roster UI (`plugin/assets/wr26-roster.js`) collects attendees and
+their ranked seminar choices and serializes them into these hidden fields:
+
+```text
+attendees_json                 Uncapped JSON array of attendees (source of truth)
+attendee_count                 Array length (drives the summary + GAS pricing)
+seminar_counts_json            {slot:{title:firstChoiceCount}} for this party
+registration_roster_preview    Human-readable summary for admin preview
+roster_active                  Set to "1" by the roster JS (see below)
+```
+
+The plugin parser **prefers `attendees_json`** (decoded, sanitized, uncapped) and
+only falls back to the legacy `a1_*`–`a5_*` fields below when it is absent. Each
+attendee in `attendees_json` has: `first_name`, `last_name`, `phone`, `email`,
+`attendee_type`, `meal_preference`, `dietary_needs`, `childcare_needed`, and a
+`seminar_preferences` object shaped `{ session_1: { pref_1, pref_2 }, … }`.
+
+Because the legacy `a1_*`–`a5_*` fields are **required**, they are gated behind
+`roster_active`: the roster JS sets `roster_active=1`, and the form's conditional
+logic hides those fields (Fluent Forms then skips their validation) whenever the
+roster is active. With JavaScript off, `roster_active` stays empty, the legacy
+fields show and remain fully required as the no-JS fallback.
+
+### Attendee fields (legacy / no-JS fallback)
+
+Attendee 1 uses the same attendee-level pattern as the other attendees. This avoids the old issue where attendee 1 was partly implied by the primary contact.
 
 For attendee 1:
 
@@ -894,9 +940,28 @@ Keep the existing non-Docker Node deployment path available for local developmen
 
 ### Attendees or seminars are missing
 
-- Confirm `a1_*` through `a5_*` field names match the expected parser keys.
-- Confirm `attendee_count` is set correctly.
+- If the roster UI is in use, confirm `attendees_json` is present and valid in the
+  submission (the parser prefers it). The roster JS writes it on every change.
+- Confirm the roster assets loaded: `plugin/assets/wr26-roster.js` + `.css` are
+  enqueued and the form contains the `#wr26-roster` mount element.
+- For the no-JS fallback, confirm `a1_*` through `a5_*` field names match the
+  expected parser keys and that `attendee_count` is set correctly.
 - Confirm `Attendees` and `SeminarPreferences` headers are correct.
+
+### Form won't submit (required-field errors on hidden attendee fields)
+
+- Confirm `roster_active` exists in the form and that the legacy `a1_*`–`a5_*`
+  fields carry a `roster_active != 1` condition. Re-run
+  `node tools/patch-wr26-form-smart-payments.js` and re-import if not.
+- `node tools/validate-wr26-form-json.js form/wr26-registration-fluentforms.smart-payments.json`
+  now **errors** if `roster_active` exists but any legacy field isn't gated.
+
+### Seminar cards show no availability badges
+
+- Confirm the GAS URL + secret are set (same connection used elsewhere) and that
+  `getSeminarAvailability` is routed in `gas/Code.gs`. Cards still render without
+  badges if GAS is unreachable — they don't break.
+- Confirm the card titles match the `Seminars` sheet `Seminar Title` values.
 
 ---
 
