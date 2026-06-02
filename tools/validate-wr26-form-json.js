@@ -109,6 +109,29 @@ const hasRosterMount = fields.some((field) =>
 );
 if (!hasRosterMount) warnings.push('Missing #wr26-roster mount element (custom roster UI will not render).');
 
+// When the roster is in play, the required legacy a{N}_* fields MUST be gated
+// behind roster_active so they don't block submission once the roster is active.
+// If roster_active exists but a legacy field isn't gated, that's an error — it
+// will make the form unsubmittable for roster users.
+if (byName.has('roster_active')) {
+  const ungated = fields.filter((field) => {
+    const name = field?.attributes?.name || '';
+    if (!/^a[1-5]_/.test(name)) return false;
+    const cl = field?.settings?.conditional_logics;
+    const conds = cl && !Array.isArray(cl) && Array.isArray(cl.conditions) ? cl.conditions : [];
+    return !conds.some((c) => c && c.field === 'roster_active');
+  });
+  if (ungated.length) {
+    errors.push(
+      `roster_active exists but ${ungated.length} legacy a{N}_* field(s) are not gated behind it ` +
+      `(e.g. ${ungated.slice(0, 3).map((f) => f.attributes.name).join(', ')}). ` +
+      `These required fields will block submission when the roster is active. Re-run the patch generator.`
+    );
+  }
+} else {
+  warnings.push('Missing roster_active flag (legacy a{N}_* fields are not gated behind the roster UI).');
+}
+
 for (const name of expectedAttendeeFields) {
   if (!byName.has(name)) {
     const severity = name.startsWith('a1_') ? 'error' : 'warning';

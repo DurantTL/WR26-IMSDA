@@ -58,10 +58,21 @@
     this.$form = $mount.closest('form');
     this.attendees = [newAttendee()];
     this.availability = {}; // slot||normTitle -> {capacity, first_choice_count, ...}
+    this.activateRoster();
     this.render();
     this.sync();
     this.loadAvailability();
   }
+
+  // Signal that the JS roster is driving registration. Setting roster_active=1
+  // makes Fluent Forms hide the legacy a{N}_* fields via conditional logic, which
+  // also skips their (required) validation and excludes them from the submission.
+  // Then cosmetically hide the leftover legacy attendee_count control, which the
+  // roster owns and writes for us.
+  WR26Roster.prototype.activateRoster = function () {
+    this.setHidden('roster_active', '1');
+    this.$form.find('[name="attendee_count"]').closest('.ff-el-group').hide();
+  };
 
   WR26Roster.prototype.setHidden = function (name, value) {
     var $f = this.$form.find('[name="' + name + '"]');

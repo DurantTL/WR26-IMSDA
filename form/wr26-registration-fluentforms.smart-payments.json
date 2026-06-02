@@ -1520,7 +1520,17 @@
                 "global": true
               }
             },
-            "conditional_logics": [],
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
             "visible": true,
             "is_unique": "no",
             "unique_validation_message": "This value need to be unique."
@@ -1560,7 +1570,17 @@
                 "global": true
               }
             },
-            "conditional_logics": [],
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
             "visible": true,
             "is_unique": "no",
             "unique_validation_message": "This value need to be unique."
@@ -1610,7 +1630,17 @@
                 "global_message": "Phone number is not valid"
               }
             },
-            "conditional_logics": [],
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
             "visible": true
           },
           "editor_options": {
@@ -1659,7 +1689,17 @@
                 "global": true
               }
             },
-            "conditional_logics": [],
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
             "visible": true,
             "calc_value_status": false,
             "enable_image_input": false,
@@ -1742,7 +1782,17 @@
                 "global": true
               }
             },
-            "conditional_logics": [],
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
             "visible": true,
             "calc_value_status": false,
             "enable_image_input": false,
@@ -1797,7 +1847,17 @@
                 "global": true
               }
             },
-            "conditional_logics": [],
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
             "visible": true
           },
           "editor_options": {
@@ -1846,7 +1906,17 @@
                 "global": true
               }
             },
-            "conditional_logics": [],
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
             "visible": true,
             "calc_value_status": false,
             "enable_image_input": false,
@@ -1911,7 +1981,17 @@
                 "global": true
               }
             },
-            "conditional_logics": [],
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
             "visible": true,
             "calc_value_status": false,
             "enable_image_input": false,
@@ -1976,7 +2056,17 @@
                 "global": true
               }
             },
-            "conditional_logics": [],
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
             "visible": true,
             "calc_value_status": false,
             "enable_image_input": false,
@@ -2053,7 +2143,17 @@
                 "global": true
               }
             },
-            "conditional_logics": [],
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
             "visible": true,
             "calc_value_status": false,
             "enable_image_input": false,
@@ -2130,7 +2230,17 @@
                 "global": true
               }
             },
-            "conditional_logics": [],
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
             "visible": true,
             "calc_value_status": false,
             "enable_image_input": false,
@@ -2201,7 +2311,17 @@
                 "global": true
               }
             },
-            "conditional_logics": [],
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
             "visible": true,
             "calc_value_status": false,
             "enable_image_input": false,
@@ -2272,7 +2392,17 @@
                 "global": true
               }
             },
-            "conditional_logics": [],
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
             "visible": true,
             "calc_value_status": false,
             "enable_image_input": false,
@@ -2331,7 +2461,17 @@
                 "global": true
               }
             },
-            "conditional_logics": [],
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
             "visible": true,
             "calc_value_status": false,
             "enable_image_input": false,
@@ -2429,12 +2569,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "2"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -2490,12 +2635,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "2"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -2561,12 +2711,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "2"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -2637,12 +2792,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "2"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -2741,12 +2901,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "2"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -2817,12 +2982,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "2"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -2887,12 +3057,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "2"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -2973,12 +3148,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "2"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -3059,12 +3239,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "2"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -3157,12 +3342,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "2"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -3255,12 +3445,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "2"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -3347,12 +3542,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "2"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -3439,12 +3639,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "2"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -3519,12 +3724,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "2"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -3636,12 +3846,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "3"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -3697,12 +3912,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "3"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -3768,12 +3988,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "3"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -3844,12 +4069,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "3"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -3948,12 +4178,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "3"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -4024,12 +4259,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "3"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -4094,12 +4334,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "3"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -4180,12 +4425,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "3"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -4266,12 +4516,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "3"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -4364,12 +4619,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "3"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -4462,12 +4722,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "3"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -4554,12 +4819,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "3"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -4646,12 +4916,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "3"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -4726,12 +5001,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "3"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -4843,12 +5123,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "4"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -4904,12 +5189,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "4"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -4975,12 +5265,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "4"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -5051,12 +5346,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "4"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -5155,12 +5455,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "4"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -5231,12 +5536,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "4"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -5301,12 +5611,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "4"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -5387,12 +5702,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "4"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -5473,12 +5793,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "4"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -5571,12 +5896,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "4"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -5669,12 +5999,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "4"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -5761,12 +6096,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "4"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -5853,12 +6193,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "4"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -5933,12 +6278,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "4"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -6050,12 +6400,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "5"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -6111,12 +6466,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "5"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -6182,12 +6542,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "5"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -6258,12 +6623,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "5"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -6362,12 +6732,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "5"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -6438,12 +6813,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "5"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -6508,12 +6888,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "5"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -6594,12 +6979,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "5"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -6680,12 +7070,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "5"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -6778,12 +7173,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "5"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -6876,12 +7276,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "5"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -6968,12 +7373,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "5"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -7060,12 +7470,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "5"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -7140,12 +7555,17 @@
             },
             "conditional_logics": {
               "status": true,
-              "type": "any",
+              "type": "all",
               "conditions": [
                 {
                   "field": "attendee_count",
                   "operator": ">=",
                   "value": "5"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
                 }
               ]
             },
@@ -7484,6 +7904,24 @@
             "template": "inputHidden"
           },
           "uniqElKey": "el_WR26_patch_registration_roster_preview"
+        },
+        {
+          "index": 0,
+          "element": "input_hidden",
+          "attributes": {
+            "type": "hidden",
+            "name": "roster_active",
+            "value": ""
+          },
+          "settings": {
+            "admin_field_label": "roster active"
+          },
+          "editor_options": {
+            "title": "Hidden Field",
+            "icon_class": "ff-edit-hidden-field",
+            "template": "inputHidden"
+          },
+          "uniqElKey": "el_WR26_patch_roster_active"
         },
         {
           "index": 21,

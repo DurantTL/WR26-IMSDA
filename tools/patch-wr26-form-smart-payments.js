@@ -308,6 +308,7 @@ function patchRoster(fields) {
     hiddenField('attendees_json', 'attendees json'),
     hiddenField('seminar_counts_json', 'seminar counts json'),
     hiddenField('registration_roster_preview', 'registration roster preview'),
+    hiddenField('roster_active', 'roster active'),
     rosterMountHtml(),
   ].filter((field) => {
     const name = fieldName(field);
@@ -326,6 +327,40 @@ function patchRoster(fields) {
   return additions.length;
 }
 
+/**
+ * Gate every legacy a{N}_* attendee/seminar field behind the roster.
+ *
+ * The custom roster UI sets the hidden roster_active flag to "1". By adding a
+ * `roster_active != 1` condition to each legacy field's conditional logic, Fluent
+ * Forms hides them — and crucially SKIPS their (required) validation and excludes
+ * them from the submission — whenever JavaScript/the roster is running. With JS
+ * off, roster_active stays empty, the legacy fields show, and they remain the
+ * fully-required no-JS fallback the plugin parser reads from a{N}_*.
+ *
+ * Existing conditions (e.g. a2_* shown only when attendee_count >= 2) are
+ * preserved and combined with AND (type: "all").
+ */
+function gateLegacyBehindRoster(fields) {
+  const rosterCondition = { field: 'roster_active', operator: '!=', value: '1' };
+  let gated = 0;
+  for (const field of fields) {
+    const name = fieldName(field);
+    if (!/^a[1-5]_/.test(String(name || ''))) continue;
+    const existing = field.settings && field.settings.conditional_logics;
+    let conditions = [];
+    if (existing && !Array.isArray(existing) && Array.isArray(existing.conditions)) {
+      conditions = existing.conditions.slice();
+    }
+    // Don't double-add the roster condition if the generator runs twice.
+    if (!conditions.some((c) => c && c.field === 'roster_active')) {
+      conditions.push(rosterCondition);
+    }
+    field.settings.conditional_logics = { status: true, type: 'all', conditions };
+    gated += 1;
+  }
+  return gated;
+}
+
 function updateHeaderCopy(fields) {
   const header = fields.find((field) => field.uniqElKey === 'el_WR26_1_header');
   if (header?.settings?.html_codes) {
@@ -341,6 +376,7 @@ const { form, fields } = fieldsOf(exportJson);
 const attendeeAdded = patchAttendeeOne(fields);
 const paymentAdded = patchPayment(fields);
 const rosterAdded = patchRoster(fields);
+const legacyGated = gateLegacyBehindRoster(fields);
 updateHeaderCopy(fields);
 form.has_payment = '1';
 writeJson(outputPath, exportJson);
@@ -351,4 +387,5 @@ console.log(`Output: ${outputPath}`);
 console.log(`Added attendee fields: ${attendeeAdded}`);
 console.log(`Added payment fields:  ${paymentAdded}`);
 console.log(`Added roster fields:   ${rosterAdded}`);
+console.log(`Gated legacy fields:   ${legacyGated}`);
 console.log('Next: import the patched JSON into Fluent Forms staging and test Pay Later + Square.');

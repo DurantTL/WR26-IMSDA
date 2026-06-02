@@ -27,6 +27,10 @@ source it's built from or documentation.
 > serializes them into `attendees_json`, and keeps `attendee_count` in sync so the
 > summary and GAS price correctly. The legacy `a1_*`–`a5_*` fields remain as a
 > no-JavaScript fallback — the plugin parser prefers `attendees_json` when present.
+> Those legacy fields are **required**, so they are gated behind a hidden
+> `roster_active` flag: the roster JS sets `roster_active=1`, which makes Fluent
+> Forms hide them and skip their validation. With JavaScript off, `roster_active`
+> stays empty, the legacy fields show, and they remain the fully-required fallback.
 > Seminar cards show live availability via the plugin's `getSeminarAvailability`
 > proxy (counts only — no attendee names).
 
