@@ -25,14 +25,27 @@ source it's built from or documentation.
 > interactive UI ships as `plugin/assets/wr26-roster.js` + `wr26-roster.css`.
 > It collects an **uncapped** list of attendees and their ranked seminar choices,
 > serializes them into `attendees_json`, and keeps `attendee_count` in sync so the
-> summary and GAS price correctly. The legacy `a1_*`–`a5_*` fields remain as a
-> no-JavaScript fallback — the plugin parser prefers `attendees_json` when present.
+> summary and GAS price correctly.
+>
+> **Field order matters here.** The patch generator mounts `#wr26-roster`
+> *directly above* the `Attendee 1` section, so the rich roster is the primary
+> experience (right under Primary Contact) and the legacy `a1_*`–`a5_*` block sits
+> *below* it as a collapsed fallback — followed in turn by the Payment section,
+> whose chargeable payment item (`custom_payment_amount`) comes **before**
+> `payment_method` so Square has a total to charge and Fluent Forms shows the
+> payment options. The legacy `a1_*`–`a5_*` fields remain as a no-JavaScript
+> fallback — the plugin parser prefers `attendees_json` when present.
 > Those legacy fields are **required**, so they are gated behind a hidden
 > `roster_active` flag: the roster JS sets `roster_active=1`, which makes Fluent
 > Forms hide them and skip their validation. With JavaScript off, `roster_active`
-> stays empty, the legacy fields show, and they remain the fully-required fallback.
-> Seminar cards show live availability via the plugin's `getSeminarAvailability`
-> proxy (counts only — no attendee names).
+> stays empty, the legacy fields show (preceded by an "enter attendees manually"
+> note), and they remain the fully-required fallback. The generator also enriches
+> those legacy seminar dropdowns with the speaker name in each option label.
+>
+> Seminar cards show the session time, speaker, an expandable **description**
+> (sourced from the plugin's `wr26_seminar_catalog()` / `tools/seminars-seed.csv`),
+> and live availability via the plugin's `getSeminarAvailability` proxy (counts
+> only — no attendee names).
 
 ## What each file is
 

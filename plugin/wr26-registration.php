@@ -858,22 +858,62 @@ add_action('wp_enqueue_scripts', 'wr26_enqueue_form_summary');
 function wr26_seminar_catalog() {
     return apply_filters('wr26_seminar_catalog', array(
         array('slot' => 'session_1', 'label' => 'Friday 4:00–5:00 PM', 'picks' => 2, 'seminars' => array(
-            array('title' => 'Color Me Golden: Embracing Life in Every Season', 'speaker' => 'Panel Discussion'),
-            array('title' => 'Refined by Fire, Revealed in Beauty', 'speaker' => 'Presenter TBD'),
+            array(
+                'title' => 'Color Me Golden: Embracing Life in Every Season',
+                'speaker' => 'Panel Discussion',
+                'description' => "Every season of a woman's life holds unique beauty, but later chapters often bring transitions that feel like winding down. God views this stage not as a time of fading, but as a vibrant season of deep impact and fruitfulness. Come hear real stories of faith and uncover fresh avenues for kingdom purpose while exploring practical ways to turn your life experience into a lasting legacy.",
+            ),
+            array(
+                'title' => 'Refined by Fire, Revealed in Beauty',
+                'speaker' => 'Presenter TBD',
+                'description' => "Learn how hard seasons shape strength, depth, and resilience — how to walk through trials without losing our faith, and how to find purpose in pain while developing a strength that comes only through surrender to God.",
+            ),
         )),
         array('slot' => 'session_2', 'label' => 'Sabbath 2:00–3:15 PM', 'picks' => 2, 'seminars' => array(
-            array('title' => 'Repainted by Grace', 'speaker' => 'Valerie Haveman'),
-            array('title' => 'Color Me Open', 'speaker' => 'Mary Kendall'),
-            array('title' => 'Nourished by Color', 'speaker' => 'Stephanie Richards'),
-            array('title' => 'Color Me Prayerful: Discovering the Beautiful Ways We Talk With God', 'speaker' => 'Shannon Pigsley'),
+            array(
+                'title' => 'Repainted by Grace',
+                'speaker' => 'Valerie Haveman',
+                'description' => "So many women carry the stains of past mistakes — shame, regret, or feeling not enough. But God does not define us by the colors of our past. We'll explore what it means to accept God's forgiveness, stop condemning ourselves, and let His grace repaint our hearts with truth, freedom, and hope.",
+            ),
+            array(
+                'title' => 'Color Me Open',
+                'speaker' => 'Mary Kendall',
+                'description' => "What does a root canal have to do with church hospitality? More than you'd think. Mary draws from business, home, and church ministry to share what she's learning about what it means to truly see the people around us — our neighbors, our church family, and the stranger in our pew.",
+            ),
+            array(
+                'title' => 'Nourished by Color',
+                'speaker' => 'Stephanie Richards',
+                'description' => "Simple, evidence-based ways to improve overall health through colorful nutrition, regular movement, and healthy sun exposure. Learn how \"eating the rainbow\" supports immunity, heart, gut health, and energy, and how daily activity and safe sunshine work together for long-term wellness.",
+            ),
+            array(
+                'title' => 'Color Me Prayerful: Discovering the Beautiful Ways We Talk With God',
+                'speaker' => 'Shannon Pigsley',
+                'description' => "Prayer is an intimate, ongoing conversation with a God who listens, loves, and responds. Discover the many beautiful ways we can talk with our Heavenly Father — from quiet surrender to praying in community — with interactive prayer stations that let you experience different forms of prayer hands-on.",
+            ),
         )),
         array('slot' => 'session_3', 'label' => 'Sabbath 4:15–5:30 PM', 'picks' => 2, 'seminars' => array(
-            array('title' => 'Shades of Peace', 'speaker' => 'Melissa Morris'),
-            array('title' => 'Coloring Through the Chaos: Raising Children with Grace and Truth', 'speaker' => 'Panel Discussion'),
-            array('title' => 'Broken Crayons Still Color', 'speaker' => ''),
+            array(
+                'title' => 'Shades of Peace',
+                'speaker' => 'Melissa Morris',
+                'description' => "A practical, encouraging seminar on letting go of anger and resentment while discovering the peace that comes through forgiveness in God. Explore how releasing past hurts can bring healing, restore relationships, and create greater emotional and spiritual freedom.",
+            ),
+            array(
+                'title' => 'Coloring Through the Chaos: Raising Children with Grace and Truth',
+                'speaker' => 'Panel Discussion',
+                'description' => "Raising children today can feel unpredictable and overwhelming — but God is still at work, both in your child and in you. This season doesn't ask us to control every detail; it asks us to guide, love, and trust God with the outcome.",
+            ),
+            array(
+                'title' => 'Broken Crayons Still Color',
+                'speaker' => '',
+                'description' => "Domestic violence and alcohol use affect families inside and outside our church. This session is about awareness, growth, and safety — empowering women to be the hands and feet of Jesus in a struggling world. (Matthew 22:37–39)",
+            ),
         )),
         array('slot' => 'session_4', 'label' => 'Sunday 8:15–9:15 AM', 'picks' => 1, 'seminars' => array(
-            array('title' => 'Brushstrokes of Leadership', 'speaker' => 'Ami Cook'),
+            array(
+                'title' => 'Brushstrokes of Leadership',
+                'speaker' => 'Ami Cook',
+                'description' => "God uses ordinary women to create extraordinary ministry. Discover how small acts of faith, kindness, and leadership become beautiful brushstrokes in God's masterpiece, and learn creative ways to build women's ministry in your local church.",
+            ),
         )),
     ));
 }

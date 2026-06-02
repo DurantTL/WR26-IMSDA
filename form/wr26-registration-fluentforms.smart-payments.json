@@ -1472,6 +1472,122 @@
           "uniqElKey": "el_WR26_15_seminar_info"
         },
         {
+          "index": 0,
+          "element": "input_hidden",
+          "attributes": {
+            "type": "hidden",
+            "name": "attendees_json",
+            "value": ""
+          },
+          "settings": {
+            "admin_field_label": "attendees json"
+          },
+          "editor_options": {
+            "title": "Hidden Field",
+            "icon_class": "ff-edit-hidden-field",
+            "template": "inputHidden"
+          },
+          "uniqElKey": "el_WR26_patch_attendees_json"
+        },
+        {
+          "index": 0,
+          "element": "input_hidden",
+          "attributes": {
+            "type": "hidden",
+            "name": "seminar_counts_json",
+            "value": ""
+          },
+          "settings": {
+            "admin_field_label": "seminar counts json"
+          },
+          "editor_options": {
+            "title": "Hidden Field",
+            "icon_class": "ff-edit-hidden-field",
+            "template": "inputHidden"
+          },
+          "uniqElKey": "el_WR26_patch_seminar_counts_json"
+        },
+        {
+          "index": 0,
+          "element": "input_hidden",
+          "attributes": {
+            "type": "hidden",
+            "name": "registration_roster_preview",
+            "value": ""
+          },
+          "settings": {
+            "admin_field_label": "registration roster preview"
+          },
+          "editor_options": {
+            "title": "Hidden Field",
+            "icon_class": "ff-edit-hidden-field",
+            "template": "inputHidden"
+          },
+          "uniqElKey": "el_WR26_patch_registration_roster_preview"
+        },
+        {
+          "index": 0,
+          "element": "input_hidden",
+          "attributes": {
+            "type": "hidden",
+            "name": "roster_active",
+            "value": ""
+          },
+          "settings": {
+            "admin_field_label": "roster active"
+          },
+          "editor_options": {
+            "title": "Hidden Field",
+            "icon_class": "ff-edit-hidden-field",
+            "template": "inputHidden"
+          },
+          "uniqElKey": "el_WR26_patch_roster_active"
+        },
+        {
+          "index": 16,
+          "element": "custom_html",
+          "attributes": [],
+          "settings": {
+            "html_codes": "<div id=\"wr26-roster\"></div>",
+            "conditional_logics": [],
+            "container_class": "",
+            "visible": true
+          },
+          "editor_options": {
+            "title": "Custom HTML",
+            "icon_class": "ff-edit-html",
+            "template": "customHTML"
+          },
+          "uniqElKey": "el_WR26_patch_roster_mount"
+        },
+        {
+          "index": 17,
+          "element": "custom_html",
+          "attributes": [],
+          "settings": {
+            "html_codes": "\n<div class=\"wr26-legacy-note\" style=\"padding:12px 14px;border-left:4px solid #f59e0b;background:#fffbeb;border-radius:6px;margin:8px 0;font-family:Arial,Helvetica,sans-serif;\">\n  <strong style=\"color:#92400e;\">Entering attendees manually</strong>\n  <p style=\"margin:6px 0 0;color:#5b4a1f;font-size:0.92em;\">The interactive attendee picker needs JavaScript and it doesn't appear to be running, so please fill in each attendee and their seminar choices using the fields below. Seminar descriptions are in the &ldquo;Breakout Session Descriptions&rdquo; box above.</p>\n</div>",
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
+            "container_class": "",
+            "visible": true
+          },
+          "editor_options": {
+            "title": "Custom HTML",
+            "icon_class": "ff-edit-html",
+            "template": "customHTML"
+          },
+          "uniqElKey": "el_WR26_patch_legacy_fallback_note"
+        },
+        {
           "index": 16,
           "element": "section_break",
           "attributes": {
@@ -1971,13 +2087,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season — Panel Discussion",
                 "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "label": "Session B: Refined by Fire, Revealed in Beauty — Presenter TBD",
                 "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
@@ -2046,13 +2162,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season — Panel Discussion",
                 "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "label": "Session B: Refined by Fire, Revealed in Beauty — Presenter TBD",
                 "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
@@ -2121,25 +2237,25 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session C: Repainted by Grace",
+                "label": "Session C: Repainted by Grace — Valerie Haveman",
                 "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session D: Color Me Open",
+                "label": "Session D: Color Me Open — Mary Kendall",
                 "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Session E: Nourished by Color",
+                "label": "Session E: Nourished by Color — Stephanie Richards",
                 "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
               },
               {
-                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God — Shannon Pigsley",
                 "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
                 "calc_value": "",
                 "id": 3
@@ -2208,25 +2324,25 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session C: Repainted by Grace",
+                "label": "Session C: Repainted by Grace — Valerie Haveman",
                 "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session D: Color Me Open",
+                "label": "Session D: Color Me Open — Mary Kendall",
                 "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Session E: Nourished by Color",
+                "label": "Session E: Nourished by Color — Stephanie Richards",
                 "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
               },
               {
-                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God — Shannon Pigsley",
                 "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
                 "calc_value": "",
                 "id": 3
@@ -2295,13 +2411,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session G: Shades of Peace",
+                "label": "Session G: Shades of Peace — Melissa Morris",
                 "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth — Panel Discussion",
                 "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
@@ -2376,13 +2492,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session G: Shades of Peace",
+                "label": "Session G: Shades of Peace — Melissa Morris",
                 "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth — Panel Discussion",
                 "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
@@ -2457,7 +2573,7 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session J: Brushstrokes of Leadership",
+                "label": "Session J: Brushstrokes of Leadership — Ami Cook",
                 "value": "Brushstrokes of Leadership",
                 "calc_value": "",
                 "id": 0
@@ -3141,13 +3257,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season — Panel Discussion",
                 "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "label": "Session B: Refined by Fire, Revealed in Beauty — Presenter TBD",
                 "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
@@ -3232,13 +3348,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season — Panel Discussion",
                 "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "label": "Session B: Refined by Fire, Revealed in Beauty — Presenter TBD",
                 "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
@@ -3323,25 +3439,25 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session C: Repainted by Grace",
+                "label": "Session C: Repainted by Grace — Valerie Haveman",
                 "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session D: Color Me Open",
+                "label": "Session D: Color Me Open — Mary Kendall",
                 "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Session E: Nourished by Color",
+                "label": "Session E: Nourished by Color — Stephanie Richards",
                 "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
               },
               {
-                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God — Shannon Pigsley",
                 "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
                 "calc_value": "",
                 "id": 3
@@ -3426,25 +3542,25 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session C: Repainted by Grace",
+                "label": "Session C: Repainted by Grace — Valerie Haveman",
                 "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session D: Color Me Open",
+                "label": "Session D: Color Me Open — Mary Kendall",
                 "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Session E: Nourished by Color",
+                "label": "Session E: Nourished by Color — Stephanie Richards",
                 "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
               },
               {
-                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God — Shannon Pigsley",
                 "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
                 "calc_value": "",
                 "id": 3
@@ -3529,13 +3645,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session G: Shades of Peace",
+                "label": "Session G: Shades of Peace — Melissa Morris",
                 "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth — Panel Discussion",
                 "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
@@ -3626,13 +3742,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session G: Shades of Peace",
+                "label": "Session G: Shades of Peace — Melissa Morris",
                 "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth — Panel Discussion",
                 "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
@@ -3723,7 +3839,7 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session J: Brushstrokes of Leadership",
+                "label": "Session J: Brushstrokes of Leadership — Ami Cook",
                 "value": "Brushstrokes of Leadership",
                 "calc_value": "",
                 "id": 0
@@ -4423,13 +4539,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season — Panel Discussion",
                 "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "label": "Session B: Refined by Fire, Revealed in Beauty — Presenter TBD",
                 "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
@@ -4514,13 +4630,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season — Panel Discussion",
                 "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "label": "Session B: Refined by Fire, Revealed in Beauty — Presenter TBD",
                 "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
@@ -4605,25 +4721,25 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session C: Repainted by Grace",
+                "label": "Session C: Repainted by Grace — Valerie Haveman",
                 "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session D: Color Me Open",
+                "label": "Session D: Color Me Open — Mary Kendall",
                 "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Session E: Nourished by Color",
+                "label": "Session E: Nourished by Color — Stephanie Richards",
                 "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
               },
               {
-                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God — Shannon Pigsley",
                 "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
                 "calc_value": "",
                 "id": 3
@@ -4708,25 +4824,25 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session C: Repainted by Grace",
+                "label": "Session C: Repainted by Grace — Valerie Haveman",
                 "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session D: Color Me Open",
+                "label": "Session D: Color Me Open — Mary Kendall",
                 "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Session E: Nourished by Color",
+                "label": "Session E: Nourished by Color — Stephanie Richards",
                 "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
               },
               {
-                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God — Shannon Pigsley",
                 "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
                 "calc_value": "",
                 "id": 3
@@ -4811,13 +4927,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session G: Shades of Peace",
+                "label": "Session G: Shades of Peace — Melissa Morris",
                 "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth — Panel Discussion",
                 "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
@@ -4908,13 +5024,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session G: Shades of Peace",
+                "label": "Session G: Shades of Peace — Melissa Morris",
                 "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth — Panel Discussion",
                 "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
@@ -5005,7 +5121,7 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session J: Brushstrokes of Leadership",
+                "label": "Session J: Brushstrokes of Leadership — Ami Cook",
                 "value": "Brushstrokes of Leadership",
                 "calc_value": "",
                 "id": 0
@@ -5705,13 +5821,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season — Panel Discussion",
                 "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "label": "Session B: Refined by Fire, Revealed in Beauty — Presenter TBD",
                 "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
@@ -5796,13 +5912,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season — Panel Discussion",
                 "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "label": "Session B: Refined by Fire, Revealed in Beauty — Presenter TBD",
                 "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
@@ -5887,25 +6003,25 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session C: Repainted by Grace",
+                "label": "Session C: Repainted by Grace — Valerie Haveman",
                 "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session D: Color Me Open",
+                "label": "Session D: Color Me Open — Mary Kendall",
                 "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Session E: Nourished by Color",
+                "label": "Session E: Nourished by Color — Stephanie Richards",
                 "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
               },
               {
-                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God — Shannon Pigsley",
                 "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
                 "calc_value": "",
                 "id": 3
@@ -5990,25 +6106,25 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session C: Repainted by Grace",
+                "label": "Session C: Repainted by Grace — Valerie Haveman",
                 "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session D: Color Me Open",
+                "label": "Session D: Color Me Open — Mary Kendall",
                 "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Session E: Nourished by Color",
+                "label": "Session E: Nourished by Color — Stephanie Richards",
                 "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
               },
               {
-                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God — Shannon Pigsley",
                 "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
                 "calc_value": "",
                 "id": 3
@@ -6093,13 +6209,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session G: Shades of Peace",
+                "label": "Session G: Shades of Peace — Melissa Morris",
                 "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth — Panel Discussion",
                 "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
@@ -6190,13 +6306,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session G: Shades of Peace",
+                "label": "Session G: Shades of Peace — Melissa Morris",
                 "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth — Panel Discussion",
                 "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
@@ -6287,7 +6403,7 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session J: Brushstrokes of Leadership",
+                "label": "Session J: Brushstrokes of Leadership — Ami Cook",
                 "value": "Brushstrokes of Leadership",
                 "calc_value": "",
                 "id": 0
@@ -6987,13 +7103,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season — Panel Discussion",
                 "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "label": "Session B: Refined by Fire, Revealed in Beauty — Presenter TBD",
                 "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
@@ -7078,13 +7194,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session A: Color Me Golden: Embracing Life in Every Season",
+                "label": "Session A: Color Me Golden: Embracing Life in Every Season — Panel Discussion",
                 "value": "Color Me Golden: Embracing Life in Every Season",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session B: Refined by Fire, Revealed in Beauty",
+                "label": "Session B: Refined by Fire, Revealed in Beauty — Presenter TBD",
                 "value": "Refined by Fire, Revealed in Beauty",
                 "calc_value": "",
                 "id": 1
@@ -7169,25 +7285,25 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session C: Repainted by Grace",
+                "label": "Session C: Repainted by Grace — Valerie Haveman",
                 "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session D: Color Me Open",
+                "label": "Session D: Color Me Open — Mary Kendall",
                 "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Session E: Nourished by Color",
+                "label": "Session E: Nourished by Color — Stephanie Richards",
                 "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
               },
               {
-                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God — Shannon Pigsley",
                 "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
                 "calc_value": "",
                 "id": 3
@@ -7272,25 +7388,25 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session C: Repainted by Grace",
+                "label": "Session C: Repainted by Grace — Valerie Haveman",
                 "value": "Repainted by Grace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session D: Color Me Open",
+                "label": "Session D: Color Me Open — Mary Kendall",
                 "value": "Color Me Open",
                 "calc_value": "",
                 "id": 1
               },
               {
-                "label": "Session E: Nourished by Color",
+                "label": "Session E: Nourished by Color — Stephanie Richards",
                 "value": "Nourished by Color",
                 "calc_value": "",
                 "id": 2
               },
               {
-                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
+                "label": "Session F: Color Me Prayerful: Discovering the Beautiful Ways We Talk With God — Shannon Pigsley",
                 "value": "Color Me Prayerful: Discovering the Beautiful Ways We Talk With God",
                 "calc_value": "",
                 "id": 3
@@ -7375,13 +7491,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session G: Shades of Peace",
+                "label": "Session G: Shades of Peace — Melissa Morris",
                 "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth — Panel Discussion",
                 "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
@@ -7472,13 +7588,13 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session G: Shades of Peace",
+                "label": "Session G: Shades of Peace — Melissa Morris",
                 "value": "Shades of Peace",
                 "calc_value": "",
                 "id": 0
               },
               {
-                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth",
+                "label": "Session H: Coloring Through the Chaos: Raising Children with Grace and Truth — Panel Discussion",
                 "value": "Coloring Through the Chaos: Raising Children with Grace and Truth",
                 "calc_value": "",
                 "id": 1
@@ -7569,7 +7685,7 @@
             "placeholder": "- Select -",
             "advanced_options": [
               {
-                "label": "Session J: Brushstrokes of Leadership",
+                "label": "Session J: Brushstrokes of Leadership — Ami Cook",
                 "value": "Brushstrokes of Leadership",
                 "calc_value": "",
                 "id": 0
@@ -7683,95 +7799,6 @@
             "template": "inputTextarea"
           },
           "uniqElKey": "el_WR26_87_attendee_notes"
-        },
-        {
-          "index": 0,
-          "element": "input_hidden",
-          "attributes": {
-            "type": "hidden",
-            "name": "attendees_json",
-            "value": ""
-          },
-          "settings": {
-            "admin_field_label": "attendees json"
-          },
-          "editor_options": {
-            "title": "Hidden Field",
-            "icon_class": "ff-edit-hidden-field",
-            "template": "inputHidden"
-          },
-          "uniqElKey": "el_WR26_patch_attendees_json"
-        },
-        {
-          "index": 0,
-          "element": "input_hidden",
-          "attributes": {
-            "type": "hidden",
-            "name": "seminar_counts_json",
-            "value": ""
-          },
-          "settings": {
-            "admin_field_label": "seminar counts json"
-          },
-          "editor_options": {
-            "title": "Hidden Field",
-            "icon_class": "ff-edit-hidden-field",
-            "template": "inputHidden"
-          },
-          "uniqElKey": "el_WR26_patch_seminar_counts_json"
-        },
-        {
-          "index": 0,
-          "element": "input_hidden",
-          "attributes": {
-            "type": "hidden",
-            "name": "registration_roster_preview",
-            "value": ""
-          },
-          "settings": {
-            "admin_field_label": "registration roster preview"
-          },
-          "editor_options": {
-            "title": "Hidden Field",
-            "icon_class": "ff-edit-hidden-field",
-            "template": "inputHidden"
-          },
-          "uniqElKey": "el_WR26_patch_registration_roster_preview"
-        },
-        {
-          "index": 0,
-          "element": "input_hidden",
-          "attributes": {
-            "type": "hidden",
-            "name": "roster_active",
-            "value": ""
-          },
-          "settings": {
-            "admin_field_label": "roster active"
-          },
-          "editor_options": {
-            "title": "Hidden Field",
-            "icon_class": "ff-edit-hidden-field",
-            "template": "inputHidden"
-          },
-          "uniqElKey": "el_WR26_patch_roster_active"
-        },
-        {
-          "index": 21,
-          "element": "custom_html",
-          "attributes": [],
-          "settings": {
-            "html_codes": "\n<div class=\"wr26-roster-intro\" style=\"margin:10px 0;\">\n  <h3 style=\"color:#4c1d95;margin:0 0 4px 0;\">Who's attending &amp; seminar choices</h3>\n  <p style=\"color:#5b6470;margin:0;font-size:0.92em;\">Add each attendee and pick their seminar preferences. The registration total updates automatically.</p>\n</div>\n<div id=\"wr26-roster\"></div>",
-            "conditional_logics": [],
-            "container_class": "",
-            "visible": true
-          },
-          "editor_options": {
-            "title": "Custom HTML",
-            "icon_class": "ff-edit-html",
-            "template": "customHTML"
-          },
-          "uniqElKey": "el_WR26_patch_roster_mount"
         },
         {
           "index": 88,

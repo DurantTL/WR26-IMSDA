@@ -31,22 +31,22 @@
   // still overlaid from getSeminarAvailability when the proxy is reachable.
   var DEFAULT_CATALOG = [
     { slot: 'session_1', label: 'Friday 4:00–5:00 PM', picks: 2, seminars: [
-      { title: 'Color Me Golden: Embracing Life in Every Season', speaker: 'Panel Discussion' },
-      { title: 'Refined by Fire, Revealed in Beauty', speaker: 'Presenter TBD' }
+      { title: 'Color Me Golden: Embracing Life in Every Season', speaker: 'Panel Discussion', description: "Every season of a woman's life holds unique beauty, but later chapters often bring transitions that feel like winding down. God views this stage not as a time of fading, but as a vibrant season of deep impact and fruitfulness. Come hear real stories of faith and uncover fresh avenues for kingdom purpose while exploring practical ways to turn your life experience into a lasting legacy." },
+      { title: 'Refined by Fire, Revealed in Beauty', speaker: 'Presenter TBD', description: "Learn how hard seasons shape strength, depth, and resilience — how to walk through trials without losing our faith, and how to find purpose in pain while developing a strength that comes only through surrender to God." }
     ] },
     { slot: 'session_2', label: 'Sabbath 2:00–3:15 PM', picks: 2, seminars: [
-      { title: 'Repainted by Grace', speaker: 'Valerie Haveman' },
-      { title: 'Color Me Open', speaker: 'Mary Kendall' },
-      { title: 'Nourished by Color', speaker: 'Stephanie Richards' },
-      { title: 'Color Me Prayerful: Discovering the Beautiful Ways We Talk With God', speaker: 'Shannon Pigsley' }
+      { title: 'Repainted by Grace', speaker: 'Valerie Haveman', description: "So many women carry the stains of past mistakes — shame, regret, or feeling not enough. But God does not define us by the colors of our past. We'll explore what it means to accept God's forgiveness, stop condemning ourselves, and let His grace repaint our hearts with truth, freedom, and hope." },
+      { title: 'Color Me Open', speaker: 'Mary Kendall', description: "What does a root canal have to do with church hospitality? More than you'd think. Mary draws from business, home, and church ministry to share what she's learning about what it means to truly see the people around us — our neighbors, our church family, and the stranger in our pew." },
+      { title: 'Nourished by Color', speaker: 'Stephanie Richards', description: 'Simple, evidence-based ways to improve overall health through colorful nutrition, regular movement, and healthy sun exposure. Learn how "eating the rainbow" supports immunity, heart, gut health, and energy, and how daily activity and safe sunshine work together for long-term wellness.' },
+      { title: 'Color Me Prayerful: Discovering the Beautiful Ways We Talk With God', speaker: 'Shannon Pigsley', description: 'Prayer is an intimate, ongoing conversation with a God who listens, loves, and responds. Discover the many beautiful ways we can talk with our Heavenly Father — from quiet surrender to praying in community — with interactive prayer stations that let you experience different forms of prayer hands-on.' }
     ] },
     { slot: 'session_3', label: 'Sabbath 4:15–5:30 PM', picks: 2, seminars: [
-      { title: 'Shades of Peace', speaker: 'Melissa Morris' },
-      { title: 'Coloring Through the Chaos: Raising Children with Grace and Truth', speaker: 'Panel Discussion' },
-      { title: 'Broken Crayons Still Color', speaker: '' }
+      { title: 'Shades of Peace', speaker: 'Melissa Morris', description: 'A practical, encouraging seminar on letting go of anger and resentment while discovering the peace that comes through forgiveness in God. Explore how releasing past hurts can bring healing, restore relationships, and create greater emotional and spiritual freedom.' },
+      { title: 'Coloring Through the Chaos: Raising Children with Grace and Truth', speaker: 'Panel Discussion', description: "Raising children today can feel unpredictable and overwhelming — but God is still at work, both in your child and in you. This season doesn't ask us to control every detail; it asks us to guide, love, and trust God with the outcome." },
+      { title: 'Broken Crayons Still Color', speaker: '', description: 'Domestic violence and alcohol use affect families inside and outside our church. This session is about awareness, growth, and safety — empowering women to be the hands and feet of Jesus in a struggling world. (Matthew 22:37–39)' }
     ] },
     { slot: 'session_4', label: 'Sunday 8:15–9:15 AM', picks: 1, seminars: [
-      { title: 'Brushstrokes of Leadership', speaker: 'Ami Cook' }
+      { title: 'Brushstrokes of Leadership', speaker: 'Ami Cook', description: "God uses ordinary women to create extraordinary ministry. Discover how small acts of faith, kindness, and leadership become beautiful brushstrokes in God's masterpiece, and learn creative ways to build women's ministry in your local church." }
     ] }
   ];
   var CATALOG = (Array.isArray(CFG.catalog) && CFG.catalog.length) ? CFG.catalog : DEFAULT_CATALOG;
@@ -162,6 +162,11 @@
   WR26Roster.prototype.render = function () {
     var self = this;
     var html = '<div class="wr26-roster">';
+    html += '<div class="wr26-roster-intro">' +
+      '<h3>Who\'s attending &amp; their seminar choices</h3>' +
+      '<p>Add everyone in your party and tap to choose each person\'s seminars. ' +
+      'Your registration total updates as you go.</p>' +
+      '</div>';
     this.attendees.forEach(function (a, i) {
       html += self.attendeeHtml(a, i);
     });
@@ -220,9 +225,14 @@
     var self = this;
     var pref = (a.seminar_preferences && a.seminar_preferences[slot.slot]) || {};
     var picks = slot.picks || 1;
+    var chosen = [pref.pref_1, pref.pref_2].filter(Boolean).length;
     var h = '<div class="wr26-slot" data-slot="' + esc(slot.slot) + '">';
-    h += '<div class="wr26-slot-label">' + esc(slot.label) +
-      (picks > 1 ? ' <span class="wr26-slot-hint">— choose a 1st and 2nd choice</span>' : '') + '</div>';
+    h += '<div class="wr26-slot-head">' +
+      '<span class="wr26-slot-time">' + esc(slot.label) + '</span>' +
+      '<span class="wr26-slot-hint">' +
+      (picks > 1 ? 'Pick a 1st and 2nd choice' : 'Pick one') +
+      ' · ' + chosen + '/' + picks + ' selected</span>' +
+      '</div>';
     h += '<div class="wr26-cards">';
     (slot.seminars || []).forEach(function (s) {
       var rank = pref.pref_1 === s.title ? 1 : (pref.pref_2 === s.title ? 2 : 0);
@@ -237,7 +247,11 @@
     var h = '<div class="' + cls + '" data-title="' + esc(s.title) + '">';
     if (rank) h += '<span class="wr26-rank-badge">' + (rank === 1 ? '1st choice' : '2nd choice') + '</span>';
     h += '<div class="wr26-card-title">' + esc(s.title) + '</div>';
-    if (s.speaker) h += '<div class="wr26-card-speaker">' + esc(s.speaker) + '</div>';
+    if (s.speaker) h += '<div class="wr26-card-speaker">with ' + esc(s.speaker) + '</div>';
+    if (s.description) {
+      h += '<details class="wr26-card-details"><summary>About this seminar</summary>' +
+        '<p>' + esc(s.description) + '</p></details>';
+    }
     h += '<div class="wr26-card-avail" data-avail-slot="' + esc(slot.slot) + '" data-avail-title="' + esc(norm(s.title)) + '"></div>';
     h += '<div class="wr26-card-buttons">';
     h += '<button type="button" class="wr26-pick" data-rank="1">' + (rank === 1 ? '✓ 1st choice' : 'Choose as 1st') + '</button>';

@@ -10,6 +10,14 @@
  * - Visible custom summary showing subtotal, discount, processing fee only for card, and total
  * - JavaScript that recalculates totals from attendee_count, payment_method, and promo_code
  *
+ * What it reorders / polishes:
+ * - Mounts the interactive roster (#wr26-roster) directly ABOVE the Attendee 1
+ *   section so the rich attendee + seminar UI is the primary experience and the
+ *   legacy a{N}_* block sits below it as the collapsed, JS-gated no-JS fallback.
+ * - Adds a "enter attendees manually" note shown only when JavaScript is off.
+ * - Enriches the legacy seminar dropdown option labels with the speaker name so
+ *   the no-JS fallback reads better (values are untouched, parsing is unaffected).
+ *
  * Usage:
  *   node tools/patch-wr26-form-smart-payments.js
  *   node tools/patch-wr26-form-smart-payments.js --in-place
@@ -280,23 +288,46 @@ function patchPayment(fields) {
 }
 
 function rosterMountHtml() {
-  const html = `
-<div class="wr26-roster-intro" style="margin:10px 0;">
-  <h3 style="color:#4c1d95;margin:0 0 4px 0;">Who's attending &amp; seminar choices</h3>
-  <p style="color:#5b6470;margin:0;font-size:0.92em;">Add each attendee and pick their seminar preferences. The registration total updates automatically.</p>
-</div>
-<div id="wr26-roster"></div>`;
-  // The interactive roster/seminar-card UI is NOT embedded here. Fluent Forms
-  // strips <script> from Custom HTML, so the behavior ships as a real asset
-  // (plugin/assets/wr26-roster.js + .css) enqueued by the WR26 plugin. This field
-  // only provides the #wr26-roster mount point the script renders into.
+  // Just the mount point. The interactive roster/seminar-card UI is NOT embedded
+  // here — Fluent Forms strips <script> from Custom HTML, so the behavior ships as
+  // a real asset (plugin/assets/wr26-roster.js + .css) enqueued by the WR26 plugin.
+  // The script renders its own intro heading + cards inside #wr26-roster, so no
+  // static heading lives here (that avoids a duplicate heading once JS runs). When
+  // JavaScript is off this stays an empty div and the gated legacy block below
+  // (with its own "enter attendees manually" note) is the fallback.
+  const html = `<div id="wr26-roster"></div>`;
   return {
-    index: 21,
+    index: 16,
     element: 'custom_html',
     attributes: [],
     settings: { html_codes: html, conditional_logics: [], container_class: '', visible: true },
     editor_options: { title: 'Custom HTML', icon_class: 'ff-edit-html', template: 'customHTML' },
     uniqElKey: 'el_WR26_patch_roster_mount',
+  };
+}
+
+// No-JavaScript fallback banner shown only when the roster UI is NOT active
+// (roster_active != 1). It tells visitors with JS off to use the manual attendee
+// fields below and points them at the seminar-description box for details. Gated
+// here at creation so gateLegacyBehindRoster() leaves it alone.
+function legacyFallbackNoteHtml() {
+  const html = `
+<div class="wr26-legacy-note" style="padding:12px 14px;border-left:4px solid #f59e0b;background:#fffbeb;border-radius:6px;margin:8px 0;font-family:Arial,Helvetica,sans-serif;">
+  <strong style="color:#92400e;">Entering attendees manually</strong>
+  <p style="margin:6px 0 0;color:#5b4a1f;font-size:0.92em;">The interactive attendee picker needs JavaScript and it doesn't appear to be running, so please fill in each attendee and their seminar choices using the fields below. Seminar descriptions are in the &ldquo;Breakout Session Descriptions&rdquo; box above.</p>
+</div>`;
+  return {
+    index: 17,
+    element: 'custom_html',
+    attributes: [],
+    settings: {
+      html_codes: html,
+      conditional_logics: { status: true, type: 'all', conditions: [{ field: 'roster_active', operator: '!=', value: '1' }] },
+      container_class: '',
+      visible: true,
+    },
+    editor_options: { title: 'Custom HTML', icon_class: 'ff-edit-html', template: 'customHTML' },
+    uniqElKey: 'el_WR26_patch_legacy_fallback_note',
   };
 }
 
@@ -310,6 +341,7 @@ function patchRoster(fields) {
     hiddenField('registration_roster_preview', 'registration roster preview'),
     hiddenField('roster_active', 'roster active'),
     rosterMountHtml(),
+    legacyFallbackNoteHtml(),
   ].filter((field) => {
     const name = fieldName(field);
     const nameAlreadyExists = name ? hasField(fields, name) : false;
@@ -319,16 +351,27 @@ function patchRoster(fields) {
 
   if (!additions.length) return 0;
 
-  // Mount the roster right before the "Payment & Promo Code" section so the flow
-  // reads: primary contact → (gated legacy block, hidden) → roster + seminars →
-  // payment summary. Fall back to the payment_method field, then end of form.
+  // Mount the roster right BEFORE the "Attendee 1 — You" section break so the rich
+  // attendee + seminar UI is the primary experience and sits directly under the
+  // Primary Contact / seminar-description block. The legacy a{N}_* block then
+  // follows immediately below it as the (gated, hidden-when-JS-runs) no-JS
+  // fallback, preceded by the legacy-fallback note. This is what makes the flow
+  // read: primary contact → roster + seminars → [collapsed legacy fallback] →
+  // payment. Fall back to the "Payment & Promo Code" section, then payment_method,
+  // then end of form if the attendee section can't be located.
+  const attendeeOneIndex = fields.findIndex((field) =>
+    field.uniqElKey === 'el_WR26_16_a1_section' ||
+    (field.element === 'section_break' && /^Attendee\s*1\b/i.test(String(field?.settings?.label || '')))
+  );
   const paymentSectionIndex = fields.findIndex((field) =>
     field.element === 'section_break' && /Payment\s*&?\s*Promo/i.test(String(field?.settings?.label || ''))
   );
   const paymentMethodIndex = fields.findIndex((field) => fieldName(field) === 'payment_method');
-  const insertAt = paymentSectionIndex >= 0
-    ? paymentSectionIndex
-    : (paymentMethodIndex >= 0 ? paymentMethodIndex : fields.length);
+  const insertAt = attendeeOneIndex >= 0
+    ? attendeeOneIndex
+    : (paymentSectionIndex >= 0
+      ? paymentSectionIndex
+      : (paymentMethodIndex >= 0 ? paymentMethodIndex : fields.length));
   fields.splice(insertAt, 0, ...additions);
   return additions.length;
 }
@@ -379,6 +422,48 @@ function gateLegacyBehindRoster(fields) {
   return gated;
 }
 
+// Speaker per seminar, keyed by the exact option value (= seminar title). Mirrors
+// the plugin's wr26_seminar_catalog(). Used to enrich the legacy dropdown option
+// LABELS only — values are never touched, so GAS/parser matching is unaffected.
+const SEMINAR_SPEAKERS = {
+  'Color Me Golden: Embracing Life in Every Season': 'Panel Discussion',
+  'Refined by Fire, Revealed in Beauty': 'Presenter TBD',
+  'Repainted by Grace': 'Valerie Haveman',
+  'Color Me Open': 'Mary Kendall',
+  'Nourished by Color': 'Stephanie Richards',
+  'Color Me Prayerful: Discovering the Beautiful Ways We Talk With God': 'Shannon Pigsley',
+  'Shades of Peace': 'Melissa Morris',
+  'Coloring Through the Chaos: Raising Children with Grace and Truth': 'Panel Discussion',
+  'Broken Crayons Still Color': '',
+  'Brushstrokes of Leadership': 'Ami Cook',
+};
+
+/**
+ * Polish the legacy (no-JS) seminar dropdowns so the option text reads better:
+ * append the speaker after an em-dash, e.g. "Session A: Color Me Golden …" becomes
+ * "Session A: Color Me Golden … — Panel Discussion". Only labels change; the option
+ * value (the seminar title the parser/GAS matches on) is preserved. Idempotent:
+ * skips options whose label already ends with the speaker. Returns count changed.
+ */
+function enrichLegacySeminarLabels(fields) {
+  let changed = 0;
+  for (const field of fields) {
+    const name = fieldName(field);
+    if (!/^a[1-5]_session/.test(String(name || ''))) continue;
+    const options = field?.settings?.advanced_options;
+    if (!Array.isArray(options)) continue;
+    for (const option of options) {
+      const speaker = SEMINAR_SPEAKERS[option.value];
+      if (!speaker) continue;
+      const label = String(option.label || '');
+      if (label.includes(speaker)) continue;
+      option.label = `${label} — ${speaker}`;
+      changed += 1;
+    }
+  }
+  return changed;
+}
+
 function updateHeaderCopy(fields) {
   const header = fields.find((field) => field.uniqElKey === 'el_WR26_1_header');
   if (header?.settings?.html_codes) {
@@ -395,6 +480,7 @@ const attendeeAdded = patchAttendeeOne(fields);
 const paymentAdded = patchPayment(fields);
 const rosterAdded = patchRoster(fields);
 const legacyGated = gateLegacyBehindRoster(fields);
+const labelsEnriched = enrichLegacySeminarLabels(fields);
 updateHeaderCopy(fields);
 form.has_payment = '1';
 writeJson(outputPath, exportJson);
@@ -406,4 +492,5 @@ console.log(`Added attendee fields: ${attendeeAdded}`);
 console.log(`Added payment fields:  ${paymentAdded}`);
 console.log(`Added roster fields:   ${rosterAdded}`);
 console.log(`Gated legacy fields:   ${legacyGated}`);
+console.log(`Enriched seminar opts: ${labelsEnriched}`);
 console.log('Next: import the patched JSON into Fluent Forms staging and test Pay Later + Square.');
