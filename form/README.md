@@ -19,6 +19,17 @@ source it's built from or documentation.
 > visible text and the totals stayed at **$0.00**. Keep the WR26 plugin active or
 > the summary will not update.
 
+> **The attendee roster + seminar cards also run from the plugin.** The form
+> includes a `#wr26-roster` mount point and three hidden fields
+> (`attendees_json`, `seminar_counts_json`, `registration_roster_preview`); the
+> interactive UI ships as `plugin/assets/wr26-roster.js` + `wr26-roster.css`.
+> It collects an **uncapped** list of attendees and their ranked seminar choices,
+> serializes them into `attendees_json`, and keeps `attendee_count` in sync so the
+> summary and GAS price correctly. The legacy `a1_*`–`a5_*` fields remain as a
+> no-JavaScript fallback — the plugin parser prefers `attendees_json` when present.
+> Seminar cards show live availability via the plugin's `getSeminarAvailability`
+> proxy (counts only — no attendee names).
+
 ## What each file is
 
 | File | Use it for |

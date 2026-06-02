@@ -1,0 +1,128 @@
+/*
+ * WR26 registration — custom attendee roster + seminar-card styling.
+ * Scoped under .wr26-roster so it cannot bleed into the rest of the form/theme.
+ * Palette mirrors the summary box (purple #7c3aed / #4c1d95) for visual cohesion.
+ */
+.wr26-roster { font-family: Arial, Helvetica, sans-serif; margin: 15px 0; }
+
+.wr26-attendee {
+  border: 2px solid #e2d9f7;
+  border-radius: 12px;
+  padding: 18px;
+  margin: 0 0 18px;
+  background: #fcfbff;
+}
+.wr26-attendee-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.wr26-attendee-head h3 { color: #4c1d95; margin: 0; font-size: 1.15em; }
+.wr26-remove-attendee {
+  background: none;
+  border: 1px solid #d1c4ec;
+  color: #6b21a8;
+  border-radius: 6px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 0.85em;
+}
+.wr26-remove-attendee:hover { background: #f3eefc; }
+
+.wr26-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.wr26-field { display: flex; flex-direction: column; }
+.wr26-field-wide { margin-top: 12px; }
+.wr26-field label { font-size: 0.85em; font-weight: bold; color: #44464a; margin-bottom: 4px; }
+.wr26-req { color: #b32d2e; }
+.wr26-field input,
+.wr26-field select,
+.wr26-field textarea {
+  border: 1px solid #cdd2da;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.95em;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.wr26-seminars { margin-top: 18px; }
+.wr26-seminars h4 { color: #4c1d95; margin: 0 0 8px; }
+.wr26-slot { margin-bottom: 14px; }
+.wr26-slot-label { font-weight: bold; color: #333; margin-bottom: 8px; }
+.wr26-slot-hint { font-weight: normal; color: #6b7280; font-size: 0.9em; }
+
+.wr26-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.wr26-card {
+  position: relative;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.wr26-card.is-rank-1 { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.18); }
+.wr26-card.is-rank-2 { border-color: #a78bdf; }
+.wr26-rank-badge {
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  background: #7c3aed;
+  color: #fff;
+  font-size: 0.72em;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.wr26-card.is-rank-2 .wr26-rank-badge { background: #a78bdf; }
+.wr26-card-title { font-weight: bold; color: #1f2937; line-height: 1.25; }
+.wr26-card-speaker { color: #6b21a8; font-size: 0.85em; margin-top: 2px; }
+
+.wr26-card-avail { margin-top: 8px; min-height: 18px; }
+.wr26-badge {
+  display: inline-block;
+  font-size: 0.72em;
+  font-weight: bold;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+.wr26-badge-ok { background: #dcfce7; color: #166534; }
+.wr26-badge-warn { background: #fef3c7; color: #92400e; }
+.wr26-badge-full { background: #fee2e2; color: #991b1b; }
+.wr26-avail-meta { display: block; font-size: 0.75em; color: #6b7280; margin-top: 3px; }
+.wr26-bar { background: #eef0f3; border-radius: 5px; height: 6px; margin-top: 5px; overflow: hidden; }
+.wr26-bar span { display: block; height: 100%; background: #7c3aed; }
+
+.wr26-card-buttons { display: flex; gap: 6px; margin-top: 10px; }
+.wr26-pick {
+  flex: 1;
+  border: 1px solid #c4b5e8;
+  background: #f7f3ff;
+  color: #5b21b6;
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 0.8em;
+}
+.wr26-pick:hover { background: #ede5fb; }
+
+.wr26-roster-actions { margin-top: 4px; }
+.wr26-add-attendee {
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  cursor: pointer;
+  font-size: 0.95em;
+  font-weight: bold;
+}
+.wr26-add-attendee:hover { background: #6d28d9; }

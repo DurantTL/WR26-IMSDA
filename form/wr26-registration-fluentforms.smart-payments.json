@@ -7432,6 +7432,77 @@
           "uniqElKey": "el_WR26_patch_payment_summary_script"
         },
         {
+          "index": 0,
+          "element": "input_hidden",
+          "attributes": {
+            "type": "hidden",
+            "name": "attendees_json",
+            "value": ""
+          },
+          "settings": {
+            "admin_field_label": "attendees json"
+          },
+          "editor_options": {
+            "title": "Hidden Field",
+            "icon_class": "ff-edit-hidden-field",
+            "template": "inputHidden"
+          },
+          "uniqElKey": "el_WR26_patch_attendees_json"
+        },
+        {
+          "index": 0,
+          "element": "input_hidden",
+          "attributes": {
+            "type": "hidden",
+            "name": "seminar_counts_json",
+            "value": ""
+          },
+          "settings": {
+            "admin_field_label": "seminar counts json"
+          },
+          "editor_options": {
+            "title": "Hidden Field",
+            "icon_class": "ff-edit-hidden-field",
+            "template": "inputHidden"
+          },
+          "uniqElKey": "el_WR26_patch_seminar_counts_json"
+        },
+        {
+          "index": 0,
+          "element": "input_hidden",
+          "attributes": {
+            "type": "hidden",
+            "name": "registration_roster_preview",
+            "value": ""
+          },
+          "settings": {
+            "admin_field_label": "registration roster preview"
+          },
+          "editor_options": {
+            "title": "Hidden Field",
+            "icon_class": "ff-edit-hidden-field",
+            "template": "inputHidden"
+          },
+          "uniqElKey": "el_WR26_patch_registration_roster_preview"
+        },
+        {
+          "index": 21,
+          "element": "custom_html",
+          "attributes": [],
+          "settings": {
+            "html_codes": "\n<div class=\"wr26-roster-intro\" style=\"margin:10px 0;\">\n  <h3 style=\"color:#4c1d95;margin:0 0 4px 0;\">Who's attending &amp; seminar choices</h3>\n  <p style=\"color:#5b6470;margin:0;font-size:0.92em;\">Add each attendee and pick their seminar preferences. The registration total updates automatically.</p>\n</div>\n<div id=\"wr26-roster\"></div>",
+            "conditional_logics": [],
+            "container_class": "",
+            "visible": true
+          },
+          "editor_options": {
+            "title": "Custom HTML",
+            "icon_class": "ff-edit-html",
+            "template": "customHTML"
+          },
+          "uniqElKey": "el_WR26_patch_roster_mount"
+        },
+        {
           "index": 89,
           "element": "payment_method",
           "attributes": {

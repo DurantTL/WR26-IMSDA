@@ -129,6 +129,75 @@ function wr26_queue_entry($entry_id, $action, $extra = array()) {
     update_option('wr26_dispatch_queue', $queue, false);
 }
 
+/**
+ * Sanitize one attendee's ranked seminar preferences into the
+ * { session_N: { pref_1: title, pref_2: title, ... } } shape that GAS
+ * flattenSeminarPreferences expects. Slots are limited to session_1..session_4
+ * and ranks to pref_1..pref_4; everything is run through sanitize_text_field.
+ */
+function wr26_sanitize_seminar_preferences($prefs) {
+    $out = array();
+    if (!is_array($prefs)) {
+        return $out;
+    }
+    foreach (array('session_1', 'session_2', 'session_3', 'session_4') as $slot) {
+        if (empty($prefs[$slot]) || !is_array($prefs[$slot])) {
+            continue;
+        }
+        $slot_out = array();
+        foreach (array('pref_1', 'pref_2', 'pref_3', 'pref_4') as $rank) {
+            if (!isset($prefs[$slot][$rank])) {
+                continue;
+            }
+            $title = sanitize_text_field((string) $prefs[$slot][$rank]);
+            if ($title !== '') {
+                $slot_out[$rank] = $title;
+            }
+        }
+        if (!empty($slot_out)) {
+            $out[$slot] = $slot_out;
+        }
+    }
+    return $out;
+}
+
+/**
+ * Build the attendees array from the hidden attendees_json field produced by the
+ * custom roster UI. Returns an empty array when the field is absent or invalid so
+ * the caller can fall back to the legacy a{N}_* fields. There is no fixed cap on
+ * the number of attendees — GAS prices off the array length.
+ */
+function wr26_attendees_from_json($raw, $entry_id, $church) {
+    if (empty($raw['attendees_json'])) {
+        return array();
+    }
+    $decoded = json_decode((string) $raw['attendees_json'], true);
+    if (!is_array($decoded)) {
+        return array();
+    }
+    $attendees = array();
+    $n = 0;
+    foreach ($decoded as $a) {
+        if (!is_array($a)) continue;
+        if (empty($a['first_name']) && empty($a['last_name'])) continue;
+        $n++;
+        $attendees[] = array(
+            'attendee_id'         => 'A-' . intval($entry_id) . '-' . $n,
+            'first_name'          => sanitize_text_field($a['first_name'] ?? ''),
+            'last_name'           => sanitize_text_field($a['last_name'] ?? ''),
+            'phone'               => sanitize_text_field($a['phone'] ?? ''),
+            'email'               => $n === 1 ? sanitize_email($raw['email'] ?? ($a['email'] ?? '')) : sanitize_email($a['email'] ?? ''),
+            'church'              => $n === 1 ? $church : sanitize_text_field($a['church'] ?? ''),
+            'attendee_type'       => sanitize_text_field($a['attendee_type'] ?? ''),
+            'meal_preference'     => sanitize_text_field($a['meal_preference'] ?? ''),
+            'dietary_needs'       => sanitize_textarea_field($a['dietary_needs'] ?? ''),
+            'childcare_needed'    => sanitize_text_field($a['childcare_needed'] ?? ''),
+            'seminar_preferences' => wr26_sanitize_seminar_preferences($a['seminar_preferences'] ?? array()),
+        );
+    }
+    return $attendees;
+}
+
 function wr26_parse_ff_entry($entry_id) {
     global $wpdb;
     $sub = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fluentform_submissions WHERE id=%d", $entry_id), ARRAY_A);
@@ -144,13 +213,20 @@ function wr26_parse_ff_entry($entry_id) {
     $church_other = sanitize_text_field($raw['church_other'] ?? '');
     $church = ($church_raw === 'Other' && $church_other !== '') ? $church_other : $church_raw;
 
-    // All attendees read uniformly from a{N}_* fields (N = 1..attendee_count).
+    // Preferred path: the custom roster UI submits one clean hidden field,
+    // attendees_json, with an uncapped array of attendees. When present and valid
+    // it is the source of truth. When absent (older form / JS disabled) we fall
+    // back to the legacy a{N}_* fields below.
+    $attendees = wr26_attendees_from_json($raw, $entry_id, $church);
+
+    // Legacy fallback: read attendees from a{N}_* fields (N = 1..attendee_count).
     // a1_first_name/last_name/phone/attendee_type were added in the May 2026 form
     // restructure; they are always visible and required. a2_-a5_ equivalents are
     // hidden by Fluent Forms conditional logic when attendee_count < N and submit
-    // as empty strings — the empty-first-name guard handles those slots.
-    $attendee_count = min(5, max(1, intval($raw['attendee_count'] ?? 1)));
-    $attendees = array();
+    // as empty strings — the empty-first-name guard handles those slots. The count
+    // is no longer hard-capped at 5: GAS prices off the attendee array length.
+    if (empty($attendees)) {
+    $attendee_count = max(1, intval($raw['attendee_count'] ?? 1));
     for ($n = 1; $n <= $attendee_count; $n++) {
         $prefix = "a{$n}_";
         if ($n > 1 && empty($raw["{$prefix}first_name"])) continue;
@@ -183,6 +259,7 @@ function wr26_parse_ff_entry($entry_id) {
                 )
             )
         );
+    }
     }
 
     return array(
@@ -770,6 +847,85 @@ function wr26_enqueue_form_summary() {
     )) . ';', 'before');
 }
 add_action('wp_enqueue_scripts', 'wr26_enqueue_form_summary');
+
+/**
+ * Canonical seminar catalog for the front-end roster/seminar-card UI. Mirrors
+ * tools/seminars-seed.csv (slot keys + titles + presenters) so the cards render
+ * immediately; live availability counts are overlaid from getSeminarAvailability
+ * via the wr26_seminar_availability AJAX proxy. Filterable so the catalog can be
+ * managed without code edits if needed.
+ */
+function wr26_seminar_catalog() {
+    return apply_filters('wr26_seminar_catalog', array(
+        array('slot' => 'session_1', 'label' => 'Friday 4:00–5:00 PM', 'picks' => 2, 'seminars' => array(
+            array('title' => 'Color Me Golden: Embracing Life in Every Season', 'speaker' => 'Panel Discussion'),
+            array('title' => 'Refined by Fire, Revealed in Beauty', 'speaker' => 'Presenter TBD'),
+        )),
+        array('slot' => 'session_2', 'label' => 'Sabbath 2:00–3:15 PM', 'picks' => 2, 'seminars' => array(
+            array('title' => 'Repainted by Grace', 'speaker' => 'Valerie Haveman'),
+            array('title' => 'Color Me Open', 'speaker' => 'Mary Kendall'),
+            array('title' => 'Nourished by Color', 'speaker' => 'Stephanie Richards'),
+            array('title' => 'Color Me Prayerful: Discovering the Beautiful Ways We Talk With God', 'speaker' => 'Shannon Pigsley'),
+        )),
+        array('slot' => 'session_3', 'label' => 'Sabbath 4:15–5:30 PM', 'picks' => 2, 'seminars' => array(
+            array('title' => 'Shades of Peace', 'speaker' => 'Melissa Morris'),
+            array('title' => 'Coloring Through the Chaos: Raising Children with Grace and Truth', 'speaker' => 'Panel Discussion'),
+            array('title' => 'Broken Crayons Still Color', 'speaker' => ''),
+        )),
+        array('slot' => 'session_4', 'label' => 'Sunday 8:15–9:15 AM', 'picks' => 1, 'seminars' => array(
+            array('title' => 'Brushstrokes of Leadership', 'speaker' => 'Ami Cook'),
+        )),
+    ));
+}
+
+/**
+ * Enqueue the custom attendee-roster + seminar-card UI. Self-gates on the
+ * #wr26-roster mount element so it is a no-op on pages without the WR26 form.
+ * Ships as real plugin assets because Fluent Forms strips <script> from Custom
+ * HTML fields (same constraint that moved the summary recalc out of the form).
+ */
+function wr26_enqueue_roster() {
+    wp_enqueue_style(
+        'wr26-roster',
+        plugins_url('assets/wr26-roster.css', __FILE__),
+        array(),
+        WR26_VERSION
+    );
+    wp_enqueue_script(
+        'wr26-roster',
+        plugins_url('assets/wr26-roster.js', __FILE__),
+        array('jquery'),
+        WR26_VERSION,
+        true
+    );
+    wp_localize_script('wr26-roster', 'WR26_ROSTER', array(
+        'ajaxUrl'  => admin_url('admin-ajax.php'),
+        'nonce'    => wp_create_nonce('wr26_public_nonce'),
+        'catalog'  => wr26_seminar_catalog(),
+    ));
+}
+add_action('wp_enqueue_scripts', 'wr26_enqueue_roster');
+
+/**
+ * Public AJAX proxy: returns the seminar availability snapshot (counts only) from
+ * GAS. Keeps the GAS secret server-side and caches the result briefly so a busy
+ * registration page does not hammer Apps Script. Counts-only payload — never
+ * attendee names — so it is safe to expose to logged-out visitors.
+ */
+function wr26_ajax_seminar_availability() {
+    check_ajax_referer('wr26_public_nonce', 'nonce');
+    $cached = get_transient('wr26_seminar_availability');
+    if (is_array($cached)) {
+        wp_send_json($cached);
+    }
+    $res = wr26_gas_request(array('action' => 'getSeminarAvailability'));
+    if (is_array($res) && !empty($res['success'])) {
+        set_transient('wr26_seminar_availability', $res, 60);
+    }
+    wp_send_json(is_array($res) ? $res : array('success' => false, 'message' => 'No response'));
+}
+add_action('wp_ajax_wr26_seminar_availability', 'wr26_ajax_seminar_availability');
+add_action('wp_ajax_nopriv_wr26_seminar_availability', 'wr26_ajax_seminar_availability');
 function wr26_admin_header($title,$active){ echo '<div class="wrap"><h1>'.esc_html($title).'</h1><h2 class="nav-tab-wrapper">'; foreach(array('dashboard'=>'Dashboard','registrations'=>'Registrations','waitlist'=>'Waitlist','checkin'=>'Check-In','rosters'=>'Church Rosters','promo'=>'Promo Codes','settings'=>'Settings','gas-tools'=>'GAS Tools') as $slug=>$label){$page='wr26-'.$slug;echo '<a class="nav-tab '.($active===$slug?'nav-tab-active':'').'" href="'.esc_url(admin_url('admin.php?page='.$page)).'">'.esc_html($label).'</a>';} echo '</h2></div>'; }
 function wr26_page_dashboard(){
     wr26_admin_header('WR26 Dashboard','dashboard');

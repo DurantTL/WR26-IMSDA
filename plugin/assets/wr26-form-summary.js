@@ -65,9 +65,18 @@
     return now <= earlyEnd ? EARLY_PRICE : REGULAR_PRICE;
   }
   function attendeeCount(){
+    // Prefer the uncapped roster array (attendees_json) when the custom roster UI
+    // is present; fall back to the attendee_count field for the legacy form. No
+    // upper cap — GAS prices off the same count.
+    var json = String(getVal('attendees_json') || '').trim();
+    if (json) {
+      try {
+        var arr = JSON.parse(json);
+        if (Array.isArray(arr) && arr.length) return arr.length;
+      } catch (e) { /* fall through to attendee_count */ }
+    }
     var count = parseInt(getVal('attendee_count'), 10);
     if (!count || count < 1) count = 1;
-    if (count > 5) count = 5;
     return count;
   }
   function feeFor(amount){
@@ -119,6 +128,9 @@
       );
     }
   }
-  $(document).on('change input', '[name="attendee_count"], [name="payment_method"], [name="promo_code"]', recalc);
+  $(document).on('change input', '[name="attendee_count"], [name="attendees_json"], [name="payment_method"], [name="promo_code"]', recalc);
+  // The roster UI dispatches this after every state change so the summary stays
+  // in sync even though attendees_json is a hidden field.
+  $(document).on('wr26:roster-changed', recalc);
   $(document).ready(function(){ setTimeout(recalc, 250); setTimeout(recalc, 900); });
 })(jQuery);

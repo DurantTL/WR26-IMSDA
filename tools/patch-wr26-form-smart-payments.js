@@ -279,6 +279,53 @@ function patchPayment(fields) {
   return additions.length;
 }
 
+function rosterMountHtml() {
+  const html = `
+<div class="wr26-roster-intro" style="margin:10px 0;">
+  <h3 style="color:#4c1d95;margin:0 0 4px 0;">Who's attending &amp; seminar choices</h3>
+  <p style="color:#5b6470;margin:0;font-size:0.92em;">Add each attendee and pick their seminar preferences. The registration total updates automatically.</p>
+</div>
+<div id="wr26-roster"></div>`;
+  // The interactive roster/seminar-card UI is NOT embedded here. Fluent Forms
+  // strips <script> from Custom HTML, so the behavior ships as a real asset
+  // (plugin/assets/wr26-roster.js + .css) enqueued by the WR26 plugin. This field
+  // only provides the #wr26-roster mount point the script renders into.
+  return {
+    index: 21,
+    element: 'custom_html',
+    attributes: [],
+    settings: { html_codes: html, conditional_logics: [], container_class: '', visible: true },
+    editor_options: { title: 'Custom HTML', icon_class: 'ff-edit-html', template: 'customHTML' },
+    uniqElKey: 'el_WR26_patch_roster_mount',
+  };
+}
+
+function patchRoster(fields) {
+  // The custom roster UI serializes everything into these hidden fields. The WR26
+  // plugin parser reads attendees_json (uncapped) in preference to the legacy
+  // a{N}_* fields, which remain in the form as a no-JS fallback.
+  const additions = [
+    hiddenField('attendees_json', 'attendees json'),
+    hiddenField('seminar_counts_json', 'seminar counts json'),
+    hiddenField('registration_roster_preview', 'registration roster preview'),
+    rosterMountHtml(),
+  ].filter((field) => {
+    const name = fieldName(field);
+    const nameAlreadyExists = name ? hasField(fields, name) : false;
+    const keyAlreadyExists = fields.some((existing) => existing.uniqElKey === field.uniqElKey);
+    return !nameAlreadyExists && !keyAlreadyExists;
+  });
+
+  if (!additions.length) return 0;
+
+  // Mount the roster just before the payment block so the flow reads:
+  // contact → roster + seminars → payment summary.
+  const paymentMethodIndex = fields.findIndex((field) => fieldName(field) === 'payment_method');
+  const insertAt = paymentMethodIndex >= 0 ? paymentMethodIndex : fields.length;
+  fields.splice(insertAt, 0, ...additions);
+  return additions.length;
+}
+
 function updateHeaderCopy(fields) {
   const header = fields.find((field) => field.uniqElKey === 'el_WR26_1_header');
   if (header?.settings?.html_codes) {
@@ -293,6 +340,7 @@ const exportJson = readJson(inputPath);
 const { form, fields } = fieldsOf(exportJson);
 const attendeeAdded = patchAttendeeOne(fields);
 const paymentAdded = patchPayment(fields);
+const rosterAdded = patchRoster(fields);
 updateHeaderCopy(fields);
 form.has_payment = '1';
 writeJson(outputPath, exportJson);
@@ -302,4 +350,5 @@ console.log(`Input:  ${inputPath}`);
 console.log(`Output: ${outputPath}`);
 console.log(`Added attendee fields: ${attendeeAdded}`);
 console.log(`Added payment fields:  ${paymentAdded}`);
+console.log(`Added roster fields:   ${rosterAdded}`);
 console.log('Next: import the patched JSON into Fluent Forms staging and test Pay Later + Square.');

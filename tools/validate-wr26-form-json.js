@@ -97,6 +97,18 @@ for (const name of requiredTopLevel) {
   if (!byName.has(name)) errors.push(`Missing top-level field: ${name}`);
 }
 
+// Custom roster UI fields. attendees_json is the uncapped source of truth the
+// plugin parser prefers; the others are supporting/preview data. Treated as
+// warnings so the legacy a{N}_* form still validates.
+const rosterFields = ['attendees_json', 'seminar_counts_json', 'registration_roster_preview'];
+for (const name of rosterFields) {
+  if (!byName.has(name)) warnings.push(`Missing roster field: ${name} (custom roster UI will fall back to a{N}_* fields)`);
+}
+const hasRosterMount = fields.some((field) =>
+  field.element === 'custom_html' && /id="wr26-roster"/.test(String(field?.settings?.html_codes || ''))
+);
+if (!hasRosterMount) warnings.push('Missing #wr26-roster mount element (custom roster UI will not render).');
+
 for (const name of expectedAttendeeFields) {
   if (!byName.has(name)) {
     const severity = name.startsWith('a1_') ? 'error' : 'warning';
