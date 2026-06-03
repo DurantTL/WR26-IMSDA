@@ -158,7 +158,11 @@ function portalGetRegistrationBundle(registrationId){
     if(!reg)return {success:false,message:'Registration not found'};
     var attendees=getAttendeesForRegistration_(registrationId);
     var prefs=getSeminarPreferencesForRegistration_(registrationId);
-    return {success:true,registration:reg,attendees:attachSeminarPreferencesToAttendees_(attendees,prefs),seminarPreferences:prefs};
+    // Outstanding-balance pay link (Square hosted checkout) so the portal can show
+    // a "Pay by Card" button, mirroring the confirmation email. Null when paid in
+    // full or when Square Script Properties aren't configured.
+    var pay=null;try{var info=squarePaymentInfoForRegistration_(reg);if(info&&info.url)pay={url:info.url,base:info.base,fee:info.fee,total:info.total};}catch(e){}
+    return {success:true,registration:reg,attendees:attachSeminarPreferencesToAttendees_(attendees,prefs),seminarPreferences:prefs,payLink:pay};
   }catch(e){return {success:false,message:e.message};}
 }
 

@@ -16,14 +16,19 @@ function sendConfirmationEmail(reg,edit,context){
   var discountLine=Number(reg.discountAmount)>0?'<p><b>Discount applied:</b> $'+escapeHtml(String(reg.discountAmount))+(reg.couponUsed||reg.promoCode?' (code: '+escapeHtml(String(reg.couponUsed||reg.promoCode))+')':'')+'</p>':'';
   var detailsBlock='<p><b>Church:</b> '+escapeHtml(reg.church)+'<br><b>Arrival:</b> '+escapeHtml(reg.arrivalDate)+'<br><b>Departure:</b> '+escapeHtml(reg.departureDate)+'</p>'+discountLine;
   // Payment status block. Paid registrations get a thank-you; pay-later
-  // registrations keep the balance-due notice + Square "Pay by Card" link so
-  // they can still pay from this email.
+  // registrations get the balance-due notice plus a Square "Pay by Card" button
+  // when Square is configured. When it is NOT configured the button is empty, so
+  // we must not reference a "card link below" that isn't there — fall back to the
+  // check / follow-up-link wording and point at the portal (which carries its own
+  // Pay-by-Card button once Square is set up).
+  var payButton=isPaid?'':squarePayButtonHtml_(reg);
   var paymentBlock=isPaid
     ? '<p>Thank you for your payment of <b>$'+escapeHtml(String(amountDisplay))+'</b>. Your registration is fully confirmed!</p>'
     : '<p>A balance of <b>$'+escapeHtml(String(amountDisplay))+'</b> is due.</p>'+
-      '<p style="font-size:1.1em;font-weight:bold;">Please pay your registration fee using the secure card link below, or mail a check payable to IMSDA.</p>'+
-      squarePayButtonHtml_(reg);
-  var editLink=editUrl?'<p><a href="'+escapeHtml(editUrl)+'">Edit your registration details</a></p>':'';
+      (payButton
+        ? '<p style="font-size:1.1em;font-weight:bold;">Please pay your registration fee using the secure card button below, or mail a check payable to IMSDA. You can also pay anytime from your registration portal (link below).</p>'+payButton
+        : '<p style="font-size:1.1em;font-weight:bold;">Please mail a check payable to IMSDA. If you would prefer to pay by card, open your registration portal using the link below and use the “Pay by Card” button there.</p>');
+  var editLink=editUrl?'<p><a href="'+escapeHtml(editUrl)+'">'+(isPaid?'Edit your registration details':'View, pay, or edit your registration')+'</a></p>':'';
   var qrBlock='<p><img src="'+escapeHtml(generateQRUrl(reg.qrToken))+'"/></p><p>Show this QR code at check-in.</p>';
   // Final approved informational copy (IA-MO Women's Ministries). Static prose,
   // so no escaping needed; the hotel URL's "&" are written as "&amp;" so email

@@ -34,6 +34,8 @@
 .balance-box.paid{background:var(--success-light);color:#276749;border-color:#bddfc9;}
 .balance-box .balance-amount{font-size:1.3rem;display:block;}
 .balance-box .balance-sub{font-weight:600;font-size:.85rem;display:block;margin-top:4px;}
+.balance-box .balance-pay-button{display:inline-block;margin-top:10px;background:#7c3aed;color:#fff;padding:12px 22px;border-radius:8px;font-size:1.05rem;font-weight:700;text-decoration:none;}
+.balance-box .balance-pay-button:hover{background:#6d28d9;}
 .tools-output{margin:10px 0;font-size:.9rem;}
 .tools-output:empty{display:none;}
 .roster-church{background:var(--panel-soft);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;}
