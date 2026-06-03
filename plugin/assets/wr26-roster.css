@@ -179,3 +179,23 @@
   font-weight: bold;
 }
 .wr26-add-attendee:hover { background: #6d28d9; }
+
+/*
+ * Payment summary box — keep a stable width across payment methods.
+ *
+ * The "Your Registration Summary" box (a Fluent Forms Custom HTML field) has
+ * no width of its own, and the form column it lives in is shrink-to-fit, so it
+ * sized to its own content. Because the #wr26-pay-note message is a longer
+ * sentence for "Pay Later" than for "Pay Now", the box — and with it the whole
+ * form column (promo field, divider) — visibly widened on Pay Later and
+ * narrowed on Pay Now every time the payment method changed.
+ *
+ * Pinning the form, its field groups, and the box to full width removes the
+ * content-driven sizing, and table-layout:fixed stops the long fee-row label
+ * from pushing the table wider, so the layout stays put.
+ */
+.fluentform { width: 100%; }
+.fluentform .ff-el-group { width: 100%; box-sizing: border-box; }
+.wr26-summary-box { width: 100%; box-sizing: border-box; }
+.wr26-summary-box table { width: 100%; table-layout: fixed; }
+.wr26-summary-box #wr26-pay-note { overflow-wrap: anywhere; }
