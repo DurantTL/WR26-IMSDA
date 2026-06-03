@@ -124,11 +124,18 @@
     $(document).trigger('wr26:roster-changed');
   };
 
+  // Human-readable roster summary. This is the source the admin notification and
+  // the registration PDF render from (the legacy a{N}_* fields are blank once the
+  // roster UI is active), so it must carry everything reviewers need: name, type,
+  // meal, dietary needs, childcare, and ranked seminar picks per session.
   WR26Roster.prototype.buildPreview = function () {
     var lines = [];
     this.attendees.forEach(function (a, i) {
       var name = (a.first_name + ' ' + a.last_name).trim() || ('Attendee ' + (i + 1));
       lines.push('• ' + name + ' (' + (a.attendee_type || 'adult') + ', ' + (a.meal_preference || 'regular') + ')');
+      var dietary = String(a.dietary_needs || '').trim();
+      if (dietary) lines.push('    Dietary: ' + dietary);
+      if (String(a.childcare_needed) === 'yes') lines.push('    Childcare needed: yes');
       Object.keys(a.seminar_preferences || {}).forEach(function (slot) {
         var p = a.seminar_preferences[slot] || {};
         var picks = [p.pref_1, p.pref_2].filter(Boolean).join(' / ');

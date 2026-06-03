@@ -3,7 +3,18 @@
  * Scoped under .wr26-roster so it cannot bleed into the rest of the form/theme.
  * Palette mirrors the summary box (purple #7c3aed / #4c1d95) for visual cohesion.
  */
-.wr26-roster { font-family: Arial, Helvetica, sans-serif; margin: 15px 0; }
+.wr26-roster {
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 15px 0;
+  /* Never let the roster push past the form column. Without this the seminar /
+     field grids can lay out columns wider than a phone viewport, which scrolls
+     the form sideways and visually "cuts off" the right half on mobile. */
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: break-word;
+}
+.wr26-roster *, .wr26-roster *::before, .wr26-roster *::after { box-sizing: border-box; }
+.wr26-roster img { max-width: 100%; height: auto; }
 
 .wr26-roster-intro { margin: 0 0 14px; }
 .wr26-roster-intro h3 { color: #4c1d95; margin: 0 0 4px; font-size: 1.2em; }
@@ -179,3 +190,18 @@
   font-weight: bold;
 }
 .wr26-add-attendee:hover { background: #6d28d9; }
+
+/* ---- Mobile -------------------------------------------------------------
+ * On phones the auto-fit/auto-fill grids above can still try to hold a column
+ * wider than the screen (min track widths of 180–230px plus card padding),
+ * which forces horizontal overflow and clips the form. Collapse everything to
+ * a single column and trim padding so the whole form fits the viewport. */
+@media (max-width: 600px) {
+  .wr26-attendee { padding: 14px 12px; }
+  .wr26-slot { padding: 10px; }
+  .wr26-grid { grid-template-columns: 1fr; }
+  .wr26-cards { grid-template-columns: 1fr; }
+  .wr26-card { padding: 12px; }
+  .wr26-card-buttons { flex-wrap: wrap; }
+  .wr26-pick { flex: 1 1 100%; }
+}
