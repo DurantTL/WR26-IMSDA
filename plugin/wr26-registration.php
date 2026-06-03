@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WR26 Registration
  * Description: Women's Retreat 2026 registration + waitlist + check-in bridge for Fluent Forms and Google Apps Script.
- * Version: 1.0.3
+ * Version: 1.0.4
  * Author: IMSDA
  */
 
@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WR26_VERSION', '1.0.3');
+define('WR26_VERSION', '1.0.4');
 
 function wr26_default_options() {
     return array(
@@ -581,8 +581,15 @@ function wr26_gas_http_post($url, $payload, $timeout = 45, $tries = 3) {
         if ($attempt > 1) {
             sleep(2 * ($attempt - 1)); // 2s, 4s, … backoff between attempts
         }
+        // POST WITHOUT auto-following the redirect. Apps Script answers a POST to
+        // /exec with a 302 to script.googleusercontent.com; some HTTP stacks replay
+        // that as another POST, which Google rejects with an "Error 400" page (a
+        // bare GET to the same /exec returns 200, which is the tell). We follow the
+        // redirect ourselves with a GET — the correct method for the echo URL — so
+        // the response comes back as JSON instead of a 400.
         $response = wp_remote_post($url, array(
             'timeout' => intval($timeout),
+            'redirection' => 0,
             'headers' => array('Content-Type' => 'application/json'),
             'body' => wp_json_encode($payload),
         ));
@@ -591,6 +598,20 @@ function wr26_gas_http_post($url, $payload, $timeout = 45, $tries = 3) {
             continue; // network error — retry
         }
         $code = intval(wp_remote_retrieve_response_code($response));
+        // Follow Apps Script's redirect chain manually, always as GET.
+        $hops = 0;
+        while ($code >= 300 && $code < 400 && $hops < 5) {
+            $location = wp_remote_retrieve_header($response, 'location');
+            if (!$location) break;
+            $response = wp_remote_get($location, array('timeout' => intval($timeout), 'redirection' => 5));
+            if (is_wp_error($response)) break;
+            $code = intval(wp_remote_retrieve_response_code($response));
+            $hops++;
+        }
+        if (is_wp_error($response)) {
+            $last = array('ok' => false, 'http_code' => 0, 'raw_body' => '', 'message' => $response->get_error_message());
+            continue; // network error following redirect — retry
+        }
         $raw_body = (string) wp_remote_retrieve_body($response);
         $body = json_decode($raw_body, true);
         if (is_array($body)) {
