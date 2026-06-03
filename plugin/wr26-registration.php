@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WR26 Registration
  * Description: Women's Retreat 2026 registration + waitlist + check-in bridge for Fluent Forms and Google Apps Script.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: IMSDA
  */
 
@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WR26_VERSION', '1.0.1');
+define('WR26_VERSION', '1.0.2');
 
 function wr26_default_options() {
     return array(
