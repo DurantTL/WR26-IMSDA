@@ -96,12 +96,14 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 12px;
-  /* Don't let one card's height drive its row-mates. Grid's default
-     align-items:stretch forces every card in a row to match the tallest
-     one, so opening a single "About this seminar" panel would balloon all
-     the sibling cards (and shove the page around). align-items:start lets
-     each card size to its own content, so only the opened card grows. */
-  align-items: start;
+  /* Make every card in a row the same height. Grid's stretch alignment sizes
+     all cards in a row to the tallest one, so a long (multi-line) seminar
+     title no longer leaves its shorter row-mates looking ragged. The pieces
+     below (title min-height + bottom-pinned availability/buttons) keep the
+     INNER content aligned too, so the cards read as a tidy, uniform set.
+     Trade-off: opening one card's "About this seminar" panel grows that whole
+     row; the extra space just lands above the (bottom-pinned) buttons. */
+  align-items: stretch;
 }
 .wr26-card {
   position: relative;
@@ -128,7 +130,9 @@
   border-radius: 10px;
 }
 .wr26-card.is-rank-2 .wr26-rank-badge { background: #a78bdf; }
-.wr26-card-title { font-weight: bold; color: #1f2937; line-height: 1.25; }
+/* Reserve ~2 lines for the title so single-line titles don't sit higher than
+   their two-line neighbours; longer titles simply grow past this floor. */
+.wr26-card-title { font-weight: bold; color: #1f2937; line-height: 1.25; min-height: 2.5em; }
 .wr26-card-speaker { color: #6b21a8; font-size: 0.85em; margin-top: 2px; }
 
 .wr26-card-details { margin-top: 8px; }
@@ -150,7 +154,10 @@
   line-height: 1.45;
 }
 
-.wr26-card-avail { margin-top: 8px; min-height: 18px; }
+/* Push the availability badge + buttons to the bottom of the card as a group.
+   With cards stretched to equal height, this keeps the badges (and the
+   buttons under them) aligned across a row regardless of title length. */
+.wr26-card-avail { margin-top: auto; padding-top: 8px; min-height: 18px; }
 .wr26-badge {
   display: inline-block;
   font-size: 0.72em;
@@ -165,7 +172,7 @@
 .wr26-bar { background: #eef0f3; border-radius: 5px; height: 6px; margin-top: 5px; overflow: hidden; }
 .wr26-bar span { display: block; height: 100%; background: #7c3aed; }
 
-.wr26-card-buttons { display: flex; gap: 6px; margin-top: auto; padding-top: 10px; }
+.wr26-card-buttons { display: flex; gap: 6px; padding-top: 10px; }
 .wr26-pick {
   flex: 1;
   border: 1px solid #c4b5e8;
