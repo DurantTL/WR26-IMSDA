@@ -72,6 +72,36 @@ function readSeminarPreferenceRows_(){
   return out;
 }
 
+// Recompute the Seminars sheet "Assigned Count" column (col 5) from live demand:
+// the number of attendees whose FIRST choice (rank 1) in that slot is this seminar.
+// This mirrors getSeminarAvailability's first_choice_count so the sheet shows, at a
+// glance, how many people have chosen each seminar against its capacity — updated on
+// every registration and portal edit, without waiting for the admin to run
+// assignSeminars (which later overwrites col 5 with the true post-assignment counts).
+function recomputeSeminarAssignedCounts_(){
+  try{
+    var pref=readSeminarPreferenceRows_();
+    var firstCounts={};
+    Object.keys(pref.byAttendeeSlot).forEach(function(att){
+      Object.keys(pref.byAttendeeSlot[att]).forEach(function(slot){
+        pref.byAttendeeSlot[att][slot].forEach(function(p){
+          if(Number(p.rank)===1&&String(p.title).trim()){
+            var key=slot+'||'+normalizeTitle_(p.title);
+            firstCounts[key]=(firstCounts[key]||0)+1;
+          }
+        });
+      });
+    });
+    var ssh=ensureSeminarsSheet_();var sv=ssh.getDataRange().getValues();
+    for(var i=1;i<sv.length;i++){
+      var slot=String(sv[i][0]);var title=String(sv[i][2]);if(!title)continue;
+      var key=slot+'||'+normalizeTitle_(title);
+      ssh.getRange(i+1,5).setValue(firstCounts[key]||0);
+    }
+    return {success:true};
+  }catch(e){Logger.log('recomputeSeminarAssignedCounts_ failed: '+e.message);return {success:false,message:e.message};}
+}
+
 // Assign every attendee to a seminar in each slot, honoring ranked preference and
 // per-seminar capacity. Greedy by rank: pass 1 tries everyone's #1 choice, pass 2
 // the next-best for those still unplaced, etc. When SEMINAR_FULL_BEHAVIOR is

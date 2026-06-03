@@ -38,7 +38,7 @@ function sendConfirmationEmail(reg,edit,context){
 <p>Our teen and young adult programming has grown steadily each year, and we praise God for the increasing number of young women seeking Christian fellowship, encouragement, and spiritual growth. The friendships and support networks formed at retreat are making a lasting impact in their lives.</p>
 <p>We invite you to prayerfully consider how God may use you to help a teen/young woman experience the blessing of a retreat weekend like this.</p>
 <p><b>Childcare Reminder</b></p>
-<p>Childcare will be available for children under the age of two. However, childcare will only be provided if at least five children are registered. If you’ll be bringing a little one, please make sure you’ve indicated that during registration so we can plan accordingly. We will communicate any updates regarding childcare as the retreat approaches.</p>
+<p>Childcare will be available for children 24 months and younger. However, childcare will only be provided if at least five children are registered. If you’ll be bringing a little one, please make sure you’ve indicated that during registration so we can plan accordingly. We will communicate any updates regarding childcare as the retreat approaches.</p>
 <p><b>What to Wear</b></p>
 <p>Retreat attire is individualized, so please feel free to dress comfortably. Seminar rooms can sometimes be cool, so you may wish to bring a sweater or light jacket.</p>
 <p><b>Weekend Schedule &amp; Meals</b></p>

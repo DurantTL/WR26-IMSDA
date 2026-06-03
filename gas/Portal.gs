@@ -235,7 +235,8 @@ function replaceAttendeesForRegistration_(reg,attendees){
   else{warnings.push('SeminarPreferences tab missing; seminar choices were NOT saved.');}
   var ok=true;
   if(attSh){var attendeeResult=writeAttendeesForRegistration(reg,normalized);if(attendeeResult.warning)warnings.push(attendeeResult.warning);if(attendeeResult.success===false)ok=false;}
-  if(semSh){var seminarResult=writeSeminarPreferencesForRegistration(reg,normalized);if(seminarResult.warning)warnings.push(seminarResult.warning);if(seminarResult.success===false)ok=false;}
+  if(semSh){var seminarResult=writeSeminarPreferencesForRegistration(reg,normalized);if(seminarResult.warning)warnings.push(seminarResult.warning);if(seminarResult.success===false)ok=false;
+    try{recomputeSeminarAssignedCounts_();}catch(e){Logger.log('seminar count refresh failed: '+e.message);}}
   return {success:ok,attendees:normalized,warnings:warnings};
 }
 

@@ -59,7 +59,7 @@
   ];
   var TYPE_OPTIONS = [
     { value: 'adult', label: 'Adult' },
-    { value: 'child', label: 'Child' }
+    { value: 'teen', label: 'Teen' }
   ];
 
   function esc(s) {
