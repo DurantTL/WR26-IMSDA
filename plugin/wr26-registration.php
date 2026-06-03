@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WR26 Registration
  * Description: Women's Retreat 2026 registration + waitlist + check-in bridge for Fluent Forms and Google Apps Script.
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: IMSDA
  */
 
@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WR26_VERSION', '1.0.2');
+define('WR26_VERSION', '1.0.3');
 
 function wr26_default_options() {
     return array(
@@ -641,6 +641,53 @@ function wr26_tools_post_to_gas($payload, $timeout = 45) {
     );
 }
 
+/**
+ * Connection diagnostic for the GAS Tools "Ping" button.
+ *
+ * The old ping POSTed `portalGetCacheSnapshot`, whose reply can be large/slow;
+ * Apps Script's front end answers some of those with a Google "Error 400" page
+ * even though small POSTs (a real `register`) go through fine. So we test the
+ * connection two cheaper ways and report both, which also pinpoints where a
+ * failure is:
+ *   1. GET /exec  → hits doGet(), tiny response. Proves the URL + deployment are
+ *      reachable, independent of POST/redirect handling.
+ *   2. POST getAvailability → small reply. Proves the authenticated POST path
+ *      works without the heavy snapshot payload.
+ * Success if either returns JSON. The message shows both HTTP codes so a
+ * "GET ok / POST 400" vs "both 400" outcome tells us exactly what to fix.
+ */
+function wr26_tools_diagnose_connection() {
+    $url = esc_url_raw(get_option('wr26_gas_url', ''));
+    if (!$url) {
+        return array('success' => false, 'message' => 'Missing WR26 GAS URL in WR26 settings.');
+    }
+
+    $get = wp_remote_get($url, array('timeout' => 30, 'redirection' => 5));
+    $get_code = is_wp_error($get) ? 0 : intval(wp_remote_retrieve_response_code($get));
+    $get_raw = is_wp_error($get) ? $get->get_error_message() : (string) wp_remote_retrieve_body($get);
+    $get_json = (!is_wp_error($get)) && is_array(json_decode($get_raw, true));
+
+    $post = wr26_tools_post_to_gas(array('action' => 'getAvailability'), 30);
+    $post_ok = !empty($post['success']);
+    $post_code = isset($post['http_code']) ? intval($post['http_code'])
+        : (isset($post['_http_code']) ? intval($post['_http_code']) : 0);
+
+    $ok = $get_json || $post_ok;
+    $msg = ($ok ? 'GAS connection OK. ' : 'GAS connection problem. ')
+        . 'GET /exec: HTTP ' . $get_code . ($get_json ? ' (JSON ✓)' : ' (non-JSON)')
+        . ' · POST getAvailability: ' . ($post_ok ? 'success ✓' : ('failed — HTTP ' . $post_code));
+    if (!$post_ok && !empty($post['message'])) {
+        $msg .= ' — ' . $post['message'];
+    }
+
+    return array(
+        'success' => $ok,
+        'message' => $msg,
+        'get' => array('http_code' => $get_code, 'json' => $get_json, 'raw_body' => substr($get_raw, 0, 300)),
+        'post' => $post,
+    );
+}
+
 function wr26_tools_fake_registration_payload() {
     $now = current_time('mysql');
     $stamp = gmdate('YmdHis');
@@ -745,10 +792,10 @@ function wr26_tools_page() {
                 ? array('type' => 'success', 'message' => 'Fake WR26 test registration sent to GAS successfully. Check Registrations, Attendees, and SeminarPreferences in the Sheet.')
                 : array('type' => 'error', 'message' => 'Fake WR26 test registration failed. See response below.');
         } elseif ($action === 'ping_cache') {
-            $result = wr26_tools_post_to_gas(array('action' => 'portalGetCacheSnapshot'), 45);
+            $result = wr26_tools_diagnose_connection();
             $notice = !empty($result['success'])
-                ? array('type' => 'success', 'message' => 'GAS cache snapshot/ping succeeded.')
-                : array('type' => 'error', 'message' => 'GAS cache snapshot/ping failed. See response below.');
+                ? array('type' => 'success', 'message' => $result['message'])
+                : array('type' => 'error', 'message' => $result['message']);
         } else {
             $notice = array('type' => 'error', 'message' => 'Unknown GAS Tools action.');
         }
@@ -800,11 +847,11 @@ function wr26_tools_page() {
     echo '</form>';
 
     echo '<h2>GAS Tests</h2>';
-    echo '<p><strong>Ping / cache snapshot</strong> checks the GAS URL and secret without creating a registration.</p>';
+    echo '<p><strong>Ping GAS</strong> checks the GAS URL and secret without creating a registration. It runs a GET probe and a lightweight POST and reports both HTTP codes, so a "GET ok / POST failing" result points to the connection itself rather than your data.</p>';
     echo '<form method="post" style="display:inline-block;margin-right:8px">';
     wp_nonce_field('wr26_gas_tools');
     echo '<input type="hidden" name="wr26_gas_tools_action" value="ping_cache">';
-    echo '<button class="button">Ping GAS / Cache Snapshot</button>';
+    echo '<button class="button">Ping GAS Connection</button>';
     echo '</form>';
 
     echo '<p style="margin-top:18px"><strong>Send fake WR26 registration</strong> creates a real test registration in Google Sheets using a WR26-style two-attendee payload. Delete it from the Sheet after confirming the test.</p>';
