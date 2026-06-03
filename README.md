@@ -371,7 +371,6 @@ attendee_notes
 attendee_count
 payment_method
 promo_code
-worker_registration
 acknowledgment
 ```
 

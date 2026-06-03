@@ -16,14 +16,19 @@ function sendConfirmationEmail(reg,edit,context){
   var discountLine=Number(reg.discountAmount)>0?'<p><b>Discount applied:</b> $'+escapeHtml(String(reg.discountAmount))+(reg.couponUsed||reg.promoCode?' (code: '+escapeHtml(String(reg.couponUsed||reg.promoCode))+')':'')+'</p>':'';
   var detailsBlock='<p><b>Church:</b> '+escapeHtml(reg.church)+'<br><b>Arrival:</b> '+escapeHtml(reg.arrivalDate)+'<br><b>Departure:</b> '+escapeHtml(reg.departureDate)+'</p>'+discountLine;
   // Payment status block. Paid registrations get a thank-you; pay-later
-  // registrations keep the balance-due notice + Square "Pay by Card" link so
-  // they can still pay from this email.
+  // registrations get the balance-due notice plus a Square "Pay by Card" button
+  // when Square is configured. When it is NOT configured the button is empty, so
+  // we must not reference a "card link below" that isn't there — fall back to the
+  // check / follow-up-link wording and point at the portal (which carries its own
+  // Pay-by-Card button once Square is set up).
+  var payButton=isPaid?'':squarePayButtonHtml_(reg);
   var paymentBlock=isPaid
     ? '<p>Thank you for your payment of <b>$'+escapeHtml(String(amountDisplay))+'</b>. Your registration is fully confirmed!</p>'
     : '<p>A balance of <b>$'+escapeHtml(String(amountDisplay))+'</b> is due.</p>'+
-      '<p style="font-size:1.1em;font-weight:bold;">Please pay your registration fee using the secure card link below, or mail a check payable to IMSDA.</p>'+
-      squarePayButtonHtml_(reg);
-  var editLink=editUrl?'<p><a href="'+escapeHtml(editUrl)+'">Edit your registration details</a></p>':'';
+      (payButton
+        ? '<p style="font-size:1.1em;font-weight:bold;">Please pay your registration fee using the secure card button below, or mail a check payable to IMSDA. You can also pay anytime from your registration portal (link below).</p>'+payButton
+        : '<p style="font-size:1.1em;font-weight:bold;">Please mail a check payable to IMSDA. If you would prefer to pay by card, open your registration portal using the link below and use the “Pay by Card” button there.</p>');
+  var editLink=editUrl?'<p><a href="'+escapeHtml(editUrl)+'">'+(isPaid?'Edit your registration details':'View, pay, or edit your registration')+'</a></p>':'';
   var qrBlock='<p><img src="'+escapeHtml(generateQRUrl(reg.qrToken))+'"/></p><p>Show this QR code at check-in.</p>';
   // Final approved informational copy (IA-MO Women's Ministries). Static prose,
   // so no escaping needed; the hotel URL's "&" are written as "&amp;" so email
@@ -38,7 +43,7 @@ function sendConfirmationEmail(reg,edit,context){
 <p>Our teen and young adult programming has grown steadily each year, and we praise God for the increasing number of young women seeking Christian fellowship, encouragement, and spiritual growth. The friendships and support networks formed at retreat are making a lasting impact in their lives.</p>
 <p>We invite you to prayerfully consider how God may use you to help a teen/young woman experience the blessing of a retreat weekend like this.</p>
 <p><b>Childcare Reminder</b></p>
-<p>Childcare will be available for children under the age of two. However, childcare will only be provided if at least five children are registered. If you’ll be bringing a little one, please make sure you’ve indicated that during registration so we can plan accordingly. We will communicate any updates regarding childcare as the retreat approaches.</p>
+<p>Childcare will be available for children 24 months and younger. However, childcare will only be provided if at least five children are registered. If you’ll be bringing a little one, please make sure you’ve indicated that during registration so we can plan accordingly. We will communicate any updates regarding childcare as the retreat approaches.</p>
 <p><b>What to Wear</b></p>
 <p>Retreat attire is individualized, so please feel free to dress comfortably. Seminar rooms can sometimes be cool, so you may wish to bring a sweater or light jacket.</p>
 <p><b>Weekend Schedule &amp; Meals</b></p>

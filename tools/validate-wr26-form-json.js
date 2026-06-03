@@ -66,7 +66,6 @@ const requiredTopLevel = [
   'attendee_count',
   'payment_method',
   'promo_code',
-  'worker_registration',
   'acknowledgment'
 ];
 
@@ -149,8 +148,12 @@ if (!paymentMethod) {
   const values = options.map((option) => String(option.value || '').toLowerCase());
   if (!values.includes('offline')) errors.push('payment_method is missing offline / Pay Later option.');
   if (!values.includes('square')) warnings.push('payment_method is missing square / Pay Now option.');
-  if (paymentMethod?.settings?.default_payment !== 'offline') {
-    warnings.push(`payment_method default_payment should be offline, found: ${paymentMethod?.settings?.default_payment}`);
+  // No pre-selected payment method: registrants must actively choose Pay Later
+  // or Pay Now, so an empty default_payment is the intended state. Only warn if a
+  // method other than offline is forced as the default.
+  const defaultPayment = paymentMethod?.settings?.default_payment || '';
+  if (defaultPayment && defaultPayment !== 'offline') {
+    warnings.push(`payment_method default_payment unexpectedly pre-selects: ${defaultPayment}`);
   }
 }
 

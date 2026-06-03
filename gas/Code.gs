@@ -77,6 +77,7 @@ function handleRegister(payload){try{
   var attendees=buildAttendees(payload,reg.registrationId);
   var attendeeResult=writeAttendeesForRegistration(reg,attendees);
   var seminarResult=writeSeminarPreferencesForRegistration(reg,attendees);
+  try{recomputeSeminarAssignedCounts_();}catch(e){Logger.log('seminar count refresh failed: '+e.message);}
   if(payload.worker_flag)Logger.log('Worker/non-paying flag received for '+reg.registrationId+': '+payload.worker_flag+'; use worker form URL: '+getConfig().WORKER_REGISTRATION_URL);
   var warnings=[attendeeResult.warning,seminarResult.warning].filter(Boolean);
   var emailResult=sendConfirmationEmail(reg,payload.edit_page_url||getConfig().EDIT_PAGE_URL,{attendees:attendees,warnings:warnings});

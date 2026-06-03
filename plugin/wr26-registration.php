@@ -369,15 +369,16 @@ function wr26_build_and_send($entry_id, $action, $extra = array()) {
     if (!empty($extra)) {
         $payload = array_merge($payload, $extra);
     }
-    $r = wp_remote_post($url, array('timeout' => 45, 'headers' => array('Content-Type' => 'application/json'), 'body' => wp_json_encode($payload)));
-    if (is_wp_error($r)) return $r->get_error_message();
-    $body = json_decode(wp_remote_retrieve_body($r), true);
+    // Retries transient Google front-end failures; safe because GAS de-duplicates by entry_id.
+    $res = wr26_gas_http_post($url, $payload, 45, 3);
+    if (empty($res['ok'])) return $res['message'];
+    $body = $res['body'];
     if (empty($body['success'])) {
         if ($action === 'register' && !empty($body['capacityFull'])) {
             $waitlist_payload = array_merge($payload, array('action' => 'waitlist'));
-            $waitlist_response = wp_remote_post($url, array('timeout' => 45, 'headers' => array('Content-Type' => 'application/json'), 'body' => wp_json_encode($waitlist_payload)));
-            if (is_wp_error($waitlist_response)) return $waitlist_response->get_error_message();
-            $waitlist_body = json_decode(wp_remote_retrieve_body($waitlist_response), true);
+            $waitlist_res = wr26_gas_http_post($url, $waitlist_payload, 45, 3);
+            if (empty($waitlist_res['ok'])) return $waitlist_res['message'];
+            $waitlist_body = $waitlist_res['body'];
             if (empty($waitlist_body['success'])) return !empty($waitlist_body['message']) ? $waitlist_body['message'] : 'Waitlist reroute failed';
             if (empty($waitlist_body['duplicate'])) update_option('wr26_waitlist_count', intval(get_option('wr26_waitlist_count', 0)) + 1, false);
             error_log('WR26 entry '.intval($entry_id).' rerouted to waitlist due to full capacity.');
@@ -495,9 +496,9 @@ function wr26_gas_request($payload, $timeout = 30) {
     $payload['secret'] = get_option('wr26_gas_secret', '');
     $payload['site'] = site_url();
     $payload['edit_page_url'] = esc_url_raw(get_option('wr26_edit_page_url', site_url('/wr26-edit/')));
-    $r = wp_remote_post($url, array('timeout' => intval($timeout), 'headers' => array('Content-Type' => 'application/json'), 'body' => wp_json_encode($payload)));
-    if (is_wp_error($r)) return array('success' => false, 'message' => $r->get_error_message());
-    return json_decode(wp_remote_retrieve_body($r), true);
+    $res = wr26_gas_http_post($url, $payload, $timeout, 3);
+    if (empty($res['ok'])) return array('success' => false, 'message' => $res['message']);
+    return $res['body'];
 }
 
 function wr26_admin_guard() {
@@ -539,10 +540,13 @@ function wr26_gas_diagnose_non_json($code, $raw_body) {
         && (stripos($raw, 'google.com') !== false || stripos($raw, 'That') !== false);
 
     if ($code === 400 && $is_google_html) {
-        return 'Google rejected the request with HTTP 400 before Apps Script ran — the request never reached your script. '
-            . 'This almost always means the GAS URL is wrong, truncated, or points to an old/undeployed version. '
-            . 'Fix it in WR26 → Settings → GAS URL: paste the current Web app URL ending in /exec from Apps Script → Deploy → Manage deployments, '
-            . 'then redeploy (New deployment or Edit → new version) with "Who has access: Anyone", and retest.';
+        return 'Google returned an HTTP 400 page instead of JSON, so this request did not reach Apps Script. '
+            . 'Apps Script\'s front end does this intermittently even when the URL and deployment are correct, so the plugin '
+            . 'retries automatically — and because registrations de-duplicate by entry, a momentary 400 here does NOT mean a '
+            . 'submission was lost (run the full test below to confirm the connection works). '
+            . 'Only if EVERY attempt fails (including the full test) is the GAS URL likely wrong or undeployed: in '
+            . 'WR26 → Settings → GAS URL, paste the current Web app URL ending in /exec from Apps Script → Deploy → Manage '
+            . 'deployments, redeploy (New deployment or Edit → new version) with "Who has access: Anyone", and retest.';
     }
     if (($code === 401 || $code === 403) || stripos($raw, 'accounts.google.com') !== false || stripos($raw, 'sign in') !== false) {
         return 'Google returned a sign-in/authorization page instead of JSON (HTTP ' . intval($code) . '). '
@@ -553,6 +557,59 @@ function wr26_gas_diagnose_non_json($code, $raw_body) {
             . 'Verify the GAS URL ends in /exec and the web app deployment is current and shared with "Anyone".';
     }
     return 'GAS returned a non-JSON response (HTTP ' . intval($code) . '). See raw_body below.';
+}
+
+/**
+ * POST JSON to the GAS web app, retrying transient failures.
+ *
+ * Apps Script's front end (script.google.com → script.googleusercontent.com)
+ * intermittently answers a perfectly valid POST with a Google "Error 400" /
+ * non-JSON HTML page even when the URL and deployment are correct; an identical
+ * request a moment later succeeds. Because handleRegister()/handleWaitlist()
+ * de-duplicate by entry_id, replaying a register/waitlist POST is safe, so we
+ * retry these transient responses (Google HTML 400, 5xx, 429, 408, and WP
+ * network errors) with a short backoff instead of reporting a false failure.
+ *
+ * Returns:
+ *   on JSON reply: ['ok'=>true,  'body'=>array, 'http_code'=>int]
+ *   on failure:    ['ok'=>false, 'http_code'=>int, 'raw_body'=>string, 'message'=>string]
+ */
+function wr26_gas_http_post($url, $payload, $timeout = 45, $tries = 3) {
+    $last = array('ok' => false, 'http_code' => 0, 'raw_body' => '', 'message' => 'No response from GAS.');
+    $tries = max(1, intval($tries));
+    for ($attempt = 1; $attempt <= $tries; $attempt++) {
+        if ($attempt > 1) {
+            sleep(2 * ($attempt - 1)); // 2s, 4s, … backoff between attempts
+        }
+        $response = wp_remote_post($url, array(
+            'timeout' => intval($timeout),
+            'headers' => array('Content-Type' => 'application/json'),
+            'body' => wp_json_encode($payload),
+        ));
+        if (is_wp_error($response)) {
+            $last = array('ok' => false, 'http_code' => 0, 'raw_body' => '', 'message' => $response->get_error_message());
+            continue; // network error — retry
+        }
+        $code = intval(wp_remote_retrieve_response_code($response));
+        $raw_body = (string) wp_remote_retrieve_body($response);
+        $body = json_decode($raw_body, true);
+        if (is_array($body)) {
+            return array('ok' => true, 'body' => $body, 'http_code' => $code);
+        }
+        // Non-JSON reply. Record diagnosis, then decide whether to retry.
+        $last = array(
+            'ok' => false,
+            'http_code' => $code,
+            'raw_body' => $raw_body,
+            'message' => wr26_gas_diagnose_non_json($code, $raw_body),
+        );
+        $google_html = (stripos($raw_body, '<html') !== false || stripos($raw_body, '<!DOCTYPE html') !== false);
+        $transient = ($code >= 500 || $code === 429 || $code === 408 || $code === 0 || ($code === 400 && $google_html));
+        if (!$transient) {
+            break; // genuine sign-in/auth/other error — retrying won't help
+        }
+    }
+    return $last;
 }
 
 function wr26_tools_post_to_gas($payload, $timeout = 45) {
@@ -566,33 +623,22 @@ function wr26_tools_post_to_gas($payload, $timeout = 45) {
     $payload['version'] = WR26_VERSION;
     $payload['edit_page_url'] = esc_url_raw(get_option('wr26_edit_page_url', site_url('/wr26-edit/')));
 
-    $response = wp_remote_post($url, array(
-        'timeout' => intval($timeout),
-        'headers' => array('Content-Type' => 'application/json'),
-        'body' => wp_json_encode($payload),
-    ));
-
-    if (is_wp_error($response)) {
-        return array('success' => false, 'message' => $response->get_error_message());
+    $res = wr26_gas_http_post($url, $payload, $timeout, 3);
+    if (!empty($res['ok'])) {
+        $body = $res['body'];
+        $body['_http_code'] = $res['http_code'];
+        return $body;
     }
 
-    $code = intval(wp_remote_retrieve_response_code($response));
-    $raw_body = wp_remote_retrieve_body($response);
-    $body = json_decode($raw_body, true);
-
-    if (!is_array($body)) {
-        $trimmed = (strlen($raw_body) > 600) ? substr($raw_body, 0, 600) . '… [truncated]' : $raw_body;
-        return array(
-            'success' => false,
-            'message' => wr26_gas_diagnose_non_json($code, $raw_body),
-            'http_code' => $code,
-            'gas_url_valid' => wr26_gas_url_looks_valid(get_option('wr26_gas_url', '')),
-            'raw_body' => $trimmed,
-        );
-    }
-
-    $body['_http_code'] = $code;
-    return $body;
+    $raw_body = (string) ($res['raw_body'] ?? '');
+    $trimmed = (strlen($raw_body) > 600) ? substr($raw_body, 0, 600) . '… [truncated]' : $raw_body;
+    return array(
+        'success' => false,
+        'message' => $res['message'],
+        'http_code' => intval($res['http_code']),
+        'gas_url_valid' => wr26_gas_url_looks_valid(get_option('wr26_gas_url', '')),
+        'raw_body' => $trimmed,
+    );
 }
 
 function wr26_tools_fake_registration_payload() {

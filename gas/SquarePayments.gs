@@ -29,6 +29,30 @@ function squareIsConfigured_(){var c=squareConfig_();return !!(c.token&&c.locati
 
 function squareApiBase_(env){return env==='sandbox'?'https://connect.squareupsandbox.com':'https://connect.squareup.com';}
 
+// Manual diagnostic — run from the Apps Script editor (Run ▸ wr26TestSquareConfig,
+// then View ▸ Logs). Attempts a real $1.00 hosted payment link so credential,
+// location-ID, and environment problems surface as Square's actual error
+// (e.g. "Location `IMSDAREG` not found" or AUTHENTICATION_ERROR) instead of the
+// pay button silently failing to appear. Never logs the access token itself.
+function wr26TestSquareConfig(){
+  var c=squareConfig_();
+  var out={environment:c.env,apiBase:squareApiBase_(c.env),hasToken:!!c.token,tokenLength:c.token?c.token.length:0,locationId:c.locationId};
+  if(!c.token||!c.locationId){out.ok=false;out.message='Missing SQUARE_ACCESS_TOKEN or SQUARE_LOCATION_ID in Script Properties.';Logger.log(JSON.stringify(out,null,2));return out;}
+  try{
+    var res=UrlFetchApp.fetch(squareApiBase_(c.env)+'/v2/online-checkout/payment-links',{
+      method:'post',contentType:'application/json',
+      headers:{Authorization:'Bearer '+c.token,'Square-Version':'2024-10-17'},
+      payload:JSON.stringify({idempotency_key:'wr26-test-'+Date.now(),quick_pay:{name:'WR26 Square config test',price_money:{amount:100,currency:'USD'},location_id:c.locationId}}),
+      muteHttpExceptions:true
+    });
+    var code=res.getResponseCode();var body=res.getContentText()||'';
+    out.httpCode=code;out.ok=(code>=200&&code<300);
+    try{var j=JSON.parse(body);if(out.ok&&j.payment_link){out.paymentLinkUrl=j.payment_link.url;}else{out.error=j.errors||body;}}catch(e){out.error=body.slice(0,500);}
+  }catch(e){out.ok=false;out.error=e.message;}
+  Logger.log(JSON.stringify(out,null,2));
+  return out;
+}
+
 // Create a Square-hosted quick-pay checkout link for `amount` USD (a Number of
 // dollars). Returns the checkout URL string, or '' on any failure (logged, never
 // throws). A stable idempotency key derived from referenceId + amount means

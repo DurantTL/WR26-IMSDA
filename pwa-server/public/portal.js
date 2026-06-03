@@ -176,7 +176,7 @@
     list.innerHTML = `<ul class="portal-seminar-list">${prefs.map((pref) => `<li>${escapeHtml(formatSeminarPreference(pref))}</li>`).join('')}</ul>`;
   }
 
-  function renderPaymentNotice(registration = {}) {
+  function renderPaymentNotice(registration = {}, bundle = {}) {
     const box = $('portal-balance');
     if (!box) return;
     const status = String(registration.paymentStatus || '').toLowerCase();
@@ -191,7 +191,18 @@
     }
     if (balance > 0) {
       box.className = 'balance-box';
-      box.innerHTML = `<span class="balance-amount">Balance due: $${escapeHtml(balance.toFixed(2))}</span><span class="balance-sub">Pay online or mail a check payable to IMSDA. Your confirmation email contains your payment link.</span>`;
+      // When GAS supplies a Square hosted-checkout link, show a real "Pay by Card"
+      // button right here so registrants can pay from the portal (not just the email).
+      const pay = bundle.payLink || null;
+      if (pay && pay.url) {
+        const amount = Number(pay.total != null ? pay.total : balance);
+        const feeNote = Number(pay.fee) > 0 ? ` (includes a $${Number(pay.fee).toFixed(2)} card processing fee)` : '';
+        box.innerHTML = `<span class="balance-amount">Balance due: $${escapeHtml(balance.toFixed(2))}</span>`
+          + `<a class="balance-pay-button" href="${escapeHtml(pay.url)}" target="_blank" rel="noopener">Pay $${escapeHtml(amount.toFixed(2))} by Card</a>`
+          + `<span class="balance-sub">Secure checkout hosted by Square${escapeHtml(feeNote)}. Or mail a check payable to IMSDA.</span>`;
+      } else {
+        box.innerHTML = `<span class="balance-amount">Balance due: $${escapeHtml(balance.toFixed(2))}</span><span class="balance-sub">To pay by card, use the payment link in your confirmation email, or mail a check payable to IMSDA.</span>`;
+      }
       box.hidden = false;
       return;
     }
@@ -206,7 +217,7 @@
     $('registration-heading').textContent = `${registration.firstName || ''} ${registration.lastName || ''}`.trim() || 'Manage Registration';
     $('registration-meta').textContent = [registration.registrationId, registration.email].filter(Boolean).join(' • ');
     $('registration-status').textContent = registration.paymentStatus || registration.status || 'Open';
-    renderPaymentNotice(registration);
+    renderPaymentNotice(registration, bundle);
     renderRegistrationFields(registration);
     renderAttendees();
     // Seminar prefs are now editable inline per attendee; hide the old read-only summary.
