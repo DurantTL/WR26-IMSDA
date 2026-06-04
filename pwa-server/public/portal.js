@@ -20,7 +20,10 @@
     ['attendee_type', 'Attendee Type', 'select', 'ATTENDEE_TYPE_OPTIONS'],
     ['meal_preference', 'Meal Preference', 'select', 'MEAL_OPTIONS'],
     ['dietary_needs', 'Dietary Needs', 'textarea'],
-    ['childcare_needed', 'Childcare Needed', 'select', 'CHILDCARE_OPTIONS'],
+    ['childcare_needed', 'Childcare Needed?', 'select', 'CHILDCARE_OPTIONS'],
+    // Number-of-children is shown only when childcare is requested (see attendeeCardHtml).
+    ['childcare_children', 'How Many Children Need Care?', 'number'],
+    ['volunteer', 'Willing to Volunteer to Help?', 'select', 'VOLUNTEER_OPTIONS'],
   ];
 
   const state = {
@@ -92,9 +95,15 @@
       ? `<button class="btn btn-sm btn-white portal-remove-attendee" type="button" data-remove-attendee="${index}">Remove</button>`
       : '';
     const O = window.WR26_OPTIONS;
+    const childcareYes = String(attendee.childcare_needed || '').toLowerCase() === 'yes';
     const fields = ATTENDEE_FIELDS.map(([name, label, type, optionKey]) => {
       const value = attendee[name] || '';
       if (type === 'textarea') return `<label>${escapeHtml(label)}<textarea data-attendee-field="${escapeHtml(name)}" rows="2">${escapeHtml(value)}</textarea></label>`;
+      if (type === 'number') {
+        // Children-needing-care count: only relevant (and shown) when childcare is requested.
+        // Inline display:none (not the hidden attribute) so it beats `.form-grid label{display:block}`.
+        return `<label class="portal-childcare-count" data-childcare-count${childcareYes ? '' : ' style="display:none"'}>${escapeHtml(label)}<input data-attendee-field="${escapeHtml(name)}" type="number" min="1" step="1" inputmode="numeric" value="${escapeHtml(value)}"></label>`;
+      }
       if (type === 'select') return `<label>${escapeHtml(label)}${O.selectHtml(`data-attendee-field="${escapeHtml(name)}"`, value, O[optionKey])}</label>`;
       return `<label>${escapeHtml(label)}<input data-attendee-field="${escapeHtml(name)}" type="${escapeHtml(type)}" value="${escapeHtml(value)}"></label>`;
     }).join('');
@@ -113,15 +122,35 @@
       }
       return out.join('');
     }).join('');
+    const attendeeId = attendee.attendee_id || attendee.attendeeId || '';
+    // The transfer control is only meaningful for an already-saved attendee (one with
+    // an id). New, unsaved rows added in the portal have no id yet, so we hide it.
+    const transferToggle = attendeeId
+      ? `<button class="btn btn-sm btn-white portal-transfer-toggle" type="button" data-transfer-toggle="${index}">Transfer</button>`
+      : '';
+    const transferPanel = attendeeId ? `
+      <div class="attendee-transfer" data-transfer-card="${index}" hidden>
+        <h4>Transfer this person to someone else</h4>
+        <p class="meta">Gives this seat to a new person and keeps the payment. Meal, dietary, childcare, and seminar choices reset for the new person, who will be emailed. Save any other changes first — transferring reloads your registration.</p>
+        <div class="form-grid compact-form">
+          <label>New First Name<input data-transfer-field="newFirstName" type="text"></label>
+          <label>New Last Name<input data-transfer-field="newLastName" type="text"></label>
+          <label>New Email<input data-transfer-field="newEmail" type="email"></label>
+          <label>New Phone<input data-transfer-field="newPhone" type="tel"></label>
+          <label>Reason (optional)<input data-transfer-field="reason" type="text"></label>
+        </div>
+        <button class="btn btn-primary full-width portal-transfer-confirm" type="button" data-confirm-transfer="${index}" data-attendee-id="${escapeHtml(attendeeId)}">Transfer This Person</button>
+      </div>` : '';
     return `<div class="attendee-card portal-attendee-card" data-attendee-index="${index}">
       <div class="portal-attendee-heading">
         <h3>Attendee ${index + 1}</h3>
-        ${removeButton}
+        <div class="portal-attendee-actions">${transferToggle}${removeButton}</div>
       </div>
-      <input type="hidden" data-attendee-field="attendee_id" value="${escapeHtml(attendee.attendee_id || attendee.attendeeId || '')}">
+      <input type="hidden" data-attendee-field="attendee_id" value="${escapeHtml(attendeeId)}">
       <div class="form-grid compact-form">${fields}</div>
       <h4>Seminar Preferences</h4>
       <div class="form-grid compact-form">${seminarFields}</div>
+      ${transferPanel}
     </div>`;
   }
 
@@ -156,6 +185,67 @@
     document.querySelectorAll('[data-attendee-pref][data-desc-target]').forEach((select) => {
       select.addEventListener('change', () => updateSeminarDesc(select));
     });
+    // Show the "how many children" count only while childcare is requested, and clear
+    // it when childcare is turned off so a stale number isn't saved.
+    document.querySelectorAll('[data-attendee-field="childcare_needed"]').forEach((select) => {
+      select.addEventListener('change', () => {
+        const card = select.closest('.portal-attendee-card');
+        const countLabel = card && card.querySelector('[data-childcare-count]');
+        if (!countLabel) return;
+        const show = String(select.value).toLowerCase() === 'yes';
+        countLabel.style.display = show ? '' : 'none';
+        if (!show) {
+          const input = countLabel.querySelector('input');
+          if (input) input.value = '';
+        }
+      });
+    });
+    document.querySelectorAll('[data-transfer-toggle]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const card = button.closest('.portal-attendee-card');
+        const panel = card && card.querySelector('[data-transfer-card]');
+        if (panel) panel.hidden = !panel.hidden;
+      });
+    });
+    document.querySelectorAll('[data-confirm-transfer]').forEach((button) => {
+      button.addEventListener('click', () => transferAttendee(button).catch((error) => showStatus(error.message, 'error')));
+    });
+  }
+
+  async function transferAttendee(button) {
+    const card = button.closest('.portal-attendee-card');
+    if (!card) return;
+    const get = (field) => {
+      const el = card.querySelector(`[data-transfer-field="${field}"]`);
+      return el ? el.value.trim() : '';
+    };
+    const attendeeId = button.dataset.attendeeId || '';
+    const newFirstName = get('newFirstName');
+    const newLastName = get('newLastName');
+    const newEmail = get('newEmail');
+    if (!attendeeId) return showStatus('This attendee must be saved before it can be transferred.', 'error');
+    if (!newFirstName || !newLastName || !newEmail) return showStatus('New first name, last name, and email are required to transfer.', 'error');
+    if (!window.confirm(`Transfer this seat to ${newFirstName} ${newLastName}? This cannot be undone here, and any unsaved changes on this page will be lost.`)) return;
+    setBusy(button, true, 'Transfer This Person');
+    showStatus('Transferring… Please keep this page open.', 'saving');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    try {
+      const saved = await api('/api/magic-link/attendee-transfer', {
+        token: state.token,
+        attendeeId,
+        newFirstName,
+        newLastName,
+        newEmail,
+        newPhone: get('newPhone'),
+        reason: get('reason'),
+      });
+      renderBundle(saved);
+      showStatus(`✓ This seat has been transferred to ${newFirstName} ${newLastName}. They have been emailed.`, 'success');
+    } catch (error) {
+      showStatus(error.message, 'error');
+    } finally {
+      setBusy(button, false, 'Transfer This Person');
+    }
   }
 
   function formatSeminarPreference(pref = {}) {
@@ -269,6 +359,9 @@
         meal_preference: attendee.meal_preference || '',
         dietary_needs: attendee.dietary_needs || '',
         childcare_needed: attendee.childcare_needed || '',
+        // Only send a children count when childcare is actually requested.
+        childcare_children: String(attendee.childcare_needed || '').toLowerCase() === 'yes' ? (attendee.childcare_children || '') : '',
+        volunteer: attendee.volunteer || '',
         seminar_preferences: attendee.seminar_preferences || attendee.seminarPreferences || {},
       })),
     };

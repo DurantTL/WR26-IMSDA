@@ -20,6 +20,10 @@
 .portal-attendee-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
 .portal-attendee-heading h3{margin:0;}
 .portal-remove-attendee{flex:none;}
+.portal-attendee-actions{display:flex;align-items:center;gap:6px;flex:none;}
+.attendee-transfer{margin-top:14px;padding:12px;background:var(--warn-light);border:1px solid #e6c48a;border-radius:12px;}
+.attendee-transfer h4{margin:0 0 4px;color:#744210;}
+.attendee-transfer .meta{margin:0 0 10px;}
 .portal-seminar-list{margin:8px 0 0;padding-left:18px;color:var(--muted);line-height:1.55;}
 .seminar-desc-box{margin-top:6px;padding:10px 12px;background:var(--secondary);border-left:3px solid var(--primary);border-radius:0 8px 8px 0;font-size:.88rem;line-height:1.55;color:var(--text);}
 .seminar-desc-box .seminar-desc-presenter{display:block;font-size:.8rem;font-weight:700;color:var(--primary);margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em;}

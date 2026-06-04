@@ -400,8 +400,28 @@ function seminarPrefFields(attendee) {
 
 function attendeeEditor(attendee = {}, index = 0) {
   const O = window.WR26_OPTIONS;
+  const attendeeId = attendee.attendee_id || '';
+  // Transfer is an in-place substitution of a saved attendee; hide it for new,
+  // unsaved rows (no id yet — save the registration first).
+  const transferToggle = attendeeId
+    ? `<button class="btn btn-sm btn-white attendee-transfer-toggle" type="button" data-transfer-toggle="${index}">Transfer</button>`
+    : '';
+  const transferPanel = attendeeId ? `
+    <div class="attendee-transfer" data-transfer-card="${index}" hidden>
+      <h4>Transfer this person to someone else</h4>
+      <p class="meta">Gives this seat to a new person and keeps the registration's payment. Meal, dietary, childcare, and seminar choices reset for the new person, who is emailed. The registration holder/payer is unchanged. Save other edits first — this writes immediately and reloads the registration.</p>
+      <div class="form-grid compact-form">
+        <label>New First Name<input data-transfer-field="newFirstName"></label>
+        <label>New Last Name<input data-transfer-field="newLastName"></label>
+        <label>New Email<input data-transfer-field="newEmail" type="email"></label>
+        <label>New Phone<input data-transfer-field="newPhone" type="tel"></label>
+        <label>New Church<input data-transfer-field="newChurch"></label>
+        <label>Reason<input data-transfer-field="reason"></label>
+      </div>
+      <button class="btn btn-primary full-width" type="button" data-confirm-transfer="${index}" data-attendee-id="${escapeHtml(attendeeId)}">Transfer This Person</button>
+    </div>` : '';
   return `<div class="attendee-card" data-attendee-index="${index}">
-    <h3>Attendee ${index + 1}</h3>
+    <div class="portal-attendee-heading"><h3>Attendee ${index + 1}</h3><div class="portal-attendee-actions">${transferToggle}</div></div>
     <div class="form-grid">
       <label>First Name<input data-a="first_name" value="${escapeHtml(attendee.first_name)}"></label>
       <label>Last Name<input data-a="last_name" value="${escapeHtml(attendee.last_name)}"></label>
@@ -418,7 +438,8 @@ function attendeeEditor(attendee = {}, index = 0) {
     <div class="form-grid">
       ${seminarPrefFields(attendee)}
     </div>
-    <input type="hidden" data-a="attendee_id" value="${escapeHtml(attendee.attendee_id)}">
+    <input type="hidden" data-a="attendee_id" value="${escapeHtml(attendeeId)}">
+    ${transferPanel}
   </div>`;
 }
 
@@ -563,6 +584,30 @@ async function saveTransfer() {
   showToast('Registration transferred.');
   logActivity(`Transferred ${selectedRegistration} → ${payload.newRegId || 'new'}`);
   if (payload.newRegId) await selectRegistration(payload.newRegId);
+}
+
+async function transferAttendeeStaff(button) {
+  if (!selectedRegistration) return showToast('Select a registration first.');
+  const card = button.closest('.attendee-card');
+  if (!card) return;
+  const get = (field) => {
+    const el = card.querySelector(`[data-transfer-field="${field}"]`);
+    return el ? el.value.trim() : '';
+  };
+  const attendeeId = button.dataset.attendeeId || '';
+  const newFirstName = get('newFirstName');
+  const newLastName = get('newLastName');
+  const newEmail = get('newEmail');
+  if (!attendeeId) return showToast('Save the registration before transferring this attendee.');
+  if (!newFirstName || !newLastName || !newEmail) return showToast('New first name, last name, and email are required.');
+  if (!window.confirm(`Transfer this seat to ${newFirstName} ${newLastName}? Unsaved edits on this registration will be lost.`)) return;
+  await api('/api/attendee-transfer', {
+    method: 'POST',
+    body: { registrationId: selectedRegistration, attendeeId, newFirstName, newLastName, newEmail, newPhone: get('newPhone'), newChurch: get('newChurch'), reason: get('reason') },
+  });
+  showToast(`Attendee transferred to ${newFirstName} ${newLastName}.`);
+  logActivity(`Transferred attendee ${attendeeId} → ${newFirstName} ${newLastName} (${selectedRegistration})`);
+  await selectRegistration(selectedRegistration);
 }
 
 const SEMINAR_SLOT_LABELS = {
@@ -720,6 +765,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (count >= 5) return showToast('Maximum 5 attendees.');
       $('attendee-list').insertAdjacentHTML('beforeend', attendeeEditor({}, count));
     }
+    const transferToggle = event.target.closest('[data-transfer-toggle]');
+    if (transferToggle) {
+      const panel = transferToggle.closest('.attendee-card').querySelector('[data-transfer-card]');
+      if (panel) panel.hidden = !panel.hidden;
+    }
+    const confirmTransfer = event.target.closest('[data-confirm-transfer]');
+    if (confirmTransfer) transferAttendeeStaff(confirmTransfer).catch((error) => showToast(error.message));
   });
   $('save-payment').addEventListener('click', () => savePayment().catch((error) => showToast(error.message)));
   $('save-refund').addEventListener('click', () => saveRefund().catch((error) => showToast(error.message)));

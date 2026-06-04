@@ -223,7 +223,10 @@ function preserveExistingAttendeeFields_(registrationId,normalized){
       if(!prev)return;
       if(!a.email)a.email=prev.email||'';
       if(!a.church)a.church=prev.church||'';
-      if(!a.childcare_children)a.childcare_children=prev.childcare_children||'';
+      // Only carry over the children count when childcare is still requested. This lets the
+      // portal clear it when childcare is turned off, while protecting surfaces that don't
+      // submit the count (e.g. the staff app) from wiping it when childcare stays "yes".
+      if(!a.childcare_children&&String(a.childcare_needed||'').toLowerCase()==='yes')a.childcare_children=prev.childcare_children||'';
       if(!a.volunteer)a.volunteer=prev.volunteer||'';
     });
   }catch(e){Logger.log('preserveExistingAttendeeFields_ failed: '+e.message);}
@@ -288,6 +291,22 @@ function portalSaveRegistrationByMagicToken(payload){
     return bundle;
   }catch(e){return {success:false,message:e.message};}
   finally{lock.releaseLock();}
+}
+
+// Self-serve individual-attendee transfer: the registrant uses their magic link to
+// substitute one attendee in THEIR registration with a new person. The token pins
+// the registrationId, so a registrant can only transfer attendees in their own party.
+// Returns the refreshed bundle on success so the portal can re-render.
+function portalTransferAttendeeByMagicToken(payload){
+  try{
+    var v=portalValidateToken_((payload&&payload.token)||'',payload&&payload.requestIp);
+    if(!v.success)return v;
+    var result=transferAttendeeCore_(v.registrationId,payload,{source:'portal',actor:(v.email||'registrant'),notify:true});
+    if(!result.success)return result;
+    var bundle=portalGetRegistrationBundle(v.registrationId);
+    bundle.transfer=result;
+    return bundle;
+  }catch(e){return {success:false,message:e.message};}
 }
 
 function portalAdminSaveRegistration(payload){

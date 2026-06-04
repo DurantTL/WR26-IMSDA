@@ -19,6 +19,10 @@
     { value: 'no', label: 'No' },
     { value: 'yes', label: 'Yes' },
   ];
+  const VOLUNTEER_OPTIONS = [
+    { value: 'no', label: 'No' },
+    { value: 'yes', label: 'Yes' },
+  ];
   // 10 breakouts across 4 slots. Values match Fluent Form option values exactly.
   const SEMINAR_SLOTS = [
     { slot: 'session_1', label: 'Friday 4:00–5:00 PM', ranks: 2 },
@@ -170,6 +174,7 @@
     MEAL_OPTIONS,
     ATTENDEE_TYPE_OPTIONS,
     CHILDCARE_OPTIONS,
+    VOLUNTEER_OPTIONS,
     SEMINAR_SLOTS,
     SEMINAR_DESCRIPTIONS,
     selectHtml,
