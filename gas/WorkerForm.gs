@@ -65,27 +65,32 @@ function createWorkerRegistrationForm(){
   return result;
 }
 
-// Form-submit handler (installed as an onFormSubmit trigger). Maps the response
-// to the worker payload shape and reuses handleWorkerRegistration(), so the
-// Google Form behaves exactly like the PWA / staff entry points. The form
-// response id (prefixed) becomes ffEntryId for idempotent de-duplication.
+// Form-submit handler (installed as an onFormSubmit trigger on the FORM via
+// ScriptApp.forForm()). Maps the response to the worker payload shape and reuses
+// handleWorkerRegistration(), so the Google Form behaves exactly like the PWA /
+// staff entry points. The form response id (prefixed) becomes ffEntryId for
+// idempotent de-duplication.
+//
+// IMPORTANT: a form-bound trigger's event exposes e.response (a FormResponse) and
+// has NO e.namedValues — that field only exists on spreadsheet-bound form-submit
+// triggers. We read values via workerFormValues_(), which handles both shapes.
 function onWorkerFormSubmit(e){
   try{
-    var nv=(e&&e.namedValues)||{};
+    var vals=workerFormValues_(e);
     var T=WR26_WORKER_FORM_TITLES;
-    var meal=workerFormVal_(nv,T.meal);
+    var meal=vals[T.meal]||'';
     var payload={
-      first_name:workerFormVal_(nv,T.first),
-      last_name:workerFormVal_(nv,T.last),
-      email:workerFormVal_(nv,T.email),
-      phone:workerFormVal_(nv,T.phone),
-      church:workerFormVal_(nv,T.church),
-      worker_role:workerFormVal_(nv,T.role),
+      first_name:vals[T.first]||'',
+      last_name:vals[T.last]||'',
+      email:vals[T.email]||'',
+      phone:vals[T.phone]||'',
+      church:vals[T.church]||'',
+      worker_role:vals[T.role]||'',
       meal_preference:(meal==='No preference'?'':meal),
-      dietary_needs:workerFormVal_(nv,T.dietary),
-      emergency_contact_name:workerFormVal_(nv,T.ecName),
-      emergency_contact_phone:workerFormVal_(nv,T.ecPhone),
-      special_needs:workerFormVal_(nv,T.special),
+      dietary_needs:vals[T.dietary]||'',
+      emergency_contact_name:vals[T.ecName]||'',
+      emergency_contact_phone:vals[T.ecPhone]||'',
+      special_needs:vals[T.special]||'',
       entry_id:(e&&e.response&&typeof e.response.getId==='function')?('gform-'+e.response.getId()):'',
       adminUser:'google_form'
     };
@@ -96,6 +101,27 @@ function onWorkerFormSubmit(e){
     Logger.log('onWorkerFormSubmit error: '+err.message);
     return {success:false,message:err.message};
   }
+}
+
+// Builds a {questionTitle: trimmedValue} map from a form-submit event. Supports
+// both a form-bound trigger (e.response: FormResponse — what installWorkerForm-
+// SubmitTrigger_ creates) and a spreadsheet-bound trigger (e.namedValues:
+// {title:[value]}). For multi-value/array responses the first non-empty value is
+// kept, matching the single-select worker form items.
+function workerFormValues_(e){
+  var out={};
+  var resp=e&&e.response;
+  if(resp&&typeof resp.getItemResponses==='function'){
+    resp.getItemResponses().forEach(function(ir){
+      var item=ir.getItem();var title=item&&item.getTitle?item.getTitle():'';if(!title)return;
+      var v=ir.getResponse();
+      out[String(title).trim()]=Array.isArray(v)?String(v[0]||'').trim():String(v==null?'':v).trim();
+    });
+    return out;
+  }
+  var nv=(e&&e.namedValues)||{};
+  Object.keys(nv).forEach(function(title){out[String(title).trim()]=workerFormVal_(nv,title);});
+  return out;
 }
 
 // Returns the stored form's id + URLs, or {exists:false} if it was never created.
