@@ -223,7 +223,10 @@ function preserveExistingAttendeeFields_(registrationId,normalized){
       if(!prev)return;
       if(!a.email)a.email=prev.email||'';
       if(!a.church)a.church=prev.church||'';
-      if(!a.childcare_children)a.childcare_children=prev.childcare_children||'';
+      // Only carry over the children count when childcare is still requested. This lets the
+      // portal clear it when childcare is turned off, while protecting surfaces that don't
+      // submit the count (e.g. the staff app) from wiping it when childcare stays "yes".
+      if(!a.childcare_children&&String(a.childcare_needed||'').toLowerCase()==='yes')a.childcare_children=prev.childcare_children||'';
       if(!a.volunteer)a.volunteer=prev.volunteer||'';
     });
   }catch(e){Logger.log('preserveExistingAttendeeFields_ failed: '+e.message);}

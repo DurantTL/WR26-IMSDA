@@ -20,7 +20,10 @@
     ['attendee_type', 'Attendee Type', 'select', 'ATTENDEE_TYPE_OPTIONS'],
     ['meal_preference', 'Meal Preference', 'select', 'MEAL_OPTIONS'],
     ['dietary_needs', 'Dietary Needs', 'textarea'],
-    ['childcare_needed', 'Childcare Needed', 'select', 'CHILDCARE_OPTIONS'],
+    ['childcare_needed', 'Childcare Needed?', 'select', 'CHILDCARE_OPTIONS'],
+    // Number-of-children is shown only when childcare is requested (see attendeeCardHtml).
+    ['childcare_children', 'How Many Children Need Care?', 'number'],
+    ['volunteer', 'Willing to Volunteer to Help?', 'select', 'VOLUNTEER_OPTIONS'],
   ];
 
   const state = {
@@ -92,9 +95,15 @@
       ? `<button class="btn btn-sm btn-white portal-remove-attendee" type="button" data-remove-attendee="${index}">Remove</button>`
       : '';
     const O = window.WR26_OPTIONS;
+    const childcareYes = String(attendee.childcare_needed || '').toLowerCase() === 'yes';
     const fields = ATTENDEE_FIELDS.map(([name, label, type, optionKey]) => {
       const value = attendee[name] || '';
       if (type === 'textarea') return `<label>${escapeHtml(label)}<textarea data-attendee-field="${escapeHtml(name)}" rows="2">${escapeHtml(value)}</textarea></label>`;
+      if (type === 'number') {
+        // Children-needing-care count: only relevant (and shown) when childcare is requested.
+        // Inline display:none (not the hidden attribute) so it beats `.form-grid label{display:block}`.
+        return `<label class="portal-childcare-count" data-childcare-count${childcareYes ? '' : ' style="display:none"'}>${escapeHtml(label)}<input data-attendee-field="${escapeHtml(name)}" type="number" min="1" step="1" inputmode="numeric" value="${escapeHtml(value)}"></label>`;
+      }
       if (type === 'select') return `<label>${escapeHtml(label)}${O.selectHtml(`data-attendee-field="${escapeHtml(name)}"`, value, O[optionKey])}</label>`;
       return `<label>${escapeHtml(label)}<input data-attendee-field="${escapeHtml(name)}" type="${escapeHtml(type)}" value="${escapeHtml(value)}"></label>`;
     }).join('');
@@ -155,6 +164,21 @@
     });
     document.querySelectorAll('[data-attendee-pref][data-desc-target]').forEach((select) => {
       select.addEventListener('change', () => updateSeminarDesc(select));
+    });
+    // Show the "how many children" count only while childcare is requested, and clear
+    // it when childcare is turned off so a stale number isn't saved.
+    document.querySelectorAll('[data-attendee-field="childcare_needed"]').forEach((select) => {
+      select.addEventListener('change', () => {
+        const card = select.closest('.portal-attendee-card');
+        const countLabel = card && card.querySelector('[data-childcare-count]');
+        if (!countLabel) return;
+        const show = String(select.value).toLowerCase() === 'yes';
+        countLabel.style.display = show ? '' : 'none';
+        if (!show) {
+          const input = countLabel.querySelector('input');
+          if (input) input.value = '';
+        }
+      });
     });
   }
 
@@ -269,6 +293,9 @@
         meal_preference: attendee.meal_preference || '',
         dietary_needs: attendee.dietary_needs || '',
         childcare_needed: attendee.childcare_needed || '',
+        // Only send a children count when childcare is actually requested.
+        childcare_children: String(attendee.childcare_needed || '').toLowerCase() === 'yes' ? (attendee.childcare_children || '') : '',
+        volunteer: attendee.volunteer || '',
         seminar_preferences: attendee.seminar_preferences || attendee.seminarPreferences || {},
       })),
     };
