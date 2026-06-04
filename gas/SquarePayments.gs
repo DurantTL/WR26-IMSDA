@@ -53,6 +53,35 @@ function wr26TestSquareConfig(){
   return out;
 }
 
+// Manual diagnostic — run from the Apps Script editor (Run ▸ wr26ListSquareLocations,
+// then View ▸ Logs) to list the VALID location IDs your access token can use. Square
+// location IDs are machine-generated (e.g. "L8FX2K9ABC123"), not a name you pick, so
+// when wr26TestSquareConfig reports "Invalid location id", run this, copy the right
+// `id`, and paste it into the SQUARE_LOCATION_ID Script Property. Never logs the token.
+function wr26ListSquareLocations(){
+  var c=squareConfig_();
+  var out={environment:c.env,apiBase:squareApiBase_(c.env),hasToken:!!c.token};
+  if(!c.token){out.ok=false;out.message='Missing SQUARE_ACCESS_TOKEN in Script Properties.';Logger.log(JSON.stringify(out,null,2));return out;}
+  try{
+    var res=UrlFetchApp.fetch(squareApiBase_(c.env)+'/v2/locations',{
+      method:'get',
+      headers:{Authorization:'Bearer '+c.token,'Square-Version':'2024-10-17'},
+      muteHttpExceptions:true
+    });
+    var code=res.getResponseCode();var body=res.getContentText()||'';
+    out.httpCode=code;out.ok=(code>=200&&code<300);
+    var j=JSON.parse(body||'{}');
+    if(out.ok&&Array.isArray(j.locations)){
+      // Surface just what you need to pick the right one: id, name, and status.
+      out.currentSquareLocationId=c.locationId||'(unset)';
+      out.locations=j.locations.map(function(loc){return {id:loc.id,name:loc.name,status:loc.status};});
+      out.hint='Copy the `id` of the location you want into the SQUARE_LOCATION_ID Script Property.';
+    }else{out.error=j.errors||body.slice(0,500);}
+  }catch(e){out.ok=false;out.error=e.message;}
+  Logger.log(JSON.stringify(out,null,2));
+  return out;
+}
+
 // Create a Square-hosted quick-pay checkout link for `amount` USD (a Number of
 // dollars). Returns the checkout URL string, or '' on any failure (logged, never
 // throws). A stable idempotency key derived from referenceId + amount means
