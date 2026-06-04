@@ -436,7 +436,12 @@ function renderDetail(reg) {
     </div>
     <div class="guest-list-section"><div class="guest-list-header"><strong>Attendees</strong><button id="add-attendee" class="btn btn-sm btn-white">Add</button></div><div id="attendee-list">${(reg.attendees || []).map(attendeeEditor).join('')}</div></div>
     <div class="detail-actions"><button id="save-detail" class="btn btn-primary full-width">Save Registration</button>
-      <div class="btn-row"><button id="goto-transfer" class="btn btn-white">Transfer / Swap</button><button id="goto-refund" class="btn btn-white">Refund</button></div></div>`;
+      <div class="btn-row"><button id="goto-transfer" class="btn btn-white">Transfer / Swap</button><button id="goto-refund" class="btn btn-white">Refund</button></div>
+      <div class="resend-row">
+        <input id="resend-email" type="email" autocomplete="off" placeholder="Send to a different email (optional — defaults to ${escapeHtml(reg.email || 'address on file')})">
+        <button id="resend-confirmation" class="btn btn-white">Resend Confirmation Email</button>
+      </div>
+      <div id="resend-status" class="resend-status" aria-live="polite"></div></div>`;
 }
 
 function collectDetail() {
@@ -464,6 +469,25 @@ async function saveDetail() {
   showToast('Registration saved.');
   logActivity(`Saved ${selectedRegistration}`);
   await selectRegistration(selectedRegistration);
+}
+
+async function resendConfirmation() {
+  if (!selectedRegistration) return showToast('Select a registration first.');
+  const emailEl = $('resend-email');
+  const statusEl = $('resend-status');
+  const email = emailEl ? emailEl.value.trim() : '';
+  if (statusEl) { statusEl.textContent = 'Sending…'; statusEl.classList.remove('error'); }
+  try {
+    const payload = await api(`/api/registration/${encodeURIComponent(selectedRegistration)}/resend-confirmation`, { method: 'POST', body: email ? { email } : {} });
+    const sentTo = payload.sentTo || email || (selectedBundle && selectedBundle.email) || '';
+    if (statusEl) statusEl.textContent = `Confirmation email sent${sentTo ? ' to ' + sentTo : ''}.`;
+    if (emailEl) emailEl.value = '';
+    showToast('Confirmation email sent.');
+    logActivity(`Resent confirmation for ${selectedRegistration}${email ? ' → ' + email : ''}`);
+  } catch (error) {
+    if (statusEl) { statusEl.textContent = error.message; statusEl.classList.add('error'); }
+    showToast(error.message);
+  }
 }
 
 async function savePayment() {
@@ -690,6 +714,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.target.id === 'save-detail') saveDetail().catch((error) => showToast(error.message));
     if (event.target.id === 'goto-transfer') switchTab('transfer');
     if (event.target.id === 'goto-refund') switchTab('payments');
+    if (event.target.id === 'resend-confirmation') resendConfirmation().catch((error) => showToast(error.message));
     if (event.target.id === 'add-attendee') {
       const count = document.querySelectorAll('#detail .attendee-card').length;
       if (count >= 5) return showToast('Maximum 5 attendees.');

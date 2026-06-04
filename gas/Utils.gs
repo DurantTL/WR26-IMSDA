@@ -10,6 +10,20 @@ function formatDate(d){return Utilities.formatDate(new Date(d),Session.getScript
 // the same attendee on a separate submission is intentionally allowed through.
 function isDuplicateEntry(entryId){var s=getSS().getSheetByName('Registrations');if(!s||s.getLastRow()<2)return false;var v=s.getRange(2,21,s.getLastRow()-1,1).getValues();return v.some(function(r){return String(r[0])===String(entryId);});}
 function isDuplicateWaitlistEntry(entryId){var s=getSS().getSheetByName('Waitlist');if(!s||s.getLastRow()<2)return false;var v=s.getRange(2,8,s.getLastRow()-1,1).getValues();return v.some(function(r){return String(r[0])===String(entryId);});}
+// Lets the WordPress queue confirm whether a Fluent Forms entry actually landed
+// before declaring a permanent failure. Google's front end can return an HTML 400
+// on the *response* even though GAS processed the POST (and de-duplicates by
+// entry_id), so a lost response is not a lost submission. Returns
+// {success, processed, registered, waitlisted}.
+function checkEntryProcessed(payload){
+  try{
+    var id=payload&&payload.entry_id;
+    if(id===undefined||id===null||id==='')return {success:false,message:'entry_id is required'};
+    var registered=isDuplicateEntry(id);
+    var waitlisted=isDuplicateWaitlistEntry(id);
+    return {success:true,processed:(registered||waitlisted),registered:registered,waitlisted:waitlisted};
+  }catch(e){return {success:false,message:e.message};}
+}
 function checkCapacity(){try{var cfg=getConfig()||{};var capacity=Number(cfg.CAPACITY||350);if(isNaN(capacity)||capacity<0)capacity=350;var active=getAllRegistrations({status:'active'}).length;var available=Math.max(capacity-active,0);return {success:true,capacity:capacity,active:active,available:available,full:available<1};}catch(e){return {success:false,message:e.message,capacity:Number((getConfig()||{}).CAPACITY||350)||350,active:0,available:0,full:false};}}
 function jsonResponse(data){return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);}
 

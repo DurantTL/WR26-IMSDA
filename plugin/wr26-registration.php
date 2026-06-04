@@ -396,6 +396,23 @@ function wr26_build_and_send($entry_id, $action, $extra = array()) {
     return true;
 }
 
+/**
+ * Ask GAS whether a Fluent Forms entry actually landed (in Registrations or
+ * Waitlist). Google's front end can return an HTML 400 on the *response* even
+ * though Apps Script processed the POST and de-duplicated by entry_id, so a lost
+ * response is not a lost submission. Returns the GAS response array (which carries
+ * 'registered' and 'waitlisted' booleans) only when it positively confirms the
+ * entry is present; otherwise returns null so the caller falls back to its normal
+ * failure handling.
+ */
+function wr26_check_entry_processed($entry_id) {
+    $res = wr26_gas_request(array('action' => 'checkEntryProcessed', 'entry_id' => intval($entry_id)));
+    if (is_array($res) && !empty($res['success']) && !empty($res['processed'])) {
+        return $res;
+    }
+    return null;
+}
+
 function wr26_process_dispatch_queue() {
     $queue = get_option('wr26_dispatch_queue', array());
     $failed = get_option('wr26_failed_submissions', array());
@@ -406,6 +423,26 @@ function wr26_process_dispatch_queue() {
         $item['attempts'] = intval($item['attempts']) + 1;
         $item['error'] = sanitize_text_field($result);
         if ($item['attempts'] >= 5) {
+            // Before declaring a permanent failure, confirm with GAS whether the
+            // entry actually landed. If it did, the retries were only losing the
+            // HTTP response (Google front-end 400s), not the submission — so drop
+            // it silently instead of moving it to failed and alerting the admin.
+            $processed = wr26_check_entry_processed($item['entry_id']);
+            if ($processed) {
+                // The success-path counter increment in wr26_build_and_send() never
+                // ran for this item (every attempt errored, or it would have been
+                // cleared already), so reconcile the local count here. Those counts
+                // gate the register-vs-waitlist decision in the FF hooks; increment
+                // the one matching where GAS actually placed the entry. GAS's own
+                // capacity check stays authoritative regardless.
+                if (!empty($processed['registered'])) {
+                    update_option('wr26_registered_count', intval(get_option('wr26_registered_count', 0)) + 1, false);
+                } elseif (!empty($processed['waitlisted'])) {
+                    update_option('wr26_waitlist_count', intval(get_option('wr26_waitlist_count', 0)) + 1, false);
+                }
+                error_log('WR26 entry '.intval($item['entry_id']).' confirmed present in GAS after '.intval($item['attempts']).' transient failures; cleared from queue (local count reconciled), no admin alert.');
+                continue;
+            }
             $item['failed_at'] = current_time('mysql');
             $failed[] = $item;
             wp_mail(get_option('admin_email'), 'WR26 Queue Failure', 'Entry '.$item['entry_id'].' failed: '.$result);
