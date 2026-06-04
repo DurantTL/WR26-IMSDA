@@ -289,9 +289,9 @@
         const feeNote = Number(pay.fee) > 0 ? ` (includes a $${Number(pay.fee).toFixed(2)} card processing fee)` : '';
         box.innerHTML = `<span class="balance-amount">Balance due: $${escapeHtml(balance.toFixed(2))}</span>`
           + `<a class="balance-pay-button" href="${escapeHtml(pay.url)}" target="_blank" rel="noopener">Pay $${escapeHtml(amount.toFixed(2))} by Card</a>`
-          + `<span class="balance-sub">Secure checkout hosted by Square${escapeHtml(feeNote)}. Or mail a check payable to IMSDA.</span>`;
+          + `<span class="balance-sub">Secure checkout hosted by Square${escapeHtml(feeNote)}. Or mail a check payable to the Iowa-Missouri Conference.</span>`;
       } else {
-        box.innerHTML = `<span class="balance-amount">Balance due: $${escapeHtml(balance.toFixed(2))}</span><span class="balance-sub">To pay by card, use the payment link in your confirmation email, or mail a check payable to IMSDA.</span>`;
+        box.innerHTML = `<span class="balance-amount">Balance due: $${escapeHtml(balance.toFixed(2))}</span><span class="balance-sub">To pay by card, use the payment link in your confirmation email, or mail a check payable to the Iowa-Missouri Conference.</span>`;
       }
       box.hidden = false;
       return;

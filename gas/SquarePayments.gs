@@ -145,7 +145,7 @@ function squarePayButtonHtml_(reg){
   if(!info)return '';
   var feeNote=info.fee>0?(' (includes a $'+info.fee.toFixed(2)+' card processing fee)'):'';
   return '<p><a href="'+escapeHtml(info.url)+'" style="display:inline-block;background:#7c3aed;color:#ffffff;padding:12px 22px;border-radius:8px;font-size:1.1em;font-weight:bold;text-decoration:none;">Pay $'+escapeHtml(info.total.toFixed(2))+' by Card Now</a></p>'+
-    '<p style="font-size:0.9em;color:#5b6470;margin-top:4px;">Secure checkout hosted by Square'+feeNote+'. Or mail a check payable to IMSDA.</p>';
+    '<p style="font-size:0.9em;color:#5b6470;margin-top:4px;">Secure checkout hosted by Square'+feeNote+'. Or mail a check payable to the Iowa-Missouri Conference.</p>';
 }
 
 // Record a PAY-LATER Square payment-link payment as collected. Driven by the
