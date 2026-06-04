@@ -293,6 +293,22 @@ function portalSaveRegistrationByMagicToken(payload){
   finally{lock.releaseLock();}
 }
 
+// Self-serve individual-attendee transfer: the registrant uses their magic link to
+// substitute one attendee in THEIR registration with a new person. The token pins
+// the registrationId, so a registrant can only transfer attendees in their own party.
+// Returns the refreshed bundle on success so the portal can re-render.
+function portalTransferAttendeeByMagicToken(payload){
+  try{
+    var v=portalValidateToken_((payload&&payload.token)||'',payload&&payload.requestIp);
+    if(!v.success)return v;
+    var result=transferAttendeeCore_(v.registrationId,payload,{source:'portal',actor:(v.email||'registrant'),notify:true});
+    if(!result.success)return result;
+    var bundle=portalGetRegistrationBundle(v.registrationId);
+    bundle.transfer=result;
+    return bundle;
+  }catch(e){return {success:false,message:e.message};}
+}
+
 function portalAdminSaveRegistration(payload){
   var lock=LockService.getScriptLock();
   if(!lock.tryLock(10000))return {success:false,message:'System busy, please try again'};

@@ -572,7 +572,8 @@ GET  /api/scan/:value
 ```text
 POST /api/payment
 POST /api/refund
-POST /api/transfer
+POST /api/transfer                  (whole registration → new person)
+POST /api/attendee-transfer         (one attendee → new person, in-place; registrar)
 POST /api/check-in
 POST /api/offline-actions
 ```
@@ -621,6 +622,7 @@ base + 2.9% + $0.30, for collection in the Square app). `/api/refund`,
 POST /api/magic-link/request
 POST /api/magic-link/registration
 POST /api/magic-link/save
+POST /api/magic-link/attendee-transfer   (self-serve: substitute one attendee in your own party)
 ```
 
 ---
@@ -822,9 +824,35 @@ Min Purchase: optional
 
 ## Transfer and waitlist workflow
 
-### Transfer
+### Transfer (whole registration)
 
 Use the legacy plugin/admin transfer flow to transfer one registration to another person. Transfers are logged to `TransferLog`.
+
+### Attendee transfer (one person, in-place)
+
+When only **one person** in a party needs to change — not the whole registration —
+use the individual-attendee transfer (GAS `transferAttendee` /
+`portalTransferAttendeeByMagicToken`). It is an **in-place substitution**: the chosen
+attendee's identity (name, email, phone, optional church) is replaced with the new
+person, while the **seat, party, and payment stay put**. Because the prior person's
+personal details no longer apply, the attendee's meal preference, dietary needs,
+childcare, volunteer flag, and seminar choices are **reset** for the new person (who
+can then set their own via the normal edit flow). The registration's **primary
+contact / payer is intentionally not changed** — use the whole-registration transfer
+for that.
+
+Two surfaces, both writing through the same core and logging to `TransferLog` +
+`AuditLog` (`attendeeTransfer`):
+
+- **Admin** — the staff app's registration detail shows a **Transfer** button on each
+  attendee card (`POST /api/attendee-transfer`, `registrar` role).
+- **Self-serve** — the registrant portal shows a **Transfer** button on each attendee
+  card; the magic-link token pins the registration, so a registrant can only
+  substitute attendees in their own party (`POST /api/magic-link/attendee-transfer`).
+
+The new attendee is emailed a welcome/confirmation, and the person who gave up the
+spot gets a courtesy notice when a distinct email is on file. The party keeps its
+single shared check-in QR, so no new QR is issued for the substitute.
 
 ### Waitlist
 

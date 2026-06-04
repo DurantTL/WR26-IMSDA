@@ -73,6 +73,34 @@ function sendWaitlistEmail(w){return sendEmailSafe_(Object.assign({to:w.email,su
 function sendWaitlistPromotionEmail(w,n,edit){var editUrl=portalMintLinkForRegistration_(n,'waitlist_promotion')||(String(edit||'')+'?token='+encodeURIComponent(String(n.editToken||'')));return sendEmailSafe_(Object.assign({to:n.email,subject:"Women's Retreat 2026 – Your Spot is Confirmed!",htmlBody:'<p>Great news! A spot opened up.</p><p>'+escapeHtml(n.firstName)+' '+escapeHtml(n.lastName)+'</p><p><a href="'+escapeHtml(editUrl)+'">Edit Registration</a></p><p><img src="'+escapeHtml(generateQRUrl(n.qrToken))+'"/></p>'},bccObj()));}
 function sendTransferEmail(o,n,reason,refund,edit){var sub="Women's Retreat 2026 – Registration Transfer Confirmation";sendEmailSafe_(Object.assign({to:o.email,subject:sub,htmlBody:'<p>Your registration has been transferred out.</p><p>Reason: '+escapeHtml(reason||'')+'</p><p>Refund notes: '+escapeHtml(refund||'')+'</p>'},bccObj()));var editUrl=portalMintLinkForRegistration_(n,'transfer')||(String(edit||'')+'?token='+encodeURIComponent(String(n.editToken||'')));return sendEmailSafe_(Object.assign({to:n.email,subject:sub,htmlBody:'<p>Your transfer registration is confirmed.</p><p><a href="'+escapeHtml(editUrl)+'">Edit Registration</a></p><p><img src="'+escapeHtml(generateQRUrl(n.qrToken))+'"/></p>'},bccObj()));}
 function sendEditConfirmationEmail(reg){return sendEmailSafe_(Object.assign({to:reg.email,subject:"Women's Retreat 2026 – Registration Updated",htmlBody:'<p>Your registration details were updated.</p><p>'+escapeHtml(reg.firstName)+' '+escapeHtml(reg.lastName)+' | '+escapeHtml(reg.church)+'</p>'},bccObj()));}
+// Individual-attendee transfer (in-place substitution) notice. Emails the new
+// attendee a welcome/confirmation, and — when a distinct address is on file — a
+// courtesy notice to the person who gave up the spot. The registration holder/payer
+// is unchanged, so the new attendee gets no edit/payment link; the holder manages
+// the registration and its single shared check-in QR.
+function sendAttendeeTransferEmail_(reg,oldName,oldEmail,newAttendee,reason){
+  var cfg=getConfig()||{};
+  var event=cfg.EVENT_NAME||"Women's Retreat 2026";
+  var dates=cfg.EVENT_DATES?(' ('+escapeHtml(cfg.EVENT_DATES)+')'):'';
+  var holder=(String(reg.firstName||'').trim()+' '+String(reg.lastName||'').trim()).trim();
+  var toNew=String((newAttendee&&newAttendee.email)||'').trim();
+  if(toNew&&isValidEmail_(toNew)){
+    var bodyNew='<p>Hello '+escapeHtml(newAttendee.firstName||'')+',</p>'+
+      '<p>You have been added as an attendee for '+escapeHtml(event)+dates+(holder?(' under '+escapeHtml(holder)+'’s registration'):'')+'.</p>'+
+      '<p>The registration holder manages payment and any changes. If you have dietary needs, childcare, or seminar preferences, please let them know so they can update your details, or contact us.</p>'+
+      '<p>We look forward to seeing you there!</p>';
+    sendEmailSafe_(Object.assign({to:toNew,subject:event+' – You’re Registered as an Attendee',htmlBody:bodyNew},bccObj()));
+  }
+  var toOld=String(oldEmail||'').trim();
+  if(toOld&&isValidEmail_(toOld)&&toOld.toLowerCase()!==toNew.toLowerCase()){
+    var bodyOld='<p>Hello '+escapeHtml(oldName||'')+',</p>'+
+      '<p>Your attendee spot for '+escapeHtml(event)+dates+' has been transferred to '+escapeHtml((String(newAttendee.firstName||'')+' '+String(newAttendee.lastName||'')).trim())+'.</p>'+
+      (reason?('<p>Reason: '+escapeHtml(reason)+'</p>'):'')+
+      '<p>If this was not expected, please contact us.</p>';
+    sendEmailSafe_(Object.assign({to:toOld,subject:event+' – Attendee Spot Transferred',htmlBody:bodyOld},bccObj()));
+  }
+  return {success:true};
+}
 // Staff-triggered re-send of a registrant's original confirmation email. Lets
 // staff recover a confirmation that bounced/was lost, or deliver it to a corrected
 // address WITHOUT changing the stored registration (pass payload.email to override

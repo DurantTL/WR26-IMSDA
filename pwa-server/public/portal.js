@@ -122,15 +122,35 @@
       }
       return out.join('');
     }).join('');
+    const attendeeId = attendee.attendee_id || attendee.attendeeId || '';
+    // The transfer control is only meaningful for an already-saved attendee (one with
+    // an id). New, unsaved rows added in the portal have no id yet, so we hide it.
+    const transferToggle = attendeeId
+      ? `<button class="btn btn-sm btn-white portal-transfer-toggle" type="button" data-transfer-toggle="${index}">Transfer</button>`
+      : '';
+    const transferPanel = attendeeId ? `
+      <div class="attendee-transfer" data-transfer-card="${index}" hidden>
+        <h4>Transfer this person to someone else</h4>
+        <p class="meta">Gives this seat to a new person and keeps the payment. Meal, dietary, childcare, and seminar choices reset for the new person, who will be emailed. Save any other changes first — transferring reloads your registration.</p>
+        <div class="form-grid compact-form">
+          <label>New First Name<input data-transfer-field="newFirstName" type="text"></label>
+          <label>New Last Name<input data-transfer-field="newLastName" type="text"></label>
+          <label>New Email<input data-transfer-field="newEmail" type="email"></label>
+          <label>New Phone<input data-transfer-field="newPhone" type="tel"></label>
+          <label>Reason (optional)<input data-transfer-field="reason" type="text"></label>
+        </div>
+        <button class="btn btn-primary full-width portal-transfer-confirm" type="button" data-confirm-transfer="${index}" data-attendee-id="${escapeHtml(attendeeId)}">Transfer This Person</button>
+      </div>` : '';
     return `<div class="attendee-card portal-attendee-card" data-attendee-index="${index}">
       <div class="portal-attendee-heading">
         <h3>Attendee ${index + 1}</h3>
-        ${removeButton}
+        <div class="portal-attendee-actions">${transferToggle}${removeButton}</div>
       </div>
-      <input type="hidden" data-attendee-field="attendee_id" value="${escapeHtml(attendee.attendee_id || attendee.attendeeId || '')}">
+      <input type="hidden" data-attendee-field="attendee_id" value="${escapeHtml(attendeeId)}">
       <div class="form-grid compact-form">${fields}</div>
       <h4>Seminar Preferences</h4>
       <div class="form-grid compact-form">${seminarFields}</div>
+      ${transferPanel}
     </div>`;
   }
 
@@ -180,6 +200,52 @@
         }
       });
     });
+    document.querySelectorAll('[data-transfer-toggle]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const card = button.closest('.portal-attendee-card');
+        const panel = card && card.querySelector('[data-transfer-card]');
+        if (panel) panel.hidden = !panel.hidden;
+      });
+    });
+    document.querySelectorAll('[data-confirm-transfer]').forEach((button) => {
+      button.addEventListener('click', () => transferAttendee(button).catch((error) => showStatus(error.message, 'error')));
+    });
+  }
+
+  async function transferAttendee(button) {
+    const card = button.closest('.portal-attendee-card');
+    if (!card) return;
+    const get = (field) => {
+      const el = card.querySelector(`[data-transfer-field="${field}"]`);
+      return el ? el.value.trim() : '';
+    };
+    const attendeeId = button.dataset.attendeeId || '';
+    const newFirstName = get('newFirstName');
+    const newLastName = get('newLastName');
+    const newEmail = get('newEmail');
+    if (!attendeeId) return showStatus('This attendee must be saved before it can be transferred.', 'error');
+    if (!newFirstName || !newLastName || !newEmail) return showStatus('New first name, last name, and email are required to transfer.', 'error');
+    if (!window.confirm(`Transfer this seat to ${newFirstName} ${newLastName}? This cannot be undone here, and any unsaved changes on this page will be lost.`)) return;
+    setBusy(button, true, 'Transfer This Person');
+    showStatus('Transferring… Please keep this page open.', 'saving');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    try {
+      const saved = await api('/api/magic-link/attendee-transfer', {
+        token: state.token,
+        attendeeId,
+        newFirstName,
+        newLastName,
+        newEmail,
+        newPhone: get('newPhone'),
+        reason: get('reason'),
+      });
+      renderBundle(saved);
+      showStatus(`✓ This seat has been transferred to ${newFirstName} ${newLastName}. They have been emailed.`, 'success');
+    } catch (error) {
+      showStatus(error.message, 'error');
+    } finally {
+      setBusy(button, false, 'Transfer This Person');
+    }
   }
 
   function formatSeminarPreference(pref = {}) {

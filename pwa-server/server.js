@@ -689,6 +689,32 @@ app.post('/api/transfer', noStore, apiWriteLimiter, requireRole('registrar'), as
   }
 });
 
+// Transfer a single attendee (in-place substitution) to a new person, keeping the
+// seat and payment. Distinct from /api/transfer, which moves the whole registration.
+app.post('/api/attendee-transfer', noStore, apiWriteLimiter, requireRole('registrar'), async (req, res) => {
+  try {
+    if (!isNonEmptyString(req.body.registrationId)) return validationError(res, 'registrationId is required');
+    if (!isNonEmptyString(req.body.attendeeId)) return validationError(res, 'attendeeId is required');
+    if (!isNonEmptyString(req.body.newFirstName) || !isNonEmptyString(req.body.newLastName)) return validationError(res, 'newFirstName and newLastName are required');
+    if (!isValidEmail(req.body.newEmail)) return validationError(res, 'A valid newEmail is required');
+    const payload = await gasRequest('transferAttendee', {
+      registrationId: req.body.registrationId,
+      attendeeId: req.body.attendeeId,
+      newFirstName: req.body.newFirstName,
+      newLastName: req.body.newLastName,
+      newEmail: req.body.newEmail,
+      newPhone: req.body.newPhone || '',
+      newChurch: req.body.newChurch || '',
+      reason: req.body.reason || '',
+      adminUser: req.session.sub,
+    });
+    if (payload.success) await refreshCache(true);
+    res.status(payload.success ? 200 : 400).json({ ...payload, sync: getSyncMeta() });
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message, sync: getSyncMeta() });
+  }
+});
+
 // Public, unauthenticated list of active seminars (titles only) so the registrant
 // portal and worker page can build seminar dropdowns that match what's assignable.
 // Read-only and rate-limited; exposes no PII.
@@ -1000,6 +1026,33 @@ app.post('/api/magic-link/save', noStore, apiWriteLimiter, async (req, res) => {
     }, false);
     // Refresh the staff cache in the background so the registrant gets their
     // confirmation immediately instead of waiting on a full re-sync of all data.
+    if (payload.success) refreshCache(true).catch(() => {});
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+// Self-serve attendee transfer: the registrant uses their magic-link token to
+// substitute one attendee in their own party. The token pins the registration, so
+// the registrationId is never trusted from the client here.
+app.post('/api/magic-link/attendee-transfer', noStore, apiWriteLimiter, async (req, res) => {
+  try {
+    if (!isNonEmptyString(req.body.token)) return validationError(res, 'token is required');
+    if (!isNonEmptyString(req.body.attendeeId)) return validationError(res, 'attendeeId is required');
+    if (!isNonEmptyString(req.body.newFirstName) || !isNonEmptyString(req.body.newLastName)) return validationError(res, 'newFirstName and newLastName are required');
+    if (!isValidEmail(req.body.newEmail)) return validationError(res, 'A valid newEmail is required');
+    const payload = await gasRequest('portalTransferAttendeeByMagicToken', {
+      token: req.body.token,
+      requestIp: req.ip,
+      attendeeId: req.body.attendeeId,
+      newFirstName: req.body.newFirstName,
+      newLastName: req.body.newLastName,
+      newEmail: req.body.newEmail,
+      newPhone: req.body.newPhone || '',
+      newChurch: req.body.newChurch || '',
+      reason: req.body.reason || '',
+    }, false);
     if (payload.success) refreshCache(true).catch(() => {});
     res.status(payload.success ? 200 : 400).json(payload);
   } catch (error) {
