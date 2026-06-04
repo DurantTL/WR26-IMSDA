@@ -606,6 +606,24 @@ app.post('/api/registration/:id', noStore, apiWriteLimiter, requireRole('registr
   }
 });
 
+// Re-send a registrant's confirmation email. With no body it goes to the address
+// on file; pass { email } to deliver to a corrected/alternate address for this
+// send only (the stored registration is not changed).
+app.post('/api/registration/:id/resend-confirmation', noStore, apiWriteLimiter, requireRole('registrar', 'payments', 'checkin'), async (req, res) => {
+  try {
+    const email = req.body.email ? String(req.body.email).trim() : '';
+    if (email && !isValidEmail(email)) return validationError(res, 'Provide a valid email address, or leave it blank to use the address on file');
+    const payload = await gasRequest('resendConfirmationEmail', {
+      registrationId: req.params.id,
+      email: email || undefined,
+      adminUser: req.session.sub,
+    });
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
 app.post('/api/payment', noStore, apiWriteLimiter, requireRole('payments', 'registrar', 'checkin'), async (req, res) => {
   try {
     if (!isNonEmptyString(req.body.registrationId)) return validationError(res, 'registrationId is required');

@@ -73,3 +73,32 @@ function sendWaitlistEmail(w){return sendEmailSafe_(Object.assign({to:w.email,su
 function sendWaitlistPromotionEmail(w,n,edit){var editUrl=portalMintLinkForRegistration_(n,'waitlist_promotion')||(String(edit||'')+'?token='+encodeURIComponent(String(n.editToken||'')));return sendEmailSafe_(Object.assign({to:n.email,subject:"Women's Retreat 2026 – Your Spot is Confirmed!",htmlBody:'<p>Great news! A spot opened up.</p><p>'+escapeHtml(n.firstName)+' '+escapeHtml(n.lastName)+'</p><p><a href="'+escapeHtml(editUrl)+'">Edit Registration</a></p><p><img src="'+escapeHtml(generateQRUrl(n.qrToken))+'"/></p>'},bccObj()));}
 function sendTransferEmail(o,n,reason,refund,edit){var sub="Women's Retreat 2026 – Registration Transfer Confirmation";sendEmailSafe_(Object.assign({to:o.email,subject:sub,htmlBody:'<p>Your registration has been transferred out.</p><p>Reason: '+escapeHtml(reason||'')+'</p><p>Refund notes: '+escapeHtml(refund||'')+'</p>'},bccObj()));var editUrl=portalMintLinkForRegistration_(n,'transfer')||(String(edit||'')+'?token='+encodeURIComponent(String(n.editToken||'')));return sendEmailSafe_(Object.assign({to:n.email,subject:sub,htmlBody:'<p>Your transfer registration is confirmed.</p><p><a href="'+escapeHtml(editUrl)+'">Edit Registration</a></p><p><img src="'+escapeHtml(generateQRUrl(n.qrToken))+'"/></p>'},bccObj()));}
 function sendEditConfirmationEmail(reg){return sendEmailSafe_(Object.assign({to:reg.email,subject:"Women's Retreat 2026 – Registration Updated",htmlBody:'<p>Your registration details were updated.</p><p>'+escapeHtml(reg.firstName)+' '+escapeHtml(reg.lastName)+' | '+escapeHtml(reg.church)+'</p>'},bccObj()));}
+// Staff-triggered re-send of a registrant's original confirmation email. Lets
+// staff recover a confirmation that bounced/was lost, or deliver it to a corrected
+// address WITHOUT changing the stored registration (pass payload.email to override
+// the recipient just for this send). Attendee names are rebuilt from the Attendees
+// sheet so the email mirrors the original. Returns {success, sentTo} or {success:false,message}.
+function resendConfirmationEmail(payload){
+  try{
+    var id=payload&&payload.registrationId;
+    if(!id)return {success:false,message:'registrationId is required'};
+    var reg=getRegistrationById(id);
+    if(!reg)return {success:false,message:'Registration not found'};
+    var overrideEmail=String((payload&&payload.email)||'').trim();
+    // Shallow-copy so an override recipient never mutates the stored row.
+    var target={};Object.keys(reg).forEach(function(k){target[k]=reg[k];});
+    if(overrideEmail){
+      if(!isValidEmail_(overrideEmail))return {success:false,message:'Invalid email address'};
+      target.email=overrideEmail;
+    }
+    if(!isValidEmail_(target.email))return {success:false,message:'This registration has no valid email on file. Enter an address to send to.'};
+    var attendees=portalReadAllAttendees_()
+      .filter(function(a){return String(a.registrationId)===String(id);})
+      .map(function(a){return {first_name:a.first_name,last_name:a.last_name,attendee_type:a.attendee_type};});
+    var edit=(payload&&payload.edit_page_url)||getConfig().EDIT_PAGE_URL;
+    var result=sendConfirmationEmail(target,edit,{attendees:attendees});
+    if(result&&result.sent===false)return {success:false,message:'Email could not be sent: '+(result.reason||'unknown')};
+    logAudit_('resendConfirmation',id,(payload&&payload.adminUser)||'staff',overrideEmail?('Resent to override address '+overrideEmail):('Resent to '+target.email));
+    return {success:true,sentTo:target.email};
+  }catch(e){return {success:false,message:e.message};}
+}
