@@ -82,6 +82,10 @@
   function WR26Roster($mount) {
     this.$mount = $mount;
     this.$form = $mount.closest('form');
+    // Tag the form so the stylesheet can scope mobile layout fixes to this
+    // form without relying on the CSS :has() selector — some asset optimizers
+    // (e.g. FlyingPress) strip :has() rules, which silently breaks them.
+    this.$form.addClass('wr26-form');
     this.attendees = [newAttendee()];
     this.availability = {}; // slot||normTitle -> {capacity, first_choice_count, ...}
     this.activateRoster();

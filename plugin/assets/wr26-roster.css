@@ -213,26 +213,36 @@
   .wr26-pick { flex: 1 1 100%; }
 }
 
-/* ---- Mobile page-overflow guard ----------------------------------------
+/* ---- Mobile: force the form to fit the screen --------------------------
  * Symptom: on a phone the ENTIRE form — header box, every field, the seminar
- * grid, all the way down — is clipped on the right edge, not just the cards.
+ * grid, all the way down — runs off the right edge, not just the cards.
  *
- * Why: a <form> is a normal block, so an overflowing CHILD can't clip a
- * sibling like the header; the header would simply wrap. For the whole form
- * (header included) to run off-screen, one of the form's ANCESTORS — a
- * Fluent Forms container or a Breakdance section/column — is itself sized
- * wider than the viewport, so the entire form column hangs off the right.
- * The roster's own max-width can't undo a width imposed from above.
+ * Why: the Fluent Forms <form> was rendering wider than the viewport (a child
+ * with min-width:auto won't shrink, so it forces the whole form wide), which
+ * drags the page sideways. Clipping the overflow only hides it; the form has
+ * to actually shrink to fit.
  *
- * Fix: cap every ancestor of the WR26 form to the viewport, and let the form
- * clip any residual horizontal overflow. Scoped with :has() to the WR26 form
- * only (it contains #wr26-roster), so no other form or page is affected. */
+ * Fix: force the form (.wr26-form, added by wr26-roster.js) and everything
+ * inside it to the viewport width and let it reflow. We target a real class
+ * instead of :has() because some asset optimizers (FlyingPress) strip :has()
+ * rules — which is why the earlier :has()-scoped version silently did nothing
+ * on the live site. */
 @media (max-width: 782px) {
-  :has(form:has(#wr26-roster)) { max-width: 100% !important; }
-  form:has(#wr26-roster) { overflow-x: hidden; }
-  /* Let flex/grid children shrink below their content size instead of forcing
-     the column wide (min-width:auto is the usual flexbox overflow culprit). */
-  form:has(#wr26-roster) * { min-width: 0; }
-  form:has(#wr26-roster) img,
-  form:has(#wr26-roster) table { max-width: 100%; }
+  .wr26-form {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+    overflow-x: clip;
+  }
+  /* min-width:0 lets flex/grid children shrink below their content size
+     (min-width:auto is the usual culprit); max-width keeps any single child
+     from forcing the form wider than the screen. */
+  .wr26-form * {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+  .wr26-form img,
+  .wr26-form table { max-width: 100% !important; }
 }
