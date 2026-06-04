@@ -29,8 +29,8 @@ function sendConfirmationEmail(reg,edit,context){
     ? '<p>Thank you for your payment of <b>$'+escapeHtml(String(amountDisplay))+'</b>. Your registration is fully confirmed!</p>'
     : '<p>A balance of <b>$'+escapeHtml(String(amountDisplay))+'</b> is due.</p>'+
       (payButton
-        ? '<p style="font-size:1.1em;font-weight:bold;">Please pay your registration fee using the secure card button below, or mail a check payable to IMSDA. You can also pay anytime from your registration portal (link below).</p>'+payButton
-        : '<p style="font-size:1.1em;font-weight:bold;">Please mail a check payable to IMSDA. If you would prefer to pay by card, open your registration portal using the link below and use the “Pay by Card” button there.</p>');
+        ? '<p style="font-size:1.1em;font-weight:bold;">Please pay your registration fee using the secure card button below, or mail a check payable to the Iowa-Missouri Conference. You can also pay anytime from your registration portal (link below).</p>'+payButton
+        : '<p style="font-size:1.1em;font-weight:bold;">Please mail a check payable to the Iowa-Missouri Conference. If you would prefer to pay by card, open your registration portal using the link below and use the “Pay by Card” button there.</p>');
   var editLink=editUrl?'<p><a href="'+escapeHtml(editUrl)+'">'+(isPaid?'Edit your registration details':'View, pay, or edit your registration')+'</a></p>':'';
   var qrBlock='<p><img src="'+escapeHtml(generateQRUrl(reg.qrToken))+'"/></p><p>Show this QR code at check-in.</p>';
   // Final approved informational copy (IA-MO Women's Ministries). Static prose,
