@@ -115,7 +115,9 @@ function rowToAttendee_(r){
     dietary_needs:r[9],
     childcare_needed:r[10],
     seminar_preferences_complete:r[11],
-    notes:r[12]
+    notes:r[12],
+    childcare_children:r[13],
+    volunteer:r[14]
   };
 }
 
@@ -190,6 +192,8 @@ function normalizePortalAttendees_(registrationId,attendees){
       meal_preference:String(a.meal_preference||a.mealPreference||'').trim(),
       dietary_needs:String(a.dietary_needs||a.dietaryNeeds||'').trim(),
       childcare_needed:String(a.childcare_needed||a.childcareNeeded||'').trim(),
+      childcare_children:String(a.childcare_children||a.childcareChildren||'').trim(),
+      volunteer:String(a.volunteer||'').trim(),
       seminar_preferences:a.seminar_preferences||a.seminarPreferences||{},
       notes:String(a.notes||'').trim()
     };
@@ -219,6 +223,8 @@ function preserveExistingAttendeeFields_(registrationId,normalized){
       if(!prev)return;
       if(!a.email)a.email=prev.email||'';
       if(!a.church)a.church=prev.church||'';
+      if(!a.childcare_children)a.childcare_children=prev.childcare_children||'';
+      if(!a.volunteer)a.volunteer=prev.volunteer||'';
     });
   }catch(e){Logger.log('preserveExistingAttendeeFields_ failed: '+e.message);}
 }

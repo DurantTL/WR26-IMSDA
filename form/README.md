@@ -25,7 +25,20 @@ source it's built from or documentation.
 > interactive UI ships as `plugin/assets/wr26-roster.js` + `wr26-roster.css`.
 > It collects an **uncapped** list of attendees and their ranked seminar choices,
 > serializes them into `attendees_json`, and keeps `attendee_count` in sync so the
-> summary and GAS price correctly.
+> summary and GAS price correctly. Per attendee it also captures **how many
+> children need care** (shown only when "Childcare needed? = Yes" — we no longer
+> ask for each child's name/age, just the count) and a **"Willing to volunteer to
+> help?"** yes/no. Both flow through `attendees_json` → the plugin parser → GAS,
+> which writes them to the new **Children Needing Care** and **Volunteer** columns
+> on the Attendees sheet (run `wr26EnsureSheetSetup()` once to add the columns to
+> an existing sheet). They also appear in the `registration_roster_preview` summary
+> used by the admin notification and the registration PDF.
+>
+> **Arrival/Departure dates were removed** from the registration form (we don't
+> need to know when people arrive/leave). The Sheets columns and the portal date
+> fields remain so old records are undisturbed; confirmation emails now omit those
+> lines when empty. If you ever re-add them, put them back in the base form and the
+> validator's `requiredTopLevel` list, then regenerate.
 >
 > **Field order matters here.** The patch generator mounts `#wr26-roster`
 > *directly above* the `Attendee 1` section, so the rich roster is the primary

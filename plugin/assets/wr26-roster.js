@@ -74,7 +74,8 @@
     return {
       first_name: '', last_name: '', phone: '', email: '',
       attendee_type: 'adult', meal_preference: 'regular',
-      dietary_needs: '', childcare_needed: 'no',
+      dietary_needs: '', childcare_needed: 'no', childcare_children: '',
+      volunteer: 'no',
       seminar_preferences: {}
     };
   }
@@ -135,7 +136,11 @@
       lines.push('• ' + name + ' (' + (a.attendee_type || 'adult') + ', ' + (a.meal_preference || 'regular') + ')');
       var dietary = String(a.dietary_needs || '').trim();
       if (dietary) lines.push('    Dietary: ' + dietary);
-      if (String(a.childcare_needed) === 'yes') lines.push('    Childcare needed: yes');
+      if (String(a.childcare_needed) === 'yes') {
+        var kids = String(a.childcare_children || '').trim();
+        lines.push('    Childcare needed: yes' + (kids ? ' (' + kids + ' child' + (kids === '1' ? '' : 'ren') + ')' : ''));
+      }
+      if (String(a.volunteer) === 'yes') lines.push('    Willing to volunteer: yes');
       Object.keys(a.seminar_preferences || {}).forEach(function (slot) {
         var p = a.seminar_preferences[slot] || {};
         var picks = [p.pref_1, p.pref_2].filter(Boolean).join(' / ');
@@ -203,6 +208,16 @@
     h += select('childcare_needed', 'Childcare needed?', [
       { value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }
     ], a.childcare_needed);
+    // How many children need care — shown only when childcare is requested. We no
+    // longer collect each child's name/age; the count is enough to plan staffing
+    // (and correctly handles twins/multiple children for one attendee).
+    var ccShow = String(a.childcare_needed) === 'yes';
+    h += '<div class="wr26-field wr26-childcare-count"' + (ccShow ? '' : ' style="display:none"') + '>' +
+      '<label>How many children need care?</label>' +
+      '<input type="number" min="1" step="1" inputmode="numeric" data-field="childcare_children" value="' + esc(a.childcare_children) + '"></div>';
+    h += select('volunteer', 'Willing to volunteer to help at the retreat?', [
+      { value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }
+    ], a.volunteer);
     h += '</div>';
     h += '<div class="wr26-field wr26-field-wide"><label>Dietary needs / allergies</label>' +
       '<textarea data-field="dietary_needs" rows="2">' + esc(a.dietary_needs) + '</textarea></div>';
@@ -308,6 +323,18 @@
       var field = $el.data('field');
       if (self.attendees[idx]) {
         self.attendees[idx][field] = $el.val();
+        // Toggle the "how many children" field with the childcare answer, and clear
+        // the count when childcare is set back to "no" so stale numbers don't linger.
+        if (field === 'childcare_needed') {
+          var $cc = $el.closest('.wr26-attendee').find('.wr26-childcare-count');
+          if ($el.val() === 'yes') {
+            $cc.show();
+          } else {
+            $cc.hide();
+            self.attendees[idx].childcare_children = '';
+            $cc.find('input').val('');
+          }
+        }
         self.sync();
       }
     });

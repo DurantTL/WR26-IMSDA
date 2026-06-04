@@ -17,7 +17,9 @@ function portalReadAllAttendees_(){
       dietary_needs:r[9],
       childcare_needed:r[10],
       seminar_preferences_complete:r[11],
-      notes:r[12]
+      notes:r[12],
+      childcare_children:r[13],
+      volunteer:r[14]
     };
   });
 }
