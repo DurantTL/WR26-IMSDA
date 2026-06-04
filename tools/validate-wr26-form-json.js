@@ -57,8 +57,6 @@ const requiredTopLevel = [
   'phone',
   'church',
   'church_other',
-  'arrival_date',
-  'departure_date',
   'emergency_contact_name',
   'emergency_contact_phone',
   'special_needs',

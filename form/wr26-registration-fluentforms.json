@@ -1121,130 +1121,6 @@
           "uniqElKey": "el_WR26_8_church_other"
         },
         {
-          "index": 9,
-          "element": "select",
-          "attributes": {
-            "name": "arrival_date",
-            "value": "",
-            "id": "",
-            "class": ""
-          },
-          "settings": {
-            "dynamic_default_value": "",
-            "label": "Arrival Date",
-            "admin_field_label": "Arrival Date",
-            "help_message": "",
-            "container_class": "",
-            "label_placement": "",
-            "placeholder": "- Select -",
-            "advanced_options": [
-              {
-                "label": "Friday, October 9, 2026",
-                "value": "2026-10-09",
-                "calc_value": "",
-                "id": 0
-              },
-              {
-                "label": "Saturday, October 10, 2026",
-                "value": "2026-10-10",
-                "calc_value": "",
-                "id": 1
-              }
-            ],
-            "validation_rules": {
-              "required": {
-                "value": true,
-                "message": "This field is required",
-                "global_message": "This field is required",
-                "global": true
-              }
-            },
-            "conditional_logics": [],
-            "visible": true,
-            "calc_value_status": false,
-            "enable_image_input": false,
-            "values_visible": false,
-            "enable_select_2": "no",
-            "randomize_options": "no",
-            "inventory_type": false,
-            "inventory_stockout_message": "This Item is Stock Out",
-            "hide_choice_when_stockout": "no",
-            "hide_input_when_stockout": "no",
-            "disable_input_when_stockout": "no",
-            "show_stock": "no",
-            "simple_inventory": "",
-            "single_inventory_stock": 10,
-            "stock_quantity_label": " - {remaining_quantity} available",
-            "global_inventory": ""
-          },
-          "editor_options": {
-            "title": "Dropdown",
-            "icon_class": "ff-edit-dropdown",
-            "element": "select",
-            "template": "select"
-          },
-          "uniqElKey": "el_WR26_9_arrival_date"
-        },
-        {
-          "index": 10,
-          "element": "select",
-          "attributes": {
-            "name": "departure_date",
-            "value": "",
-            "id": "",
-            "class": ""
-          },
-          "settings": {
-            "dynamic_default_value": "",
-            "label": "Departure Date",
-            "admin_field_label": "Departure Date",
-            "help_message": "",
-            "container_class": "",
-            "label_placement": "",
-            "placeholder": "- Select -",
-            "advanced_options": [
-              {
-                "label": "Sunday, October 11, 2026",
-                "value": "2026-10-11",
-                "calc_value": "",
-                "id": 0
-              }
-            ],
-            "validation_rules": {
-              "required": {
-                "value": true,
-                "message": "This field is required",
-                "global_message": "This field is required",
-                "global": true
-              }
-            },
-            "conditional_logics": [],
-            "visible": true,
-            "calc_value_status": false,
-            "enable_image_input": false,
-            "values_visible": false,
-            "enable_select_2": "no",
-            "randomize_options": "no",
-            "inventory_type": false,
-            "inventory_stockout_message": "This Item is Stock Out",
-            "hide_choice_when_stockout": "no",
-            "hide_input_when_stockout": "no",
-            "disable_input_when_stockout": "no",
-            "show_stock": "no",
-            "simple_inventory": "",
-            "single_inventory_stock": 10,
-            "stock_quantity_label": " - {remaining_quantity} available",
-            "global_inventory": ""
-          },
-          "editor_options": {
-            "title": "Dropdown",
-            "icon_class": "ff-edit-dropdown",
-            "element": "select",
-            "template": "select"
-          },
-          "uniqElKey": "el_WR26_10_departure_date"
-        },
-        {
           "index": 11,
           "element": "input_text",
           "attributes": {
@@ -7397,7 +7273,7 @@
         "id": 1574,
         "form_id": "89",
         "meta_key": "_pdf_feeds",
-        "value": "{\"name\": \"WR26 Registration PDF\", \"template_key\": \"general\", \"settings\": {\"header\": \"<div style=\\\"font-family: Arial, Helvetica, sans-serif; color: #111; padding: 0 0 10px 0; border-bottom: 2px solid #111;\\\">\\n  <table style=\\\"width:100%; border-collapse:collapse;\\\">\\n    <tr>\\n      <td style=\\\"width:70%; vertical-align:top;\\\">\\n        <h1 style=\\\"font-size:22px; margin:0 0 6px 0; text-transform:uppercase;\\\">Women&rsquo;s Retreat 2026 Registration</h1>\\n        <div style=\\\"font-size:12px; line-height:1.4;\\\">\\n          Early Bird: $125 through August 14 &nbsp; | &nbsp; Regular: $145 through September 17<br>\\n          No boxed dinners. Pay Later is the default. Please review payment/edit details after submission.\\n        </div>\\n      </td>\\n      <td style=\\\"width:30%; text-align:right; vertical-align:top;\\\">\\n        <div style=\\\"font-size:12px; border:1px solid #111; padding:8px; display:inline-block;\\\">\\n          WR26<br>IA-MO Conference\\n        </div>\\n      </td>\\n    </tr>\\n  </table>\\n</div>\", \"footer\": \"<div style=\\\"font-family: Arial, Helvetica, sans-serif; color:#111; font-size:11px; padding-top:8px; border-top:1px solid #111;\\\">\\n  <table style=\\\"width:100%; border-collapse:collapse;\\\">\\n    <tr>\\n      <td style=\\\"width:75%; vertical-align:top;\\\">\\n        Iowa-Missouri Conference Women&rsquo;s Retreat 2026<br>\\n        Please contact the retreat registration team with payment or registration questions.\\n      </td>\\n      <td style=\\\"width:25%; text-align:right; vertical-align:top;\\\">WR26</td>\\n    </tr>\\n  </table>\\n</div>\", \"body\": \"<div style=\\\"font-family: Arial, Helvetica, sans-serif; color:#111; font-size:12px; line-height:1.35;\\\">\\n  <table style=\\\"width:100%; border-collapse:collapse; margin-top:12px;\\\">\\n    <tr><td colspan=\\\"2\\\" style=\\\"background:#eeeeee; border:1px solid #111; padding:6px 8px; font-weight:bold; text-transform:uppercase;\\\">Primary Contact</td></tr>\\n    <tr>\\n      <td style=\\\"width:50%; border:1px solid #111; padding:8px;\\\"><strong>Name:</strong><br>{inputs.first_name} {inputs.last_name}</td>\\n      <td style=\\\"width:50%; border:1px solid #111; padding:8px;\\\"><strong>Church:</strong><br>{inputs.church} {inputs.church_other}</td>\\n    </tr>\\n    <tr>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Email:</strong><br>{inputs.email}</td>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Phone:</strong><br>{inputs.phone}</td>\\n    </tr>\\n    <tr>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Arrival:</strong><br>{inputs.arrival_date}</td>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Departure:</strong><br>{inputs.departure_date}</td>\\n    </tr>\\n    <tr>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Emergency Contact:</strong><br>{inputs.emergency_contact_name}</td>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Emergency Phone:</strong><br>{inputs.emergency_contact_phone}</td>\\n    </tr>\\n  </table>\\n  <div style=\\\"margin-top:12px; border:1px solid #111; padding:8px;\\\">\\n    <strong>Special Needs / Accessibility Notes:</strong><br>{inputs.special_needs}\\n  </div>\\n  <div style=\\\"margin-top:14px;\\\"><div style=\\\"background:#eeeeee; border:1px solid #111; padding:6px 8px; font-weight:bold; text-transform:uppercase;\\\">Attendees / Meals / Seminar Preferences</div><div style=\\\"border:1px solid #111; border-top:none; padding:8px; white-space:pre-wrap; font-size:12px; line-height:1.4;\\\">{inputs.registration_roster_preview}</div></div>\\n  <div style=\\\"margin-top:12px; border:1px solid #111; padding:8px;\\\">\\n    <strong>Additional Notes:</strong><br>{inputs.attendee_notes}\\n  </div>\\n  <table style=\\\"width:100%; border-collapse:collapse; margin-top:12px;\\\">\\n    <tr><td colspan=\\\"2\\\" style=\\\"background:#eeeeee; border:1px solid #111; padding:6px 8px; font-weight:bold; text-transform:uppercase;\\\">Payment</td></tr>\\n    <tr>\\n      <td style=\\\"width:50%; border:1px solid #111; padding:8px;\\\"><strong>Payment Method:</strong><br>{inputs.payment_method}</td>\\n      <td style=\\\"width:50%; border:1px solid #111; padding:8px;\\\"><strong>Promo Code:</strong><br>{inputs.promo_code}</td>\\n    </tr>\\n    <tr>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Registration Total:</strong><br>{inputs.payment_summary}</td>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Worker Registration Flag:</strong><br>{inputs.worker_registration}</td>\\n    </tr>\\n  </table>\\n  <div style=\\\"margin-top:12px; border:1px solid #111; padding:8px;\\\"><strong>Acknowledgment:</strong><br>{inputs.acknowledgment}</div>\\n  <div style=\\\"margin-top:14px; font-size:11px; color:#333;\\\"><strong>Submission Note:</strong> This PDF was generated from the online WR26 registration submission.</div>\\n</div>\", \"shortcode\": \"{pdf.download_link.1574}\", \"allow_download\": \"1\"}, \"appearance\": {\"paper_size\": \"Letter\", \"orientation\": \"P\", \"font\": \"default\", \"font_family\": \"dejavusans\", \"font_size\": \"12\", \"font_color\": \"#323232\", \"accent_color\": \"#989797\", \"heading_color\": \"#000000\", \"language_direction\": \"ltr\", \"watermark_img_behind\": \"false\"}}"
+        "value": "{\"name\": \"WR26 Registration PDF\", \"template_key\": \"general\", \"settings\": {\"header\": \"<div style=\\\"font-family: Arial, Helvetica, sans-serif; color: #111; padding: 0 0 10px 0; border-bottom: 2px solid #111;\\\">\\n  <table style=\\\"width:100%; border-collapse:collapse;\\\">\\n\\n    <tr>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Emergency Contact:</strong><br>{inputs.emergency_contact_name}</td>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Emergency Phone:</strong><br>{inputs.emergency_contact_phone}</td>\\n    </tr>\\n  </table>\\n  <div style=\\\"margin-top:12px; border:1px solid #111; padding:8px;\\\">\\n    <strong>Special Needs / Accessibility Notes:</strong><br>{inputs.special_needs}\\n  </div>\\n  <div style=\\\"margin-top:14px;\\\"><div style=\\\"background:#eeeeee; border:1px solid #111; padding:6px 8px; font-weight:bold; text-transform:uppercase;\\\">Attendees / Meals / Seminar Preferences</div><div style=\\\"border:1px solid #111; border-top:none; padding:8px; white-space:pre-wrap; font-size:12px; line-height:1.4;\\\">{inputs.registration_roster_preview}</div></div>\\n  <div style=\\\"margin-top:12px; border:1px solid #111; padding:8px;\\\">\\n    <strong>Additional Notes:</strong><br>{inputs.attendee_notes}\\n  </div>\\n  <table style=\\\"width:100%; border-collapse:collapse; margin-top:12px;\\\">\\n    <tr><td colspan=\\\"2\\\" style=\\\"background:#eeeeee; border:1px solid #111; padding:6px 8px; font-weight:bold; text-transform:uppercase;\\\">Payment</td></tr>\\n    <tr>\\n      <td style=\\\"width:50%; border:1px solid #111; padding:8px;\\\"><strong>Payment Method:</strong><br>{inputs.payment_method}</td>\\n      <td style=\\\"width:50%; border:1px solid #111; padding:8px;\\\"><strong>Promo Code:</strong><br>{inputs.promo_code}</td>\\n    </tr>\\n    <tr>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Registration Total:</strong><br>{inputs.payment_summary}</td>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Worker Registration Flag:</strong><br>{inputs.worker_registration}</td>\\n    </tr>\\n  </table>\\n  <div style=\\\"margin-top:12px; border:1px solid #111; padding:8px;\\\"><strong>Acknowledgment:</strong><br>{inputs.acknowledgment}</div>\\n  <div style=\\\"margin-top:14px; font-size:11px; color:#333;\\\"><strong>Submission Note:</strong> This PDF was generated from the online WR26 registration submission.</div>\\n</div>\", \"shortcode\": \"{pdf.download_link.1574}\", \"allow_download\": \"1\"}, \"appearance\": {\"paper_size\": \"Letter\", \"orientation\": \"P\", \"font\": \"default\", \"font_family\": \"dejavusans\", \"font_size\": \"12\", \"font_color\": \"#323232\", \"accent_color\": \"#989797\", \"heading_color\": \"#000000\", \"language_direction\": \"ltr\", \"watermark_img_behind\": \"false\"}}"
       },
       {
         "id": 1563,
@@ -7489,7 +7365,7 @@
         "id": 1574,
         "form_id": "89",
         "meta_key": "_pdf_feeds",
-        "value": "{\"name\": \"WR26 Registration PDF\", \"template_key\": \"general\", \"settings\": {\"header\": \"<div style=\\\"font-family: Arial, Helvetica, sans-serif; color: #111; padding: 0 0 10px 0; border-bottom: 2px solid #111;\\\">\\n  <table style=\\\"width:100%; border-collapse:collapse;\\\">\\n    <tr>\\n      <td style=\\\"width:70%; vertical-align:top;\\\">\\n        <h1 style=\\\"font-size:22px; margin:0 0 6px 0; text-transform:uppercase;\\\">Women&rsquo;s Retreat 2026 Registration</h1>\\n        <div style=\\\"font-size:12px; line-height:1.4;\\\">\\n          Early Bird: $125 through August 14 &nbsp; | &nbsp; Regular: $145 through September 17<br>\\n          No boxed dinners. Pay Later is the default. Please review payment/edit details after submission.\\n        </div>\\n      </td>\\n      <td style=\\\"width:30%; text-align:right; vertical-align:top;\\\">\\n        <div style=\\\"font-size:12px; border:1px solid #111; padding:8px; display:inline-block;\\\">\\n          WR26<br>IA-MO Conference\\n        </div>\\n      </td>\\n    </tr>\\n  </table>\\n</div>\", \"footer\": \"<div style=\\\"font-family: Arial, Helvetica, sans-serif; color:#111; font-size:11px; padding-top:8px; border-top:1px solid #111;\\\">\\n  <table style=\\\"width:100%; border-collapse:collapse;\\\">\\n    <tr>\\n      <td style=\\\"width:75%; vertical-align:top;\\\">\\n        Iowa-Missouri Conference Women&rsquo;s Retreat 2026<br>\\n        Please contact the retreat registration team with payment or registration questions.\\n      </td>\\n      <td style=\\\"width:25%; text-align:right; vertical-align:top;\\\">WR26</td>\\n    </tr>\\n  </table>\\n</div>\", \"body\": \"<div style=\\\"font-family: Arial, Helvetica, sans-serif; color:#111; font-size:12px; line-height:1.35;\\\">\\n  <table style=\\\"width:100%; border-collapse:collapse; margin-top:12px;\\\">\\n    <tr><td colspan=\\\"2\\\" style=\\\"background:#eeeeee; border:1px solid #111; padding:6px 8px; font-weight:bold; text-transform:uppercase;\\\">Primary Contact</td></tr>\\n    <tr>\\n      <td style=\\\"width:50%; border:1px solid #111; padding:8px;\\\"><strong>Name:</strong><br>{inputs.first_name} {inputs.last_name}</td>\\n      <td style=\\\"width:50%; border:1px solid #111; padding:8px;\\\"><strong>Church:</strong><br>{inputs.church} {inputs.church_other}</td>\\n    </tr>\\n    <tr>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Email:</strong><br>{inputs.email}</td>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Phone:</strong><br>{inputs.phone}</td>\\n    </tr>\\n    <tr>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Arrival:</strong><br>{inputs.arrival_date}</td>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Departure:</strong><br>{inputs.departure_date}</td>\\n    </tr>\\n    <tr>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Emergency Contact:</strong><br>{inputs.emergency_contact_name}</td>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Emergency Phone:</strong><br>{inputs.emergency_contact_phone}</td>\\n    </tr>\\n  </table>\\n  <div style=\\\"margin-top:12px; border:1px solid #111; padding:8px;\\\">\\n    <strong>Special Needs / Accessibility Notes:</strong><br>{inputs.special_needs}\\n  </div>\\n  <div style=\\\"margin-top:14px;\\\"><div style=\\\"background:#eeeeee; border:1px solid #111; padding:6px 8px; font-weight:bold; text-transform:uppercase;\\\">Attendees / Meals / Seminar Preferences</div><div style=\\\"border:1px solid #111; border-top:none; padding:8px; white-space:pre-wrap; font-size:12px; line-height:1.4;\\\">{inputs.registration_roster_preview}</div></div>\\n  <div style=\\\"margin-top:12px; border:1px solid #111; padding:8px;\\\">\\n    <strong>Additional Notes:</strong><br>{inputs.attendee_notes}\\n  </div>\\n  <table style=\\\"width:100%; border-collapse:collapse; margin-top:12px;\\\">\\n    <tr><td colspan=\\\"2\\\" style=\\\"background:#eeeeee; border:1px solid #111; padding:6px 8px; font-weight:bold; text-transform:uppercase;\\\">Payment</td></tr>\\n    <tr>\\n      <td style=\\\"width:50%; border:1px solid #111; padding:8px;\\\"><strong>Payment Method:</strong><br>{inputs.payment_method}</td>\\n      <td style=\\\"width:50%; border:1px solid #111; padding:8px;\\\"><strong>Promo Code:</strong><br>{inputs.promo_code}</td>\\n    </tr>\\n    <tr>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Registration Total:</strong><br>{inputs.payment_summary}</td>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Worker Registration Flag:</strong><br>{inputs.worker_registration}</td>\\n    </tr>\\n  </table>\\n  <div style=\\\"margin-top:12px; border:1px solid #111; padding:8px;\\\"><strong>Acknowledgment:</strong><br>{inputs.acknowledgment}</div>\\n  <div style=\\\"margin-top:14px; font-size:11px; color:#333;\\\"><strong>Submission Note:</strong> This PDF was generated from the online WR26 registration submission.</div>\\n</div>\", \"shortcode\": \"{pdf.download_link.1574}\", \"allow_download\": \"1\"}, \"appearance\": {\"paper_size\": \"Letter\", \"orientation\": \"P\", \"font\": \"default\", \"font_family\": \"dejavusans\", \"font_size\": \"12\", \"font_color\": \"#323232\", \"accent_color\": \"#989797\", \"heading_color\": \"#000000\", \"language_direction\": \"ltr\", \"watermark_img_behind\": \"false\"}}"
+        "value": "{\"name\": \"WR26 Registration PDF\", \"template_key\": \"general\", \"settings\": {\"header\": \"<div style=\\\"font-family: Arial, Helvetica, sans-serif; color: #111; padding: 0 0 10px 0; border-bottom: 2px solid #111;\\\">\\n  <table style=\\\"width:100%; border-collapse:collapse;\\\">\\n\\n    <tr>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Emergency Contact:</strong><br>{inputs.emergency_contact_name}</td>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Emergency Phone:</strong><br>{inputs.emergency_contact_phone}</td>\\n    </tr>\\n  </table>\\n  <div style=\\\"margin-top:12px; border:1px solid #111; padding:8px;\\\">\\n    <strong>Special Needs / Accessibility Notes:</strong><br>{inputs.special_needs}\\n  </div>\\n  <div style=\\\"margin-top:14px;\\\"><div style=\\\"background:#eeeeee; border:1px solid #111; padding:6px 8px; font-weight:bold; text-transform:uppercase;\\\">Attendees / Meals / Seminar Preferences</div><div style=\\\"border:1px solid #111; border-top:none; padding:8px; white-space:pre-wrap; font-size:12px; line-height:1.4;\\\">{inputs.registration_roster_preview}</div></div>\\n  <div style=\\\"margin-top:12px; border:1px solid #111; padding:8px;\\\">\\n    <strong>Additional Notes:</strong><br>{inputs.attendee_notes}\\n  </div>\\n  <table style=\\\"width:100%; border-collapse:collapse; margin-top:12px;\\\">\\n    <tr><td colspan=\\\"2\\\" style=\\\"background:#eeeeee; border:1px solid #111; padding:6px 8px; font-weight:bold; text-transform:uppercase;\\\">Payment</td></tr>\\n    <tr>\\n      <td style=\\\"width:50%; border:1px solid #111; padding:8px;\\\"><strong>Payment Method:</strong><br>{inputs.payment_method}</td>\\n      <td style=\\\"width:50%; border:1px solid #111; padding:8px;\\\"><strong>Promo Code:</strong><br>{inputs.promo_code}</td>\\n    </tr>\\n    <tr>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Registration Total:</strong><br>{inputs.payment_summary}</td>\\n      <td style=\\\"border:1px solid #111; padding:8px;\\\"><strong>Worker Registration Flag:</strong><br>{inputs.worker_registration}</td>\\n    </tr>\\n  </table>\\n  <div style=\\\"margin-top:12px; border:1px solid #111; padding:8px;\\\"><strong>Acknowledgment:</strong><br>{inputs.acknowledgment}</div>\\n  <div style=\\\"margin-top:14px; font-size:11px; color:#333;\\\"><strong>Submission Note:</strong> This PDF was generated from the online WR26 registration submission.</div>\\n</div>\", \"shortcode\": \"{pdf.download_link.1574}\", \"allow_download\": \"1\"}, \"appearance\": {\"paper_size\": \"Letter\", \"orientation\": \"P\", \"font\": \"default\", \"font_family\": \"dejavusans\", \"font_size\": \"12\", \"font_color\": \"#323232\", \"accent_color\": \"#989797\", \"heading_color\": \"#000000\", \"language_direction\": \"ltr\", \"watermark_img_behind\": \"false\"}}"
       },
       "3": {
         "id": 1563,

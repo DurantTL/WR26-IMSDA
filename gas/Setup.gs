@@ -5,7 +5,7 @@ var WR26_REQUIRED_SHEETS={
   TransferLog:['Transfer ID','Timestamp','Original Reg ID','New Reg ID','Original Name','New Name','Original Email','New Email','Reason','Refund Notes','Admin Notes','Transferred By'],
   CheckIns:['Check-In ID','Timestamp','Registration ID','Name','Church','Method','Admin User'],
   Config:['Key','Value'],
-  Attendees:['Attendee ID','Registration ID','First Name','Last Name','Phone','Email','Church','Adult/Child','Meal Preference','Dietary Needs','Childcare Needed','Seminar Preferences Complete','Notes'],
+  Attendees:['Attendee ID','Registration ID','First Name','Last Name','Phone','Email','Church','Adult/Child','Meal Preference','Dietary Needs','Childcare Needed','Seminar Preferences Complete','Notes','Children Needing Care','Volunteer'],
   SeminarPreferences:['Preference ID','Registration ID','Attendee ID','Attendee Name','Session Slot','Preference Rank','Seminar Title','Seminar ID','Assigned Seminar','Assignment Status','Notes'],
   MagicLinks:['Token','Timestamp','Email','Registration ID','Expires At','Last Used At','Status','Purpose','Request IP','Notes'],
   AuditLog:['Audit ID','Timestamp','Action','Registration ID','Actor','Details','Source IP'],

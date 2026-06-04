@@ -14,7 +14,7 @@ function writeAttendeesForRegistration(reg,attendees){
     var sh=getSS().getSheetByName('Attendees');
     if(!sh)return {success:true,warning:'Attendees tab missing; attendee rows skipped.'};
     (attendees||[]).forEach(function(a){
-      sh.appendRow([a.attendee_id,reg.registrationId,a.first_name,a.last_name,a.phone,a.email,a.church,a.attendee_type,a.meal_preference,a.dietary_needs,a.childcare_needed,a.seminar_preferences&&Object.keys(a.seminar_preferences).length?'yes':'no','']);
+      sh.appendRow([a.attendee_id,reg.registrationId,a.first_name,a.last_name,a.phone,a.email,a.church,a.attendee_type,a.meal_preference,a.dietary_needs,a.childcare_needed,a.seminar_preferences&&Object.keys(a.seminar_preferences).length?'yes':'no','',a.childcare_children||'',a.volunteer||'']);
     });
     return {success:true};
   }catch(e){return {success:false,warning:'Attendees write warning: '+e.message};}

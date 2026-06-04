@@ -14,7 +14,10 @@ function sendConfirmationEmail(reg,edit,context){
   if(ctxAttendees.length){attendeeRows='<p><b>Registered Attendees:</b></p><ul>'+ctxAttendees.map(function(a){var name=escapeHtml(String(a.first_name||'').trim()+' '+String(a.last_name||'').trim());var type=a.attendee_type?(' ('+escapeHtml(String(a.attendee_type))+')'):'';return '<li>'+name+type+'</li>';}).join('')+'</ul>';}
   var amountDisplay=isPaid&&reg.amountPaid!=null?Number(reg.amountPaid):Number(reg.finalAmount||0);
   var discountLine=Number(reg.discountAmount)>0?'<p><b>Discount applied:</b> $'+escapeHtml(String(reg.discountAmount))+(reg.couponUsed||reg.promoCode?' (code: '+escapeHtml(String(reg.couponUsed||reg.promoCode))+')':'')+'</p>':'';
-  var detailsBlock='<p><b>Church:</b> '+escapeHtml(reg.church)+'<br><b>Arrival:</b> '+escapeHtml(reg.arrivalDate)+'<br><b>Departure:</b> '+escapeHtml(reg.departureDate)+'</p>'+discountLine;
+  // Arrival/Departure are no longer collected at registration, so only show them
+  // when a value exists (e.g. older records or admin-entered dates).
+  var dateBits=[];if(reg.arrivalDate)dateBits.push('<b>Arrival:</b> '+escapeHtml(reg.arrivalDate));if(reg.departureDate)dateBits.push('<b>Departure:</b> '+escapeHtml(reg.departureDate));
+  var detailsBlock='<p><b>Church:</b> '+escapeHtml(reg.church)+(dateBits.length?'<br>'+dateBits.join('<br>'):'')+'</p>'+discountLine;
   // Payment status block. Paid registrations get a thank-you; pay-later
   // registrations get the balance-due notice plus a Square "Pay by Card" button
   // when Square is configured. When it is NOT configured the button is empty, so

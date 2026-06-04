@@ -192,6 +192,8 @@ function wr26_attendees_from_json($raw, $entry_id, $church) {
             'meal_preference'     => sanitize_text_field($a['meal_preference'] ?? ''),
             'dietary_needs'       => sanitize_textarea_field($a['dietary_needs'] ?? ''),
             'childcare_needed'    => sanitize_text_field($a['childcare_needed'] ?? ''),
+            'childcare_children'  => sanitize_text_field($a['childcare_children'] ?? ''),
+            'volunteer'           => sanitize_text_field($a['volunteer'] ?? ''),
             'seminar_preferences' => wr26_sanitize_seminar_preferences($a['seminar_preferences'] ?? array()),
         );
     }
@@ -241,6 +243,8 @@ function wr26_parse_ff_entry($entry_id) {
             'meal_preference' => sanitize_text_field($raw["{$prefix}meal_preference"] ?? ''),
             'dietary_needs'   => sanitize_textarea_field($raw["{$prefix}dietary_needs"] ?? ''),
             'childcare_needed'=> sanitize_text_field($raw["{$prefix}childcare_needed"] ?? ''),
+            'childcare_children'=> sanitize_text_field($raw["{$prefix}childcare_children"] ?? ''),
+            'volunteer'       => sanitize_text_field($raw["{$prefix}volunteer"] ?? ''),
             'seminar_preferences' => array(
                 'session_1' => array(
                     'pref_1' => sanitize_text_field($raw["{$prefix}session1_pref1"] ?? ''),
