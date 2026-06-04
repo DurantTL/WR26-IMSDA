@@ -475,6 +475,10 @@ function collectDetail() {
   document.querySelectorAll('#detail .attendee-card').forEach((card) => {
     const attendee = { seminar_preferences: {} };
     card.querySelectorAll('[data-a]').forEach((el) => { attendee[el.dataset.a] = el.value; });
+    // Only submit a children count when childcare is actually requested, so a stale/
+    // imported count on an attendee whose childcare is "no" gets cleared rather than
+    // re-saved as-is. Mirrors the registrant portal's collectPayload() gating.
+    if (String(attendee.childcare_needed || '').toLowerCase() !== 'yes') attendee.childcare_children = '';
     card.querySelectorAll('[data-pref]').forEach((el) => {
       const [slot, key] = el.dataset.pref.split('.');
       attendee.seminar_preferences[slot] = attendee.seminar_preferences[slot] || {};
