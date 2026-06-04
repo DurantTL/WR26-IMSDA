@@ -47,7 +47,11 @@ source it's built from or documentation.
 > whose chargeable payment item (`custom_payment_amount`) comes **before**
 > `payment_method` so Square has a total to charge and Fluent Forms shows the
 > payment options. The legacy `a1_*`–`a5_*` fields remain as a no-JavaScript
-> fallback — the plugin parser prefers `attendees_json` when present.
+> fallback — the plugin parser prefers `attendees_json` when present. The
+> generator gives that fallback full parity with the roster: each attendee also
+> gets an `a{N}_childcare_children` count (shown only when `a{N}_childcare_needed`
+> = Yes) and an `a{N}_volunteer` yes/no, so a registrant with JavaScript off can
+> still report the child count and volunteer interest.
 > Those legacy fields are **required**, so they are gated behind a hidden
 > `roster_active` flag: the roster JS sets `roster_active=1`, which makes Fluent
 > Forms hide them and skip their validation. With JavaScript off, `roster_active`

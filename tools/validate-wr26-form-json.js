@@ -77,6 +77,8 @@ for (let n = 1; n <= 5; n += 1) {
     `a${n}_meal_preference`,
     `a${n}_dietary_needs`,
     `a${n}_childcare_needed`,
+    `a${n}_childcare_children`,
+    `a${n}_volunteer`,
     `a${n}_session1_pref1`,
     `a${n}_session1_pref2`,
     `a${n}_session2_pref1`,
@@ -131,7 +133,10 @@ if (byName.has('roster_active')) {
 
 for (const name of expectedAttendeeFields) {
   if (!byName.has(name)) {
-    const severity = name.startsWith('a1_') ? 'error' : 'warning';
+    // childcare_children + volunteer are optional no-JS fallback twins (the roster
+    // captures them via attendees_json), so never hard-fail on them — warn only.
+    const isOptionalFallback = /_(childcare_children|volunteer)$/.test(name);
+    const severity = (name.startsWith('a1_') && !isOptionalFallback) ? 'error' : 'warning';
     const message = `Missing attendee field: ${name}`;
     if (severity === 'error') errors.push(message);
     else warnings.push(message);

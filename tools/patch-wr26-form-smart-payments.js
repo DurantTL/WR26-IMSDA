@@ -262,6 +262,63 @@ function patchAttendeeOne(fields) {
   return needed.length;
 }
 
+// Force a field's conditional logic to an explicit AND-combined condition list
+// (or none). gateLegacyBehindRoster() later merges in `roster_active != 1`.
+function setConditions(field, conditions) {
+  field.settings.conditional_logics = conditions.length
+    ? { status: true, type: 'all', conditions }
+    : [];
+  return field;
+}
+
+// Add the no-JS fallback twins for the per-attendee childcare count and volunteer
+// interest. The interactive roster (attendees_json) is the primary path and already
+// captures both; these legacy a{N}_* fields keep the JS-off fallback at parity so a
+// registrant without JavaScript can still report how many children need care and
+// whether they'll volunteer. Inserted right after each a{N}_childcare_needed, with:
+//   - a{N}_childcare_children: shown only when a{N}_childcare_needed = yes
+//   - a{N}_volunteer: yes/no, inheriting the same attendee_count gating
+// Any attendee_count gating already on childcare_needed is inherited so these only
+// appear for attendees that exist; gateLegacyBehindRoster() then hides them when the
+// roster is active.
+function patchChildcareVolunteerFallback(fields) {
+  let added = 0;
+  for (let n = 1; n <= 5; n += 1) {
+    const ccName = `a${n}_childcare_needed`;
+    const src = fields.find((field) => fieldName(field) === ccName);
+    if (!src) continue;
+    const srcCl = src.settings && src.settings.conditional_logics;
+    const baseConds = (srcCl && !Array.isArray(srcCl) && Array.isArray(srcCl.conditions))
+      ? srcCl.conditions
+        .filter((c) => c && c.field !== 'roster_active')
+        .map((c) => ({ field: c.field, operator: c.operator, value: c.value }))
+      : [];
+
+    const toInsert = [];
+    const childrenName = `a${n}_childcare_children`;
+    if (!hasField(fields, childrenName)) {
+      const f = inputText(src.index, childrenName, `Attendee ${n} — How Many Children Need Care?`, 'Number of children', false);
+      setConditions(f, baseConds.concat([{ field: ccName, operator: '=', value: 'yes' }]));
+      toInsert.push(f);
+    }
+    const volName = `a${n}_volunteer`;
+    if (!hasField(fields, volName)) {
+      const f = selectField(src.index, volName, `Attendee ${n} — Willing to Volunteer to Help?`, [
+        { label: 'No', value: 'no' },
+        { label: 'Yes', value: 'yes' },
+      ], false);
+      setConditions(f, baseConds.slice());
+      toInsert.push(f);
+    }
+    if (toInsert.length) {
+      const here = fields.findIndex((field) => fieldName(field) === ccName);
+      fields.splice(here + 1, 0, ...toInsert);
+      added += toInsert.length;
+    }
+  }
+  return added;
+}
+
 function patchPayment(fields) {
   const additions = [
     hiddenField('registration_price_each', 'registration price each'),
@@ -477,6 +534,7 @@ function updateHeaderCopy(fields) {
 const exportJson = readJson(inputPath);
 const { form, fields } = fieldsOf(exportJson);
 const attendeeAdded = patchAttendeeOne(fields);
+const childcareVolunteerAdded = patchChildcareVolunteerFallback(fields);
 const paymentAdded = patchPayment(fields);
 const rosterAdded = patchRoster(fields);
 const legacyGated = gateLegacyBehindRoster(fields);
@@ -489,6 +547,7 @@ console.log('WR26 smart payment patch complete.');
 console.log(`Input:  ${inputPath}`);
 console.log(`Output: ${outputPath}`);
 console.log(`Added attendee fields: ${attendeeAdded}`);
+console.log(`Added childcare/vol:   ${childcareVolunteerAdded}`);
 console.log(`Added payment fields:  ${paymentAdded}`);
 console.log(`Added roster fields:   ${rosterAdded}`);
 console.log(`Gated legacy fields:   ${legacyGated}`);
