@@ -401,6 +401,7 @@ function seminarPrefFields(attendee) {
 function attendeeEditor(attendee = {}, index = 0) {
   const O = window.WR26_OPTIONS;
   const attendeeId = attendee.attendee_id || '';
+  const childcareYes = String(attendee.childcare_needed || '').toLowerCase() === 'yes';
   // Transfer is an in-place substitution of a saved attendee; hide it for new,
   // unsaved rows (no id yet — save the registration first).
   const transferToggle = attendeeId
@@ -431,6 +432,8 @@ function attendeeEditor(attendee = {}, index = 0) {
       <label>Attendee Type${O.selectHtml('data-a="attendee_type"', attendee.attendee_type, O.ATTENDEE_TYPE_OPTIONS)}</label>
       <label>Meal Preference${O.selectHtml('data-a="meal_preference"', attendee.meal_preference, O.MEAL_OPTIONS)}</label>
       <label>Childcare Needed${O.selectHtml('data-a="childcare_needed"', attendee.childcare_needed, O.CHILDCARE_OPTIONS)}</label>
+      <label class="portal-childcare-count" data-childcare-count${childcareYes ? '' : ' style="display:none"'}>How Many Children Need Care?<input data-a="childcare_children" type="number" min="1" step="1" inputmode="numeric" value="${escapeHtml(attendee.childcare_children)}"></label>
+      <label>Willing to Volunteer to Help?${O.selectHtml('data-a="volunteer"', attendee.volunteer, O.VOLUNTEER_OPTIONS)}</label>
       <label>Dietary Needs<textarea data-a="dietary_needs" rows="2">${escapeHtml(attendee.dietary_needs)}</textarea></label>
       <label>Notes<textarea data-a="notes" rows="2">${escapeHtml(attendee.notes)}</textarea></label>
     </div>
@@ -772,6 +775,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const confirmTransfer = event.target.closest('[data-confirm-transfer]');
     if (confirmTransfer) transferAttendeeStaff(confirmTransfer).catch((error) => showToast(error.message));
+  });
+  // Show the children-needing-care count only while childcare is requested, and clear it
+  // when childcare is turned off so a stale number isn't saved.
+  $('detail').addEventListener('change', (event) => {
+    const select = event.target.closest('[data-a="childcare_needed"]');
+    if (!select) return;
+    const card = select.closest('.attendee-card');
+    const countLabel = card && card.querySelector('[data-childcare-count]');
+    if (!countLabel) return;
+    const show = String(select.value).toLowerCase() === 'yes';
+    countLabel.style.display = show ? '' : 'none';
+    if (!show) { const input = countLabel.querySelector('input'); if (input) input.value = ''; }
   });
   $('save-payment').addEventListener('click', () => savePayment().catch((error) => showToast(error.message)));
   $('save-refund').addEventListener('click', () => saveRefund().catch((error) => showToast(error.message)));

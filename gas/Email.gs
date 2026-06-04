@@ -11,7 +11,7 @@ function sendConfirmationEmail(reg,edit,context){
   // reg.firstName is the primary contact; attendee names come from a{N}_first/last_name.
   var ctxAttendees=(context&&Array.isArray(context.attendees)&&context.attendees.length)?context.attendees:[];
   var attendeeRows='';
-  if(ctxAttendees.length){attendeeRows='<p><b>Registered Attendees:</b></p><ul>'+ctxAttendees.map(function(a){var name=escapeHtml(String(a.first_name||'').trim()+' '+String(a.last_name||'').trim());var type=a.attendee_type?(' ('+escapeHtml(String(a.attendee_type))+')'):'';return '<li>'+name+type+'</li>';}).join('')+'</ul>';}
+  if(ctxAttendees.length){attendeeRows='<p><b>Registered Attendees:</b></p><ul>'+ctxAttendees.map(function(a){var name=escapeHtml(String(a.first_name||'').trim()+' '+String(a.last_name||'').trim());var type=a.attendee_type?(' ('+escapeHtml(String(a.attendee_type))+')'):'';var notes=[];if(String(a.childcare_needed||'').toLowerCase()==='yes'){var kids=String(a.childcare_children||'').trim();notes.push('childcare'+(kids?(' for '+escapeHtml(kids)+' child'+(kids==='1'?'':'ren')):''));}if(String(a.volunteer||'').toLowerCase()==='yes')notes.push('volunteering to help');var noteStr=notes.length?(' — '+notes.join(', ')):'';return '<li>'+name+type+noteStr+'</li>';}).join('')+'</ul>';}
   var amountDisplay=isPaid&&reg.amountPaid!=null?Number(reg.amountPaid):Number(reg.finalAmount||0);
   var discountLine=Number(reg.discountAmount)>0?'<p><b>Discount applied:</b> $'+escapeHtml(String(reg.discountAmount))+(reg.couponUsed||reg.promoCode?' (code: '+escapeHtml(String(reg.couponUsed||reg.promoCode))+')':'')+'</p>':'';
   // Arrival/Departure are no longer collected at registration, so only show them
@@ -122,7 +122,7 @@ function resendConfirmationEmail(payload){
     if(!isValidEmail_(target.email))return {success:false,message:'This registration has no valid email on file. Enter an address to send to.'};
     var attendees=portalReadAllAttendees_()
       .filter(function(a){return String(a.registrationId)===String(id);})
-      .map(function(a){return {first_name:a.first_name,last_name:a.last_name,attendee_type:a.attendee_type};});
+      .map(function(a){return {first_name:a.first_name,last_name:a.last_name,attendee_type:a.attendee_type,childcare_needed:a.childcare_needed,childcare_children:a.childcare_children,volunteer:a.volunteer};});
     var edit=(payload&&payload.edit_page_url)||getConfig().EDIT_PAGE_URL;
     var result=sendConfirmationEmail(target,edit,{attendees:attendees});
     if(result&&result.sent===false)return {success:false,message:'Email could not be sent: '+(result.reason||'unknown')};

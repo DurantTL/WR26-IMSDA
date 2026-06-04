@@ -1945,6 +1945,136 @@
           "uniqElKey": "el_WR26_19_a1_childcare_needed"
         },
         {
+          "index": 19,
+          "element": "input_text",
+          "attributes": {
+            "type": "text",
+            "name": "a1_childcare_children",
+            "value": "",
+            "id": "",
+            "class": "",
+            "placeholder": "Number of children",
+            "maxlength": ""
+          },
+          "settings": {
+            "container_class": "",
+            "label": "Attendee 1 — How Many Children Need Care?",
+            "label_placement": "",
+            "admin_field_label": "Attendee 1 — How Many Children Need Care?",
+            "help_message": "",
+            "prefix_label": "",
+            "suffix_label": "",
+            "validation_rules": {
+              "required": {
+                "value": false,
+                "message": "This field is required",
+                "global_message": "This field is required",
+                "global": true
+              }
+            },
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "a1_childcare_needed",
+                  "operator": "=",
+                  "value": "yes"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
+            "visible": true,
+            "is_unique": "no",
+            "unique_validation_message": "This value need to be unique."
+          },
+          "editor_options": {
+            "title": "Simple Text",
+            "icon_class": "ff-edit-text",
+            "template": "inputText"
+          },
+          "uniqElKey": "el_WR26_patch_a1_childcare_children"
+        },
+        {
+          "index": 19,
+          "element": "select",
+          "attributes": {
+            "name": "a1_volunteer",
+            "value": "",
+            "id": "",
+            "class": ""
+          },
+          "settings": {
+            "dynamic_default_value": "",
+            "label": "Attendee 1 — Willing to Volunteer to Help?",
+            "admin_field_label": "Attendee 1 — Willing to Volunteer to Help?",
+            "help_message": "",
+            "container_class": "",
+            "label_placement": "",
+            "placeholder": "- Select -",
+            "advanced_options": [
+              {
+                "label": "No",
+                "value": "no",
+                "calc_value": "",
+                "id": 0
+              },
+              {
+                "label": "Yes",
+                "value": "yes",
+                "calc_value": "",
+                "id": 1
+              }
+            ],
+            "validation_rules": {
+              "required": {
+                "value": false,
+                "message": "This field is required",
+                "global_message": "This field is required",
+                "global": true
+              }
+            },
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
+            "visible": true,
+            "calc_value_status": false,
+            "enable_image_input": false,
+            "values_visible": false,
+            "enable_select_2": "no",
+            "randomize_options": "no",
+            "inventory_type": false,
+            "inventory_stockout_message": "This Item is Stock Out",
+            "hide_choice_when_stockout": "no",
+            "hide_input_when_stockout": "no",
+            "disable_input_when_stockout": "no",
+            "show_stock": "no",
+            "simple_inventory": "",
+            "single_inventory_stock": 10,
+            "stock_quantity_label": " - {remaining_quantity} available",
+            "global_inventory": ""
+          },
+          "editor_options": {
+            "title": "Dropdown",
+            "icon_class": "ff-edit-dropdown",
+            "element": "select",
+            "template": "select"
+          },
+          "uniqElKey": "el_WR26_patch_a1_volunteer"
+        },
+        {
           "index": 20,
           "element": "select",
           "attributes": {
@@ -3113,6 +3243,146 @@
               }
             ]
           }
+        },
+        {
+          "index": 34,
+          "element": "input_text",
+          "attributes": {
+            "type": "text",
+            "name": "a2_childcare_children",
+            "value": "",
+            "id": "",
+            "class": "",
+            "placeholder": "Number of children",
+            "maxlength": ""
+          },
+          "settings": {
+            "container_class": "",
+            "label": "Attendee 2 — How Many Children Need Care?",
+            "label_placement": "",
+            "admin_field_label": "Attendee 2 — How Many Children Need Care?",
+            "help_message": "",
+            "prefix_label": "",
+            "suffix_label": "",
+            "validation_rules": {
+              "required": {
+                "value": false,
+                "message": "This field is required",
+                "global_message": "This field is required",
+                "global": true
+              }
+            },
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "attendee_count",
+                  "operator": ">=",
+                  "value": "2"
+                },
+                {
+                  "field": "a2_childcare_needed",
+                  "operator": "=",
+                  "value": "yes"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
+            "visible": true,
+            "is_unique": "no",
+            "unique_validation_message": "This value need to be unique."
+          },
+          "editor_options": {
+            "title": "Simple Text",
+            "icon_class": "ff-edit-text",
+            "template": "inputText"
+          },
+          "uniqElKey": "el_WR26_patch_a2_childcare_children"
+        },
+        {
+          "index": 34,
+          "element": "select",
+          "attributes": {
+            "name": "a2_volunteer",
+            "value": "",
+            "id": "",
+            "class": ""
+          },
+          "settings": {
+            "dynamic_default_value": "",
+            "label": "Attendee 2 — Willing to Volunteer to Help?",
+            "admin_field_label": "Attendee 2 — Willing to Volunteer to Help?",
+            "help_message": "",
+            "container_class": "",
+            "label_placement": "",
+            "placeholder": "- Select -",
+            "advanced_options": [
+              {
+                "label": "No",
+                "value": "no",
+                "calc_value": "",
+                "id": 0
+              },
+              {
+                "label": "Yes",
+                "value": "yes",
+                "calc_value": "",
+                "id": 1
+              }
+            ],
+            "validation_rules": {
+              "required": {
+                "value": false,
+                "message": "This field is required",
+                "global_message": "This field is required",
+                "global": true
+              }
+            },
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "attendee_count",
+                  "operator": ">=",
+                  "value": "2"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
+            "visible": true,
+            "calc_value_status": false,
+            "enable_image_input": false,
+            "values_visible": false,
+            "enable_select_2": "no",
+            "randomize_options": "no",
+            "inventory_type": false,
+            "inventory_stockout_message": "This Item is Stock Out",
+            "hide_choice_when_stockout": "no",
+            "hide_input_when_stockout": "no",
+            "disable_input_when_stockout": "no",
+            "show_stock": "no",
+            "simple_inventory": "",
+            "single_inventory_stock": 10,
+            "stock_quantity_label": " - {remaining_quantity} available",
+            "global_inventory": ""
+          },
+          "editor_options": {
+            "title": "Dropdown",
+            "icon_class": "ff-edit-dropdown",
+            "element": "select",
+            "template": "select"
+          },
+          "uniqElKey": "el_WR26_patch_a2_volunteer"
         },
         {
           "index": 35,
@@ -4397,6 +4667,146 @@
           }
         },
         {
+          "index": 49,
+          "element": "input_text",
+          "attributes": {
+            "type": "text",
+            "name": "a3_childcare_children",
+            "value": "",
+            "id": "",
+            "class": "",
+            "placeholder": "Number of children",
+            "maxlength": ""
+          },
+          "settings": {
+            "container_class": "",
+            "label": "Attendee 3 — How Many Children Need Care?",
+            "label_placement": "",
+            "admin_field_label": "Attendee 3 — How Many Children Need Care?",
+            "help_message": "",
+            "prefix_label": "",
+            "suffix_label": "",
+            "validation_rules": {
+              "required": {
+                "value": false,
+                "message": "This field is required",
+                "global_message": "This field is required",
+                "global": true
+              }
+            },
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "attendee_count",
+                  "operator": ">=",
+                  "value": "3"
+                },
+                {
+                  "field": "a3_childcare_needed",
+                  "operator": "=",
+                  "value": "yes"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
+            "visible": true,
+            "is_unique": "no",
+            "unique_validation_message": "This value need to be unique."
+          },
+          "editor_options": {
+            "title": "Simple Text",
+            "icon_class": "ff-edit-text",
+            "template": "inputText"
+          },
+          "uniqElKey": "el_WR26_patch_a3_childcare_children"
+        },
+        {
+          "index": 49,
+          "element": "select",
+          "attributes": {
+            "name": "a3_volunteer",
+            "value": "",
+            "id": "",
+            "class": ""
+          },
+          "settings": {
+            "dynamic_default_value": "",
+            "label": "Attendee 3 — Willing to Volunteer to Help?",
+            "admin_field_label": "Attendee 3 — Willing to Volunteer to Help?",
+            "help_message": "",
+            "container_class": "",
+            "label_placement": "",
+            "placeholder": "- Select -",
+            "advanced_options": [
+              {
+                "label": "No",
+                "value": "no",
+                "calc_value": "",
+                "id": 0
+              },
+              {
+                "label": "Yes",
+                "value": "yes",
+                "calc_value": "",
+                "id": 1
+              }
+            ],
+            "validation_rules": {
+              "required": {
+                "value": false,
+                "message": "This field is required",
+                "global_message": "This field is required",
+                "global": true
+              }
+            },
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "attendee_count",
+                  "operator": ">=",
+                  "value": "3"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
+            "visible": true,
+            "calc_value_status": false,
+            "enable_image_input": false,
+            "values_visible": false,
+            "enable_select_2": "no",
+            "randomize_options": "no",
+            "inventory_type": false,
+            "inventory_stockout_message": "This Item is Stock Out",
+            "hide_choice_when_stockout": "no",
+            "hide_input_when_stockout": "no",
+            "disable_input_when_stockout": "no",
+            "show_stock": "no",
+            "simple_inventory": "",
+            "single_inventory_stock": 10,
+            "stock_quantity_label": " - {remaining_quantity} available",
+            "global_inventory": ""
+          },
+          "editor_options": {
+            "title": "Dropdown",
+            "icon_class": "ff-edit-dropdown",
+            "element": "select",
+            "template": "select"
+          },
+          "uniqElKey": "el_WR26_patch_a3_volunteer"
+        },
+        {
           "index": 50,
           "element": "select",
           "attributes": {
@@ -5679,6 +6089,146 @@
           }
         },
         {
+          "index": 64,
+          "element": "input_text",
+          "attributes": {
+            "type": "text",
+            "name": "a4_childcare_children",
+            "value": "",
+            "id": "",
+            "class": "",
+            "placeholder": "Number of children",
+            "maxlength": ""
+          },
+          "settings": {
+            "container_class": "",
+            "label": "Attendee 4 — How Many Children Need Care?",
+            "label_placement": "",
+            "admin_field_label": "Attendee 4 — How Many Children Need Care?",
+            "help_message": "",
+            "prefix_label": "",
+            "suffix_label": "",
+            "validation_rules": {
+              "required": {
+                "value": false,
+                "message": "This field is required",
+                "global_message": "This field is required",
+                "global": true
+              }
+            },
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "attendee_count",
+                  "operator": ">=",
+                  "value": "4"
+                },
+                {
+                  "field": "a4_childcare_needed",
+                  "operator": "=",
+                  "value": "yes"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
+            "visible": true,
+            "is_unique": "no",
+            "unique_validation_message": "This value need to be unique."
+          },
+          "editor_options": {
+            "title": "Simple Text",
+            "icon_class": "ff-edit-text",
+            "template": "inputText"
+          },
+          "uniqElKey": "el_WR26_patch_a4_childcare_children"
+        },
+        {
+          "index": 64,
+          "element": "select",
+          "attributes": {
+            "name": "a4_volunteer",
+            "value": "",
+            "id": "",
+            "class": ""
+          },
+          "settings": {
+            "dynamic_default_value": "",
+            "label": "Attendee 4 — Willing to Volunteer to Help?",
+            "admin_field_label": "Attendee 4 — Willing to Volunteer to Help?",
+            "help_message": "",
+            "container_class": "",
+            "label_placement": "",
+            "placeholder": "- Select -",
+            "advanced_options": [
+              {
+                "label": "No",
+                "value": "no",
+                "calc_value": "",
+                "id": 0
+              },
+              {
+                "label": "Yes",
+                "value": "yes",
+                "calc_value": "",
+                "id": 1
+              }
+            ],
+            "validation_rules": {
+              "required": {
+                "value": false,
+                "message": "This field is required",
+                "global_message": "This field is required",
+                "global": true
+              }
+            },
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "attendee_count",
+                  "operator": ">=",
+                  "value": "4"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
+            "visible": true,
+            "calc_value_status": false,
+            "enable_image_input": false,
+            "values_visible": false,
+            "enable_select_2": "no",
+            "randomize_options": "no",
+            "inventory_type": false,
+            "inventory_stockout_message": "This Item is Stock Out",
+            "hide_choice_when_stockout": "no",
+            "hide_input_when_stockout": "no",
+            "disable_input_when_stockout": "no",
+            "show_stock": "no",
+            "simple_inventory": "",
+            "single_inventory_stock": 10,
+            "stock_quantity_label": " - {remaining_quantity} available",
+            "global_inventory": ""
+          },
+          "editor_options": {
+            "title": "Dropdown",
+            "icon_class": "ff-edit-dropdown",
+            "element": "select",
+            "template": "select"
+          },
+          "uniqElKey": "el_WR26_patch_a4_volunteer"
+        },
+        {
           "index": 65,
           "element": "select",
           "attributes": {
@@ -6959,6 +7509,146 @@
               }
             ]
           }
+        },
+        {
+          "index": 79,
+          "element": "input_text",
+          "attributes": {
+            "type": "text",
+            "name": "a5_childcare_children",
+            "value": "",
+            "id": "",
+            "class": "",
+            "placeholder": "Number of children",
+            "maxlength": ""
+          },
+          "settings": {
+            "container_class": "",
+            "label": "Attendee 5 — How Many Children Need Care?",
+            "label_placement": "",
+            "admin_field_label": "Attendee 5 — How Many Children Need Care?",
+            "help_message": "",
+            "prefix_label": "",
+            "suffix_label": "",
+            "validation_rules": {
+              "required": {
+                "value": false,
+                "message": "This field is required",
+                "global_message": "This field is required",
+                "global": true
+              }
+            },
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "attendee_count",
+                  "operator": ">=",
+                  "value": "5"
+                },
+                {
+                  "field": "a5_childcare_needed",
+                  "operator": "=",
+                  "value": "yes"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
+            "visible": true,
+            "is_unique": "no",
+            "unique_validation_message": "This value need to be unique."
+          },
+          "editor_options": {
+            "title": "Simple Text",
+            "icon_class": "ff-edit-text",
+            "template": "inputText"
+          },
+          "uniqElKey": "el_WR26_patch_a5_childcare_children"
+        },
+        {
+          "index": 79,
+          "element": "select",
+          "attributes": {
+            "name": "a5_volunteer",
+            "value": "",
+            "id": "",
+            "class": ""
+          },
+          "settings": {
+            "dynamic_default_value": "",
+            "label": "Attendee 5 — Willing to Volunteer to Help?",
+            "admin_field_label": "Attendee 5 — Willing to Volunteer to Help?",
+            "help_message": "",
+            "container_class": "",
+            "label_placement": "",
+            "placeholder": "- Select -",
+            "advanced_options": [
+              {
+                "label": "No",
+                "value": "no",
+                "calc_value": "",
+                "id": 0
+              },
+              {
+                "label": "Yes",
+                "value": "yes",
+                "calc_value": "",
+                "id": 1
+              }
+            ],
+            "validation_rules": {
+              "required": {
+                "value": false,
+                "message": "This field is required",
+                "global_message": "This field is required",
+                "global": true
+              }
+            },
+            "conditional_logics": {
+              "status": true,
+              "type": "all",
+              "conditions": [
+                {
+                  "field": "attendee_count",
+                  "operator": ">=",
+                  "value": "5"
+                },
+                {
+                  "field": "roster_active",
+                  "operator": "!=",
+                  "value": "1"
+                }
+              ]
+            },
+            "visible": true,
+            "calc_value_status": false,
+            "enable_image_input": false,
+            "values_visible": false,
+            "enable_select_2": "no",
+            "randomize_options": "no",
+            "inventory_type": false,
+            "inventory_stockout_message": "This Item is Stock Out",
+            "hide_choice_when_stockout": "no",
+            "hide_input_when_stockout": "no",
+            "disable_input_when_stockout": "no",
+            "show_stock": "no",
+            "simple_inventory": "",
+            "single_inventory_stock": 10,
+            "stock_quantity_label": " - {remaining_quantity} available",
+            "global_inventory": ""
+          },
+          "editor_options": {
+            "title": "Dropdown",
+            "icon_class": "ff-edit-dropdown",
+            "element": "select",
+            "template": "select"
+          },
+          "uniqElKey": "el_WR26_patch_a5_volunteer"
         },
         {
           "index": 80,
