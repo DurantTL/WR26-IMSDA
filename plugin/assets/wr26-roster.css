@@ -51,6 +51,13 @@
   gap: 12px;
 }
 .wr26-field { display: flex; flex-direction: column; }
+/* Pin each control to the bottom of its grid cell so the dropdowns/inputs in a
+   row stay aligned even when one field's label wraps to two lines (e.g. the
+   longer "Willing to volunteer?" / "Childcare needed?" labels). Grid stretches
+   every cell to the tallest in the row; margin-top:auto then drops the control
+   to the shared baseline instead of leaving it floating under a short label. */
+.wr26-grid .wr26-field input,
+.wr26-grid .wr26-field select { margin-top: auto; }
 .wr26-field-wide { margin-top: 12px; }
 .wr26-field label { font-size: 0.85em; font-weight: bold; color: #44464a; margin-bottom: 4px; }
 .wr26-req { color: #b32d2e; }

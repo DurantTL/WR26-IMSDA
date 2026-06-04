@@ -215,7 +215,7 @@
     h += '<div class="wr26-field wr26-childcare-count"' + (ccShow ? '' : ' style="display:none"') + '>' +
       '<label>How many children need care?</label>' +
       '<input type="number" min="1" step="1" inputmode="numeric" data-field="childcare_children" value="' + esc(a.childcare_children) + '"></div>';
-    h += select('volunteer', 'Willing to volunteer to help at the retreat?', [
+    h += select('volunteer', 'Willing to volunteer?', [
       { value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }
     ], a.volunteer);
     h += '</div>';
