@@ -232,12 +232,53 @@ function preserveExistingAttendeeFields_(registrationId,normalized){
   }catch(e){Logger.log('preserveExistingAttendeeFields_ failed: '+e.message);}
 }
 
+// Capacity + pricing guard for portal/staff roster edits. Detail-only edits
+// (attendee count unchanged) never touch price. When the count CHANGES we
+// recompute the server-authoritative amount (N x per-head, keeping the original
+// discount); when it GROWS we also reject the save if the added seats would
+// exceed remaining capacity. Must run under the caller's lock (both portal save
+// paths hold one) so the capacity check is atomic. Returns {ok} or {ok:false,message}.
+function applyRosterCapacityAndPricing_(reg,oldCount,newCount){
+  try{
+    var effOld=Math.max(Number(oldCount||0),1);
+    var effNew=Math.max(Number(newCount||0),1);
+    if(newCount>oldCount){
+      var cap=checkCapacity();
+      if(cap&&cap.success){
+        var avail=Number(cap.available||0);
+        var delta=effNew-effOld;
+        if(delta>avail)return {ok:false,message:'Adding attendees would exceed capacity; only '+avail+' seat(s) remain.'};
+      }
+    }
+    if(newCount!==oldCount&&newCount>=1){
+      var info=resolveRegistrationAmount({},newCount,true);
+      if(info&&info.amount!==null&&info.amount!==undefined&&!isNaN(Number(info.amount))){
+        var discount=Number(reg.discountAmount||0);
+        var newOriginal=Number(info.amount||0);
+        var newFinal=Math.max(newOriginal-discount,0);
+        var fields={originalAmount:newOriginal,finalAmount:newFinal};
+        var paid=Number(reg.amountPaid||0);
+        // If a previously-settled registration now owes for added seats, reopen its
+        // balance so reminders / the Square pay link collect the difference.
+        if(newFinal>paid+0.01&&(reg.paymentStatus==='paid'||reg.paymentStatus==='paid_onsite'))fields.paymentStatus='partial_onsite';
+        updateRegistration(reg.registrationId,fields);
+        reg.originalAmount=newOriginal;reg.finalAmount=newFinal;if(fields.paymentStatus)reg.paymentStatus=fields.paymentStatus;
+      }
+    }
+    return {ok:true};
+  }catch(e){Logger.log('applyRosterCapacityAndPricing_ failed: '+e.message);return {ok:true};}
+}
+
 function replaceAttendeesForRegistration_(reg,attendees){
   var ss=getSS();
   var attSh=ss.getSheetByName('Attendees');
   var semSh=ss.getSheetByName('SeminarPreferences');
   var warnings=[];
   var normalized=normalizePortalAttendees_(reg.registrationId,attendees);
+  // Enforce capacity for roster growth and re-price for any count change BEFORE
+  // touching any rows, so a rejected save leaves the existing roster intact.
+  var gate=applyRosterCapacityAndPricing_(reg,getAttendeesForRegistration_(reg.registrationId).length,normalized.length);
+  if(!gate.ok)return {success:false,warnings:[gate.message]};
   // Preserve non-submitted fields before we delete anything.
   preserveExistingAttendeeFields_(reg.registrationId,normalized);
   // Only clear rows from sheets we can actually rewrite, so a missing/renamed tab

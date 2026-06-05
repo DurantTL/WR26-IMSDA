@@ -67,19 +67,24 @@ function handleRegister(payload){try{
     var squarePaymentId=isPaid?(payload.square_charge_id||payload.square_payment_id||''):(payload.square_payment_id||'');
     var reg={registrationId:generateRegistrationId(),firstName:payload.first_name||'',lastName:payload.last_name||'',email:payload.email||'',phone:payload.phone||'',church:payload.church||'',arrivalDate:payload.arrival_date||'',departureDate:payload.departure_date||'',dietaryNeeds:payload.dietary_needs||'',emergencyContactName:payload.emergency_contact_name||'',emergencyContactPhone:payload.emergency_contact_phone||'',specialNeeds:payload.special_needs||'',promoCode:promo,discountAmount:discount,originalAmount:originalAmount,finalAmount:isPaid?amountPaid:Math.max(originalAmount-discount,0),paymentMethod:paymentMethod,paymentStatus:paymentStatus,squarePaymentId:squarePaymentId,ffEntryId:payload.entry_id||'',status:'active',transferNotes:'',checkedIn:false,checkInTime:'',checkInBy:'',qrToken:Utilities.getUuid(),editToken:Utilities.getUuid(),adminNotes:reconNote,amountPaid:amountPaid,couponUsed:couponUsed};
     var w=writeRegistration(reg);if(!w.success)return w;
-    return {success:true,reg:reg};
+    // Attendee + seminar rows are written INSIDE the lock so the seat count
+    // (countActivePeople_ reads Attendees rows) is accurate the instant the lock
+    // releases. If they were written after the lock, a concurrent submission
+    // could see this party as only 1 seat (the floor) and overbook the retreat.
+    var attendees=buildAttendees(payload,reg.registrationId);
+    var attendeeResult=writeAttendeesForRegistration(reg,attendees);
+    var seminarResult=writeSeminarPreferencesForRegistration(reg,attendees);
+    return {success:true,reg:reg,attendees:attendees,warnings:[attendeeResult.warning,seminarResult.warning].filter(Boolean)};
   });
   if(!locked.success)return locked;
   if(locked.duplicate)return locked;
   var reg=locked.reg;
-  // Non-critical follow-up work runs outside the lock so emails/attendee writes do
-  // not serialize concurrent registrations.
-  var attendees=buildAttendees(payload,reg.registrationId);
-  var attendeeResult=writeAttendeesForRegistration(reg,attendees);
-  var seminarResult=writeSeminarPreferencesForRegistration(reg,attendees);
+  var attendees=locked.attendees||[];
+  var warnings=locked.warnings||[];
+  // Non-critical follow-up runs outside the lock so it doesn't serialize
+  // concurrent registrations (attendee rows were already written inside the lock).
   try{recomputeSeminarAssignedCounts_();}catch(e){Logger.log('seminar count refresh failed: '+e.message);}
   if(payload.worker_flag)Logger.log('Worker/non-paying flag received for '+reg.registrationId+': '+payload.worker_flag+'; use worker form URL: '+getConfig().WORKER_REGISTRATION_URL);
-  var warnings=[attendeeResult.warning,seminarResult.warning].filter(Boolean);
   var emailResult=sendConfirmationEmail(reg,payload.edit_page_url||getConfig().EDIT_PAGE_URL,{attendees:attendees,warnings:warnings});
   if(emailResult&&emailResult.sent===false)warnings.push('Confirmation email not sent ('+(emailResult.reason||'unknown')+'); registration saved.');
   return {success:true,registrationId:reg.registrationId,warnings:warnings,message:'Your registration has been received. Your confirmation, payment details, and edit-registration link are below.'};
