@@ -1,0 +1,12 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Environment / secrets — never commit these
+.env
+.env.*
+!.env.example
+deploy.secrets
+
+# OS
+.DS_Store

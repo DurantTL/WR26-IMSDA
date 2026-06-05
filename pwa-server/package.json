@@ -4,13 +4,14 @@
   "description": "Cached PWA server for WR26 registration management and check-in",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "add-user": "node add-user.js"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.5",
     "express": "^4.22.1",
     "express-rate-limit": "^7.4.1"
