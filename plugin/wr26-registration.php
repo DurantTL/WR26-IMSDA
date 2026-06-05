@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WR26 Registration
  * Description: Women's Retreat 2026 registration + waitlist + check-in bridge for Fluent Forms and Google Apps Script.
- * Version: 1.0.3
+ * Version: 1.0.4
  * Author: IMSDA
  */
 
@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WR26_VERSION', '1.0.3');
+define('WR26_VERSION', '1.0.4');
 
 function wr26_default_options() {
     return array(
@@ -111,6 +111,23 @@ add_filter('cron_schedules', function($schedules) {
     $schedules['wr26_every_5_minutes'] = array('interval' => 300, 'display' => 'Every 5 Minutes (WR26)');
     return $schedules;
 });
+
+/**
+ * Self-heal the dispatch-queue cron event.
+ *
+ * The recurring event is created by wr26_activate() (activation hook only), so a
+ * file-only plugin update (git pull / FTP overwrite, with no Deactivate →
+ * Activate) leaves it unscheduled and queued registrations never flush. Re-ensure
+ * it on every load so the event re-registers itself the moment it goes missing,
+ * without needing a reactivation. Guarded by wp_next_scheduled so it never stacks
+ * duplicate events.
+ */
+function wr26_ensure_dispatch_cron() {
+    if (!wp_next_scheduled('wr26_dispatch_queue_process')) {
+        wp_schedule_event(time() + 60, 'wr26_every_5_minutes', 'wr26_dispatch_queue_process');
+    }
+}
+add_action('init', 'wr26_ensure_dispatch_cron');
 
 function wr26_queue_entry($entry_id, $action, $extra = array()) {
     $entry_id = intval($entry_id);
@@ -375,7 +392,31 @@ function wr26_build_and_send($entry_id, $action, $extra = array()) {
     }
     // Retries transient Google front-end failures; safe because GAS de-duplicates by entry_id.
     $res = wr26_gas_http_post($url, $payload, 45, 3);
-    if (empty($res['ok'])) return $res['message'];
+    if (empty($res['ok'])) {
+        // The POST may have landed in GAS even though Google's front end returned a
+        // non-JSON 400 on the *response* — in which case re-queuing just churns the
+        // same entry for several cron cycles before the attempt-5 backstop catches
+        // it. Confirm now whether the entry is already present; if so, treat this as
+        // success on the first cycle (reconciling the local count GAS's success path
+        // would have incremented) instead of reporting a false failure.
+        if (in_array($action, array('register', 'waitlist'), true)) {
+            $processed = wr26_check_entry_processed($entry_id);
+            if ($processed) {
+                // Reconcile the local count GAS's success path would have bumped,
+                // keyed on where GAS actually placed the entry (a 'register' can be
+                // rerouted to the waitlist when capacity is full) — same rule as the
+                // attempt-5 backstop in wr26_process_dispatch_queue().
+                if (!empty($processed['registered'])) {
+                    update_option('wr26_registered_count', intval(get_option('wr26_registered_count', 0)) + 1, false);
+                } elseif (!empty($processed['waitlisted'])) {
+                    update_option('wr26_waitlist_count', intval(get_option('wr26_waitlist_count', 0)) + 1, false);
+                }
+                error_log('WR26 entry '.intval($entry_id).' confirmed present in GAS after a transient '.sanitize_text_field($action).' response failure; treated as success without re-queuing.');
+                return true;
+            }
+        }
+        return $res['message'];
+    }
     $body = $res['body'];
     if (empty($body['success'])) {
         if ($action === 'register' && !empty($body['capacityFull'])) {
