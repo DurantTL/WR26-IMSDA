@@ -705,6 +705,57 @@ async function saveWorker() {
   logActivity(`Added worker ${first} ${last}`);
 }
 
+let groupParsed = { attendees: [], errors: [] };
+
+function renderGroupPreview() {
+  groupParsed = window.WR26_OPTIONS.parseRoster($('group-roster').value);
+  const { attendees, errors } = groupParsed;
+  const out = $('group-preview');
+  if (!attendees.length && !errors.length) { out.innerHTML = ''; return; }
+  const max = window.WR26_OPTIONS.MAX_ATTENDEES;
+  const rows = attendees.map((a, i) => `<div class="seminar-row"><span>${i + 1}. <strong>${escapeHtml(`${a.first_name} ${a.last_name}`.trim())}</strong>${a.email ? ` <span class="roster-sub">${escapeHtml(a.email)}</span>` : ' <span class="roster-sub">(no email)</span>'}</span></div>`).join('');
+  const errBlock = errors.length ? `<div class="info-msg">⚠️ ${escapeHtml(errors.join('; '))}. Fix these lines before importing.</div>` : '';
+  const capBlock = attendees.length > max ? `<div class="info-msg">⚠️ ${attendees.length} exceeds the limit of ${max} per group.</div>` : '';
+  out.innerHTML = `<div class="info-msg"><strong>${attendees.length}</strong> attendee(s) ready.</div>${capBlock}${errBlock}${rows}`;
+}
+
+function readGroupFile() {
+  const file = $('group-file').files && $('group-file').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { $('group-roster').value = String(reader.result || ''); renderGroupPreview(); };
+  reader.readAsText(file);
+}
+
+async function saveGroup() {
+  const first = $('group-first').value.trim();
+  const last = $('group-last').value.trim();
+  const email = $('group-email').value.trim();
+  if (!first || !last || !email) return showToast('Coordinator first name, last name, and email are required.');
+  renderGroupPreview();
+  if (!groupParsed.attendees.length) return showToast('Paste at least one attendee.');
+  if (groupParsed.errors.length) return showToast(`Fix the roster: ${groupParsed.errors.join('; ')}.`);
+  if (groupParsed.attendees.length > window.WR26_OPTIONS.MAX_ATTENDEES) return showToast(`At most ${window.WR26_OPTIONS.MAX_ATTENDEES} attendees per group.`);
+  const body = {
+    first_name: first,
+    last_name: last,
+    email,
+    phone: $('group-phone').value.trim(),
+    church: $('group-church').value.trim(),
+    payment_method: $('group-payment').value,
+    promo_code: $('group-promo').value.trim(),
+    attendees: groupParsed.attendees,
+  };
+  const payload = await api('/api/group/add', { method: 'POST', body });
+  const total = payload.finalAmount != null ? ` Total: $${payload.finalAmount}.` : '';
+  $('group-import-status').textContent = `Imported ${payload.attendeeCount || groupParsed.attendees.length} attendee(s) for ${first} ${last} (${payload.registrationId || ''}).${total}`;
+  ['group-first', 'group-last', 'group-email', 'group-phone', 'group-church', 'group-promo', 'group-roster'].forEach((id) => { $(id).value = ''; });
+  $('group-preview').innerHTML = '';
+  groupParsed = { attendees: [], errors: [] };
+  showToast('Group imported.');
+  logActivity(`Imported group for ${first} ${last} (${payload.attendeeCount || ''} attendees)`);
+}
+
 async function loadStaff() {
   const payload = await api('/api/staff');
   const users = payload.users || [];
@@ -769,7 +820,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.target.id === 'resend-confirmation') resendConfirmation().catch((error) => showToast(error.message));
     if (event.target.id === 'add-attendee') {
       const count = document.querySelectorAll('#detail .attendee-card').length;
-      if (count >= 5) return showToast('Maximum 5 attendees.');
+      const maxAttendees = (window.WR26_OPTIONS && window.WR26_OPTIONS.MAX_ATTENDEES) || 50;
+      if (count >= maxAttendees) return showToast(`Maximum ${maxAttendees} attendees.`);
       $('attendee-list').insertAdjacentHTML('beforeend', attendeeEditor({}, count));
     }
     const transferToggle = event.target.closest('[data-transfer-toggle]');
@@ -813,6 +865,18 @@ document.addEventListener('DOMContentLoaded', () => {
     catch (_e) { $('worker-link').select(); document.execCommand('copy'); showToast('Worker link copied.'); }
   });
   $('save-worker').addEventListener('click', () => saveWorker().catch((error) => showToast(error.message)));
+  const groupLink = $('group-link');
+  if (groupLink) groupLink.value = `${window.location.origin}/group/`;
+  const copyGroupLink = $('copy-group-link');
+  if (copyGroupLink) copyGroupLink.addEventListener('click', async () => {
+    const link = $('group-link').value;
+    try { await navigator.clipboard.writeText(link); showToast('Group link copied.'); }
+    catch (_e) { $('group-link').select(); document.execCommand('copy'); showToast('Group link copied.'); }
+  });
+  if ($('group-preview-btn')) $('group-preview-btn').addEventListener('click', renderGroupPreview);
+  if ($('group-roster')) $('group-roster').addEventListener('blur', renderGroupPreview);
+  if ($('group-file')) $('group-file').addEventListener('change', readGroupFile);
+  if ($('save-group')) $('save-group').addEventListener('click', () => saveGroup().catch((error) => showToast(error.message)));
   $('load-staff').addEventListener('click', () => loadStaff().catch((error) => showToast(error.message)));
   $('save-staff').addEventListener('click', () => saveStaff().catch((error) => showToast(error.message)));
   $('staff-output').addEventListener('click', (event) => {

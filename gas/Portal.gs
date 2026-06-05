@@ -178,7 +178,7 @@ function portalGetRegistrationByMagicToken(payload){
 
 function normalizePortalAttendees_(registrationId,attendees){
   attendees=Array.isArray(attendees)?attendees:[];
-  return attendees.slice(0,5).map(function(a,idx){
+  return attendees.slice(0,WR26_MAX_ATTENDEES).map(function(a,idx){
     var first=String(a.first_name||a.firstName||'').trim();
     var last=String(a.last_name||a.lastName||'').trim();
     return {

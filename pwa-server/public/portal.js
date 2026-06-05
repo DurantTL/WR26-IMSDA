@@ -1,5 +1,5 @@
 (() => {
-  const MAX_ATTENDEES = 5;
+  const MAX_ATTENDEES = (window.WR26_OPTIONS && window.WR26_OPTIONS.MAX_ATTENDEES) || 50;
   const SAFE_MAGIC_LINK_MESSAGE = 'If a registration exists for that email, a link has been sent.';
   const EDITABLE_FIELDS = [
     ['firstName', 'First Name', 'text'],

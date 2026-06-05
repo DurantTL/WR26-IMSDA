@@ -1,4 +1,9 @@
 function getSS(){return SpreadsheetApp.getActiveSpreadsheet();}
+// Maximum attendees on a single registration / group import. Lifted from the
+// original 5 so large church groups fit, and so editing a big party in the
+// portal/staff app no longer silently truncates it. Single source of truth for
+// the GAS side (Groups.gs, Portal.gs); the PWA server has a matching constant.
+var WR26_MAX_ATTENDEES=50;
 function randHex4(){return ('0000'+Math.floor(Math.random()*65535).toString(16)).slice(-4).toUpperCase();}
 function generateRegistrationId(){return 'WR26-'+Date.now()+'-'+randHex4();}
 function generateWaitlistId(){return 'WL26-'+Date.now()+'-'+randHex4();}
@@ -24,7 +29,22 @@ function checkEntryProcessed(payload){
     return {success:true,processed:(registered||waitlisted),registered:registered,waitlisted:waitlisted};
   }catch(e){return {success:false,message:e.message};}
 }
-function checkCapacity(){try{var cfg=getConfig()||{};var capacity=Number(cfg.CAPACITY||350);if(isNaN(capacity)||capacity<0)capacity=350;var active=getAllRegistrations({status:'active'}).length;var available=Math.max(capacity-active,0);return {success:true,capacity:capacity,active:active,available:available,full:available<1};}catch(e){return {success:false,message:e.message,capacity:Number((getConfig()||{}).CAPACITY||350)||350,active:0,available:0,full:false};}}
+// Count people (seats consumed) across active registrations, NOT registration
+// rows: a church group of 30 must consume 30 seats toward CAPACITY, not 1. Each
+// active registration counts its Attendees rows, with a floor of 1 so a
+// registration with no attendee rows still occupies a seat.
+function countActivePeople_(){
+  var active={};
+  getAllRegistrations({status:'active'}).forEach(function(r){active[String(r.registrationId)]=0;});
+  var sh=getSS().getSheetByName('Attendees');
+  if(sh&&sh.getLastRow()>1){
+    var ids=sh.getRange(2,2,sh.getLastRow()-1,1).getValues();
+    for(var i=0;i<ids.length;i++){var id=String(ids[i][0]||'');if(active.hasOwnProperty(id))active[id]++;}
+  }
+  var total=0;Object.keys(active).forEach(function(id){total+=Math.max(active[id],1);});
+  return total;
+}
+function checkCapacity(){try{var cfg=getConfig()||{};var capacity=Number(cfg.CAPACITY||350);if(isNaN(capacity)||capacity<0)capacity=350;var active=countActivePeople_();var available=Math.max(capacity-active,0);return {success:true,capacity:capacity,active:active,available:available,full:available<1};}catch(e){return {success:false,message:e.message,capacity:Number((getConfig()||{}).CAPACITY||350)||350,active:0,available:0,full:false};}}
 function jsonResponse(data){return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);}
 
 // Run fn() while holding the script lock so check-then-write critical sections
