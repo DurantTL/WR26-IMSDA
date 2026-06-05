@@ -206,6 +206,40 @@
         </div>
         <button id="save-worker" class="btn btn-primary full-width">Add Worker</button>
         <p id="worker-status" class="meta"></p>
+
+        <div class="panel-divider"></div>
+        <h2>Group / Church Registration Link</h2>
+        <p class="meta">Send this link to a church coordinator so they can register their whole group at once (pay later by check or one card link, no login required).</p>
+        <div class="action-row">
+          <input id="group-link" readonly>
+          <button id="copy-group-link" class="btn btn-white">Copy</button>
+        </div>
+
+        <div class="panel-divider"></div>
+        <h2>Import a Group / Church</h2>
+        <p class="meta">Or import a church’s list yourself. Enter the coordinator (the payer), paste the roster (one lady per line, or <strong>First, Last, Email</strong>), choose how they’ll pay, and submit. Pricing is per attendee; the coordinator gets one confirmation with the total and a single check/card option. Up to 50 per group.</p>
+        <div class="form-grid compact-form">
+          <label>Coordinator First Name<input id="group-first"></label>
+          <label>Coordinator Last Name<input id="group-last"></label>
+          <label>Coordinator Email<input id="group-email" type="email"></label>
+          <label>Coordinator Phone<input id="group-phone" type="tel"></label>
+          <label>Church<input id="group-church"></label>
+          <label>Payment<select id="group-payment">
+            <option value="check">Mail one check</option>
+            <option value="card">One card link (in confirmation email)</option>
+            <option value="pay_later">Decide later</option>
+          </select></label>
+          <label>Promo code (optional)<input id="group-promo"></label>
+        </div>
+        <label for="group-roster" class="meta">Attendees (one per line):</label>
+        <textarea id="group-roster" rows="6" placeholder="Jane Smith&#10;Mary, Jones, mary@example.com"></textarea>
+        <div class="action-row">
+          <input id="group-file" type="file" accept=".csv,.txt">
+          <button id="group-preview-btn" class="btn btn-white">Preview</button>
+        </div>
+        <div id="group-preview" class="tools-output"></div>
+        <button id="save-group" class="btn btn-primary full-width">Import Group</button>
+        <p id="group-import-status" class="meta"></p>
       </div>
 
       <div id="staff-panel" class="card" hidden>

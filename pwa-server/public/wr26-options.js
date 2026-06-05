@@ -170,6 +170,72 @@
     }
   }
 
+  // Parse a pasted / uploaded roster of attendees for the group-import pages.
+  // Intentionally forgiving: one attendee per line, either a bare full name or
+  // comma/tab-separated "First, Last, Email, Phone, Church" (only the name is
+  // required; email and the rest are optional). A header row containing "name"
+  // or "email" is detected and skipped. Returns { attendees, errors } where each
+  // attendee matches the shape GAS buildAttendees expects (detail fields blank,
+  // to be completed later in the portal). Runs entirely client-side — raw text
+  // never leaves the browser; only the structured array is submitted.
+  function parseRoster(text) {
+    const lines = String(text || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    const attendees = [];
+    const errors = [];
+    let start = 0;
+    if (lines.length) {
+      const h = lines[0].toLowerCase();
+      if (/[,\t]/.test(lines[0]) && /\b(first name|last name|full name|name|email)\b/.test(h)) start = 1;
+    }
+    const looksEmail = (v) => /@/.test(v);
+    const looksPhone = (v) => /^[+()\-\d\s.]{7,}$/.test(v);
+    for (let i = start; i < lines.length; i += 1) {
+      const cells = lines[i].split(/\t|,/).map((c) => c.trim());
+      let first = '';
+      let last = '';
+      let email = '';
+      let phone = '';
+      let church = '';
+      if (cells.length === 1) {
+        const nm = cells[0].split(/\s+/);
+        if (nm.length === 1) { first = nm[0]; } else { first = nm.slice(0, -1).join(' '); last = nm[nm.length - 1]; }
+      } else {
+        first = cells[0] || '';
+        last = cells[1] || '';
+        // "Full Name, email@…" — col 1 is actually the email, not a last name.
+        if (looksEmail(last)) {
+          email = last;
+          last = '';
+          const nm = first.split(/\s+/);
+          if (nm.length > 1) { first = nm.slice(0, -1).join(' '); last = nm[nm.length - 1]; }
+        }
+        for (let c = 2; c < cells.length; c += 1) {
+          const v = cells[c];
+          if (!v) continue;
+          if (looksEmail(v) && !email) email = v;
+          else if (looksPhone(v) && !phone) phone = v;
+          else if (!church) church = v;
+        }
+      }
+      if (!first && !last) { errors.push(`Line ${i + 1}: missing name`); continue; }
+      attendees.push({
+        first_name: first,
+        last_name: last,
+        email,
+        phone,
+        church,
+        attendee_type: '',
+        meal_preference: '',
+        dietary_needs: '',
+        childcare_needed: '',
+        childcare_children: '',
+        volunteer: '',
+        seminar_preferences: {},
+      });
+    }
+    return { attendees, errors };
+  }
+
   global.WR26_OPTIONS = {
     MEAL_OPTIONS,
     ATTENDEE_TYPE_OPTIONS,
@@ -180,5 +246,7 @@
     selectHtml,
     seminarOptions,
     loadSeminars,
+    parseRoster,
+    MAX_ATTENDEES: 50,
   };
 })(window);

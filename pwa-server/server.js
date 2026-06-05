@@ -298,6 +298,11 @@ const magicTokenLimiter = rateLimit({ windowMs: 60 * 1000, max: 20, standardHead
 const staffMagicLinkLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'Too many login link requests. Try again later.' } });
 
 const ONSITE_PAYMENT_METHODS = ['cash', 'check', 'square_onsite', 'other'];
+// Max attendees per registration / group import. Raised from the original 5 so
+// large church groups fit and editing a big party never silently truncates it.
+// Mirrors WR26_MAX_ATTENDEES on the GAS side.
+const MAX_ATTENDEES = 50;
+const GROUP_PAYMENT_METHODS = ['pay_later', 'check', 'card'];
 const isNonEmptyString = (v) => typeof v === 'string' && v.trim().length > 0;
 const isFiniteNonNegative = (v) => Number.isFinite(Number(v)) && Number(v) >= 0;
 const validationError = (res, msg) => res.status(400).json({ success: false, error: msg });
@@ -592,7 +597,7 @@ app.post('/api/registration/:id', noStore, apiWriteLimiter, requireRole('registr
     const fields = req.body.fields;
     if (fields !== undefined && (typeof fields !== 'object' || Array.isArray(fields) || fields === null)) return validationError(res, 'fields must be an object');
     if (req.body.attendees !== undefined && !Array.isArray(req.body.attendees)) return validationError(res, 'attendees must be an array');
-    if (Array.isArray(req.body.attendees) && req.body.attendees.length > 5) return validationError(res, 'A registration can have at most 5 attendees');
+    if (Array.isArray(req.body.attendees) && req.body.attendees.length > MAX_ATTENDEES) return validationError(res, `A registration can have at most ${MAX_ATTENDEES} attendees`);
     const payload = await gasRequest('portalAdminSaveRegistration', {
       registrationId: req.params.id,
       fields: fields || {},
@@ -945,6 +950,92 @@ app.post('/api/worker/add', noStore, apiWriteLimiter, requireRole('registrar'), 
   }
 });
 
+// Normalize a group / church registration body from either the public
+// coordinator page or the staff import panel. One coordinator (the payer)
+// registers a party of up to MAX_ATTENDEES on a pay-later basis; the church pays
+// once by mailed check or a single card link in the confirmation email. Returns
+// { error } or { payload } ready for the GAS groupRegister action.
+function buildGroupPayload(body) {
+  const first = String(body.first_name || body.firstName || '').trim();
+  const last = String(body.last_name || body.lastName || '').trim();
+  const email = String(body.email || '').trim();
+  if (!first || !last) return { error: 'Coordinator first and last name are required' };
+  if (!isValidEmail(email)) return { error: 'A valid coordinator email is required' };
+
+  const rawAttendees = Array.isArray(body.attendees) ? body.attendees : [];
+  const attendees = rawAttendees
+    .map((a) => ({
+      first_name: String(a.first_name || a.firstName || '').trim(),
+      last_name: String(a.last_name || a.lastName || '').trim(),
+      email: String(a.email || '').trim(),
+      phone: String(a.phone || '').trim(),
+      church: String(a.church || '').trim(),
+      attendee_type: String(a.attendee_type || a.attendeeType || '').trim(),
+      meal_preference: String(a.meal_preference || a.mealPreference || '').trim(),
+      dietary_needs: String(a.dietary_needs || a.dietaryNeeds || '').trim(),
+      childcare_needed: String(a.childcare_needed || a.childcareNeeded || '').trim(),
+      childcare_children: String(a.childcare_children || a.childcareChildren || '').trim(),
+      volunteer: String(a.volunteer || '').trim(),
+      seminar_preferences: a.seminar_preferences && typeof a.seminar_preferences === 'object' && !Array.isArray(a.seminar_preferences) ? a.seminar_preferences : {},
+    }))
+    .filter((a) => a.first_name || a.last_name);
+  if (!attendees.length) return { error: 'Add at least one attendee (each must have a name)' };
+  if (attendees.length > MAX_ATTENDEES) return { error: `A group can have at most ${MAX_ATTENDEES} attendees per submission` };
+
+  let paymentMethod = String(body.payment_method || body.paymentMethod || 'pay_later').toLowerCase().trim();
+  if (!GROUP_PAYMENT_METHODS.includes(paymentMethod)) paymentMethod = 'pay_later';
+
+  // Stable id so a double-submit / retry de-dupes in GAS (isDuplicateEntry).
+  const entryId = String(body.entry_id || '').trim() || `group-${crypto.randomUUID()}`;
+
+  return {
+    payload: {
+      first_name: first,
+      last_name: last,
+      email,
+      phone: String(body.phone || '').trim(),
+      church: String(body.church || '').trim(),
+      emergency_contact_name: String(body.emergency_contact_name || '').trim(),
+      emergency_contact_phone: String(body.emergency_contact_phone || '').trim(),
+      payment_method: paymentMethod,
+      promo_code: String(body.promo_code || '').trim(),
+      entry_id: entryId,
+      attendees,
+    },
+  };
+}
+
+// Public self-serve group / church registration. No login — handed to a church
+// coordinator. Tightly rate-limited because each submission can create up to
+// MAX_ATTENDEES seats; the server holds the GAS secret so the browser never
+// talks to GAS directly.
+app.post('/api/group/register', noStore, rateLimit({ windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'Too many group registrations from this network. Please try again later.' } }), async (req, res) => {
+  try {
+    const built = buildGroupPayload(req.body || {});
+    if (built.error) return validationError(res, built.error);
+    const portalUrl = `${req.protocol}://${req.get('host')}/portal/`;
+    const payload = await gasRequest('groupRegister', { ...built.payload, edit_page_url: portalUrl });
+    if (payload.success) await refreshCache(true).catch(() => {});
+    res.status(payload.success ? 200 : 400).json(payload);
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message });
+  }
+});
+
+// Staff-added group / church registration (signed in).
+app.post('/api/group/add', noStore, apiWriteLimiter, requireRole('registrar'), async (req, res) => {
+  try {
+    const built = buildGroupPayload(req.body || {});
+    if (built.error) return validationError(res, built.error);
+    const portalUrl = `${req.protocol}://${req.get('host')}/portal/`;
+    const payload = await gasRequest('groupRegister', { ...built.payload, edit_page_url: portalUrl, adminUser: req.session.sub });
+    if (payload.success) await refreshCache(true);
+    res.status(payload.success ? 200 : 400).json({ ...payload, sync: getSyncMeta() });
+  } catch (error) {
+    res.status(503).json({ success: false, error: error.message, sync: getSyncMeta() });
+  }
+});
+
 app.post('/api/check-in', noStore, apiWriteLimiter, requireRole('checkin', 'registrar'), async (req, res) => {
   try {
     if (!isNonEmptyString(req.body.registrationId)) return validationError(res, 'registrationId is required');
@@ -1017,7 +1108,7 @@ app.post('/api/magic-link/save', noStore, apiWriteLimiter, async (req, res) => {
     if (!isNonEmptyString(req.body.token)) return validationError(res, 'token is required');
     if (req.body.fields !== undefined && (typeof req.body.fields !== 'object' || Array.isArray(req.body.fields) || req.body.fields === null)) return validationError(res, 'fields must be an object');
     if (req.body.attendees !== undefined && !Array.isArray(req.body.attendees)) return validationError(res, 'attendees must be an array');
-    if (Array.isArray(req.body.attendees) && req.body.attendees.length > 5) return validationError(res, 'A registration can have at most 5 attendees');
+    if (Array.isArray(req.body.attendees) && req.body.attendees.length > MAX_ATTENDEES) return validationError(res, `A registration can have at most ${MAX_ATTENDEES} attendees`);
     const payload = await gasRequest('portalSaveRegistrationByMagicToken', {
       token: req.body.token,
       requestIp: req.ip,
@@ -1079,6 +1170,13 @@ function sendWorkerPage(_req, res) {
 }
 app.get(/^\/worker\/$/, sendWorkerPage);
 app.get(/^\/worker$/, (_req, res) => res.redirect(302, '/worker/'));
+
+function sendGroupPage(_req, res) {
+  htmlHeaders(res);
+  res.sendFile(path.join(__dirname, 'public', 'group.html'));
+}
+app.get(/^\/group\/$/, sendGroupPage);
+app.get(/^\/group$/, (_req, res) => res.redirect(302, '/group/'));
 
 app.use('/app', express.static(path.join(__dirname, 'public'), { setHeaders: htmlHeaders }));
 app.use('/', express.static(path.join(__dirname, 'public'), { setHeaders: htmlHeaders }));

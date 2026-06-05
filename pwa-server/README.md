@@ -313,6 +313,34 @@ in rosters / meal counts / seminar assignment) at `finalAmount` 0 / status
 `worker_no_charge`. The public `/worker/` page replaces the external Google Form,
 and staff can copy a shareable worker link from the Tools tab.
 
+### Groups / churches (pay-later, paid as one)
+
+```text
+POST /api/group/register      (public, rate-limited; self-serve coordinator page)
+POST /api/group/add           (staff; registrar role)
+GET  /group/                  (public group / church registration page)
+```
+
+A church coordinator registers a whole party at once (up to 50) on a pay-later
+basis. The roster is pasted or uploaded (one lady per line, or
+`First, Last, Email`) and parsed client-side by `wr26-options.js` `parseRoster`,
+so only the structured attendee array is submitted. It creates **one**
+registration (coordinator = primary contact/payer) priced per attendee, status
+`pending_pay_later` / `pending_check` / `pending_square`. The coordinator gets
+the standard confirmation email, which already carries the group total plus a
+**single** Square pay link (or check-payment copy) for the whole balance; staff
+can record one check via the normal Payment panel. Per-lady details (meal,
+dietary, childcare, seminars) are completed afterward via the portal magic link.
+Staff can copy the `/group/` link or import a roster from the Tools tab.
+
+> **Attendee limit & capacity.** The per-registration attendee cap is **50**
+> (was 5) across the form roster, the staff editor, and the registrant portal
+> (`WR26_MAX_ATTENDEES` in GAS, `MAX_ATTENDEES` in the server / `wr26-options.js`).
+> Venue capacity (`CAPACITY`, default 350) is now counted in **people** — the sum
+> of attendee rows across active registrations — so a 30-lady group consumes 30
+> seats, and both the form and group paths reject a party that would overflow the
+> seats remaining.
+
 ### Form dropdowns (match the Fluent Form)
 
 `public/wr26-options.js` is a shared module that renders `<select>` dropdowns for

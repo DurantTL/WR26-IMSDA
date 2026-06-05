@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2c6fb6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="WR26 Group">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="stylesheet" href="/styles.css">
+  <title>Group / Church Registration — Women’s Retreat 2026</title>
+</head>
+<body class="portal-body">
+  <header class="topbar portal-topbar">
+    <div class="header-content">
+      <div class="header-title-row">
+        <h1>🌸 Women’s Retreat 2026</h1>
+      </div>
+    </div>
+    <div class="header-subtitle">
+      <span>Group / church registration — one coordinator, pay later by check or card</span>
+    </div>
+  </header>
+
+  <main class="layout portal-layout">
+    <section id="group-status" class="portal-alert" hidden></section>
+
+    <section id="group-form-panel" class="card portal-card">
+      <h2>Register Your Group</h2>
+      <p class="meta">Registering a group of ladies from your church? Enter the coordinator’s contact details, paste your list of attendees, and submit. You’ll get one confirmation email with the total due and a single way to pay — mail one check or use one card link for the whole group. Each lady can add her own meal, dietary, childcare, and seminar choices later using the link in your confirmation.</p>
+
+      <form id="group-form" class="portal-form">
+        <h3>Coordinator (the person organizing &amp; paying)</h3>
+        <div class="form-grid compact-form">
+          <label>First Name<input id="g-first" autocomplete="given-name" required></label>
+          <label>Last Name<input id="g-last" autocomplete="family-name" required></label>
+          <label>Email<input id="g-email" type="email" autocomplete="email" required></label>
+          <label>Phone<input id="g-phone" type="tel" autocomplete="tel"></label>
+          <label>Church<input id="g-church"></label>
+        </div>
+
+        <section class="guest-list-section">
+          <h3>Attendees</h3>
+          <p class="meta">One lady per line. Use just a name, or <strong>First, Last, Email</strong> (email optional, but recommended so each lady can complete her own details). You can paste from a spreadsheet, or upload a CSV. Up to 50 per group.</p>
+          <label for="g-roster" class="meta">Paste your list here:</label>
+          <textarea id="g-roster" rows="8" placeholder="Jane Smith&#10;Mary, Jones, mary@example.com&#10;Ann Lee, ann@example.com"></textarea>
+          <div class="action-row">
+            <input id="g-file" type="file" accept=".csv,.txt">
+            <button id="g-preview-btn" class="btn btn-white" type="button">Preview List</button>
+          </div>
+          <div id="g-preview" class="tools-output"></div>
+        </section>
+
+        <section class="guest-list-section">
+          <h3>Payment</h3>
+          <p class="meta">The whole group pays together — you don’t pay per person now. Pricing is calculated automatically (per attendee) and shown in your confirmation email.</p>
+          <div class="form-grid compact-form">
+            <label><input type="radio" name="g-pay" value="check" checked> Mail one check for the group</label>
+            <label><input type="radio" name="g-pay" value="card"> Pay by one card link (sent in the confirmation email)</label>
+            <label><input type="radio" name="g-pay" value="pay_later"> Decide later</label>
+          </div>
+          <div class="form-grid compact-form">
+            <label>Promo code (optional)<input id="g-promo"></label>
+          </div>
+        </section>
+
+        <div class="detail-actions">
+          <button id="group-submit" class="btn btn-primary full-width" type="submit">Submit Group Registration</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="group-done-panel" class="card portal-card success-card" hidden>
+      <h2>✅ Group registration received</h2>
+      <p id="group-done-summary" style="font-size:1.15em;font-weight:bold;"></p>
+      <p class="meta">Please check the coordinator’s email for the confirmation. It includes the total due, how to pay (check or card link), and a link to fill in each lady’s meal, dietary, childcare, and seminar details.</p>
+      <div class="detail-actions"><button id="group-another" class="btn btn-white full-width" type="button">Register Another Group</button></div>
+    </section>
+  </main>
+
+  <script src="/wr26-options.js"></script>
+  <script src="/group.js" defer></script>
+</body>
+</html>
