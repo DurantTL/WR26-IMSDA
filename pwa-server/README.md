@@ -116,26 +116,37 @@ Notes:
 ### Adding bootstrap accounts (the easy way)
 
 Use the `add-user.js` helper — it generates the bcrypt hash and writes the
-`WR26_AUTH_USERS` value for you, so you never hand-edit JSON or hashes:
+`WR26_AUTH_USERS` value for you, so you never hand-edit JSON or hashes. Run it on
+the **host**, from the `pwa-server` directory, so it updates the host
+`pwa-server/.env` that Compose reads via `env_file`:
 
 ```bash
+cd pwa-server
+
 # Interactive (prompts for username, roles, password):
 node add-user.js
 
-# Or all-in-one (writes/updates pwa-server/.env):
+# Or all-in-one (writes/updates the host pwa-server/.env):
 node add-user.js --user caleb --role admin
 
 # Just print the value without touching .env:
 node add-user.js --user caleb --role admin --print
 ```
 
-When the stack is already running you can add a user inside the container:
+Then redeploy so the container picks up the updated host `.env`:
+`docker compose up -d --build`.
 
-```bash
-docker compose exec imsda-registration node add-user.js --user jane --role registrar,checkin
-```
+> **Don't** run this with `docker compose exec` inside the running container: it
+> would write to the container's throwaway `/app/.env`, which the server doesn't
+> read (Compose injects `WR26_AUTH_USERS` from the host `pwa-server/.env` at
+> container start) and which is discarded on the next `up --build`. Always edit
+> the host `pwa-server/.env` — directly with this helper, or via
+> `deploy.secrets` + `./deploy.sh`.
 
-Restart the app afterward so it picks up the change: `docker compose up -d --build`.
+If Node isn't installed on the host, the simplest path is `deploy.secrets` +
+`./deploy.sh`: put the account in `WR26_AUTH_USERS` in `deploy.secrets` (generate
+the hashed value with `--print` from any machine that has the repo set up) and
+rerun `./deploy.sh`, which regenerates the host `.env` and redeploys.
 
 > Day-to-day staff are better added from the admin **Staff** tab in the app,
 > which bcrypt-hashes the password and syncs to the PWA automatically — no
