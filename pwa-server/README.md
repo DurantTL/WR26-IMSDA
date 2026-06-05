@@ -113,10 +113,49 @@ Notes:
 - Stateless signed sessions (HMAC-SHA256, HttpOnly + SameSite=Strict + Secure-in-production) with a `jti` and a server-side revocation list so logout immediately invalidates the token.
 - The GAS secret is never sent to the browser; the server is the only thing that talks to GAS with it.
 
-Generate bcrypt hashes after `npm install`:
+### Adding bootstrap accounts (the easy way)
+
+Use the `add-user.js` helper — it generates the bcrypt hash and writes the
+`WR26_AUTH_USERS` value for you, so you never hand-edit JSON or hashes. Run it on
+the **host**, from the `pwa-server` directory, so it updates the host
+`pwa-server/.env` that Compose reads via `env_file`:
 
 ```bash
-node -e "const bcrypt=require('bcrypt'); bcrypt.hash(process.argv[1],10).then(console.log)" "your-password"
+cd pwa-server
+
+# Interactive (prompts for username, roles, password):
+node add-user.js
+
+# Or all-in-one (writes/updates the host pwa-server/.env):
+node add-user.js --user caleb --role admin
+
+# Just print the value without touching .env:
+node add-user.js --user caleb --role admin --print
+```
+
+Then redeploy so the container picks up the updated host `.env`:
+`docker compose up -d --build`.
+
+> **Don't** run this with `docker compose exec` inside the running container: it
+> would write to the container's throwaway `/app/.env`, which the server doesn't
+> read (Compose injects `WR26_AUTH_USERS` from the host `pwa-server/.env` at
+> container start) and which is discarded on the next `up --build`. Always edit
+> the host `pwa-server/.env` — directly with this helper, or via
+> `deploy.secrets` + `./deploy.sh`.
+
+If Node isn't installed on the host, the simplest path is `deploy.secrets` +
+`./deploy.sh`: put the account in `WR26_AUTH_USERS` in `deploy.secrets` (generate
+the hashed value with `--print` from any machine that has the repo set up) and
+rerun `./deploy.sh`, which regenerates the host `.env` and redeploys.
+
+> Day-to-day staff are better added from the admin **Staff** tab in the app,
+> which bcrypt-hashes the password and syncs to the PWA automatically — no
+> redeploy needed. `WR26_AUTH_USERS` is for the one or two bootstrap admins.
+
+If you'd rather generate a hash by hand (bcryptjs is the bundled implementation):
+
+```bash
+node -e "const bcrypt=require('bcryptjs'); bcrypt.hash(process.argv[1],10).then(console.log)" "your-password"
 ```
 
 Example `WR26_AUTH_USERS`:
@@ -224,6 +263,22 @@ TRUST_PROXY=1
 ```
 
 The repository root includes `docker-compose.yml`; that Compose file builds `./pwa-server/Dockerfile`, publishes `3001:3001`, and loads runtime configuration from `./pwa-server/.env`. The `.env` file is intentionally ignored and excluded from the Docker build context so secrets are supplied by the deployment environment, not committed to Git.
+
+> **Tip — `WR26_AUTH_USERS` and quoting.** Keep the JSON wrapped in single quotes
+> (`WR26_AUTH_USERS='[...]'`) so the `$` characters in the bcrypt hashes are never
+> treated as shell or variable expansions. The server tolerates these surrounding
+> quotes when it parses the value, so the same line works whether it's loaded by
+> dotenv or by Docker Compose's `env_file`. On startup the container logs how many
+> bootstrap admins it loaded — check the logs if a login is rejected.
+
+#### Scripted deploy (`deploy.sh`)
+
+The repository root also includes `deploy.sh`, which builds `pwa-server/.env`
+and runs `docker compose up -d --build` for you. It keeps secrets out of Git:
+copy `deploy.secrets.example` to `deploy.secrets` (gitignored), fill it in, then
+run `./deploy.sh`. It validates required secrets, single-quotes
+`WR26_AUTH_USERS` correctly, and waits for the container health check so a broken
+deploy is obvious immediately.
 
 The staff PWA should open at:
 

@@ -3,7 +3,9 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --omit=dev
+# Reproducible install from the lockfile. All dependencies are now pure-JS
+# (bcrypt was swapped for bcryptjs), so no build toolchain is needed on Alpine.
+RUN npm ci --omit=dev
 
 COPY . .
 

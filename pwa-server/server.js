@@ -1,6 +1,10 @@
 require('dotenv').config();
 
-const bcrypt = require('bcrypt');
+// Pure-JS bcrypt (bcryptjs) — same `$2a/$2b` hash format and async API as the
+// native `bcrypt` module, but with no native build step. This makes the Docker
+// image (node:20-alpine / musl libc) build reliably and removes the failure mode
+// where the native addon silently broke login for the bootstrap admin account.
+const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const express = require('express');
 const rateLimit = require('express-rate-limit');
@@ -126,8 +130,17 @@ app.use((req, res, next) => {
 });
 
 function loadAuthUsers() {
-  const raw = process.env.WR26_AUTH_USERS || process.env.CM26_AUTH_USERS || '';
+  let raw = process.env.WR26_AUTH_USERS || process.env.CM26_AUTH_USERS || '';
   if (!raw) return [];
+  raw = raw.trim();
+  // Some env loaders (notably certain docker-compose `env_file` parsers) keep the
+  // literal surrounding quotes from the .env line, e.g. WR26_AUTH_USERS='[...]'.
+  // dotenv strips them, but Compose may not — leaving the value as "'[...]'" which
+  // is not valid JSON and silently produces zero admins ("can't log in as admin").
+  // Strip one matched pair of surrounding quotes so the JSON still parses.
+  if (raw.length >= 2 && ((raw[0] === "'" && raw[raw.length - 1] === "'") || (raw[0] === '"' && raw[raw.length - 1] === '"'))) {
+    raw = raw.slice(1, -1).trim();
+  }
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
@@ -148,6 +161,14 @@ function loadAuthUsers() {
 // so an operator can never be locked out. They cannot be edited/deleted via the API.
 const bootstrapUsers = loadAuthUsers();
 const bootstrapUsernames = new Set(bootstrapUsers.map((u) => u.username.toLowerCase()));
+// Surface the bootstrap admin set at startup so a misconfigured WR26_AUTH_USERS
+// (empty, malformed JSON, or stray quotes) is obvious in the container logs
+// instead of presenting as a mysterious "invalid username or password".
+if (bootstrapUsers.length) {
+  console.log(`Loaded ${bootstrapUsers.length} bootstrap admin account(s): ${bootstrapUsers.map((u) => u.username).join(', ')}`);
+} else {
+  console.warn('No bootstrap admin accounts loaded from WR26_AUTH_USERS. The only way to sign in will be Staff-sheet accounts (which require an admin to create them first).');
+}
 
 // Staff loaded from the GAS Staff sheet (bcrypt hashes stored there). Refreshed
 // from GAS periodically and after any change. Merged with bootstrap admins at

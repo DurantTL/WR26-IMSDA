@@ -530,10 +530,17 @@ The scanner requires HTTPS on phones. Localhost works for development, but produ
 | `checkin` | Check in guests and record check-in payments |
 | `readonly` | View/search only |
 
-Generate bcrypt hashes for `WR26_AUTH_USERS` inside `pwa-server` after `npm install`:
+Add bootstrap accounts for `WR26_AUTH_USERS` with the helper (generates the
+bcrypt hash and updates `pwa-server/.env` for you):
 
 ```bash
-node -e "const bcrypt=require('bcrypt'); bcrypt.hash(process.argv[1],10).then(console.log)" "your-password"
+cd pwa-server && node add-user.js --user caleb --role admin
+```
+
+Or generate a hash by hand (the bundled implementation is `bcryptjs`):
+
+```bash
+node -e "const bcrypt=require('bcryptjs'); bcrypt.hash(process.argv[1],10).then(console.log)" "your-password"
 ```
 
 ---
