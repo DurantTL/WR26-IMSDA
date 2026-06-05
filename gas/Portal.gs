@@ -232,12 +232,57 @@ function preserveExistingAttendeeFields_(registrationId,normalized){
   }catch(e){Logger.log('preserveExistingAttendeeFields_ failed: '+e.message);}
 }
 
+// Capacity + pricing guard for portal/staff roster edits. Detail-only edits
+// (attendee count unchanged) never touch price. When the count CHANGES we
+// recompute the server-authoritative amount (N x per-head, keeping the original
+// discount); when it GROWS we also reject the save if the added seats would
+// exceed remaining capacity. Must run under the caller's lock (both portal save
+// paths hold one) so the capacity check is atomic. Returns {ok} or {ok:false,message}.
+function applyRosterCapacityAndPricing_(reg,oldCount,newCount){
+  try{
+    var effOld=Math.max(Number(oldCount||0),1);
+    var effNew=Math.max(Number(newCount||0),1);
+    if(newCount>oldCount){
+      var cap=checkCapacity();
+      if(cap&&cap.success){
+        var avail=Number(cap.available||0);
+        var delta=effNew-effOld;
+        if(delta>avail)return {ok:false,message:'Adding attendees would exceed capacity; only '+avail+' seat(s) remain.'};
+      }
+    }
+    if(newCount!==oldCount&&newCount>=1){
+      // Keep the price TIER the registration was originally sold at: derive the
+      // per-head rate from the stored originalAmount (e.g. early-bird) and scale it
+      // to the new count, rather than re-quoting today's tier. Otherwise editing
+      // the roster after the early-bird deadline would silently reprice the whole
+      // party — including existing seats — at the regular rate. A $0 comp stays $0.
+      var perHead=Number(reg.originalAmount||0)/effOld;
+      if(!isFinite(perHead)||perHead<0)perHead=0;
+      var newOriginal=Math.round(perHead*newCount*100)/100;
+      var discount=Number(reg.discountAmount||0);
+      var newFinal=Math.max(newOriginal-discount,0);
+      var fields={originalAmount:newOriginal,finalAmount:newFinal};
+      var paid=Number(reg.amountPaid||0);
+      // If a previously-settled registration now owes for added seats, reopen its
+      // balance so reminders / the Square pay link collect the difference.
+      if(newFinal>paid+0.01&&(reg.paymentStatus==='paid'||reg.paymentStatus==='paid_onsite'))fields.paymentStatus='partial_onsite';
+      updateRegistration(reg.registrationId,fields);
+      reg.originalAmount=newOriginal;reg.finalAmount=newFinal;if(fields.paymentStatus)reg.paymentStatus=fields.paymentStatus;
+    }
+    return {ok:true};
+  }catch(e){Logger.log('applyRosterCapacityAndPricing_ failed: '+e.message);return {ok:true};}
+}
+
 function replaceAttendeesForRegistration_(reg,attendees){
   var ss=getSS();
   var attSh=ss.getSheetByName('Attendees');
   var semSh=ss.getSheetByName('SeminarPreferences');
   var warnings=[];
   var normalized=normalizePortalAttendees_(reg.registrationId,attendees);
+  // Enforce capacity for roster growth and re-price for any count change BEFORE
+  // touching any rows, so a rejected save leaves the existing roster intact.
+  var gate=applyRosterCapacityAndPricing_(reg,getAttendeesForRegistration_(reg.registrationId).length,normalized.length);
+  if(!gate.ok)return {success:false,warnings:[gate.message]};
   // Preserve non-submitted fields before we delete anything.
   preserveExistingAttendeeFields_(reg.registrationId,normalized);
   // Only clear rows from sheets we can actually rewrite, so a missing/renamed tab
@@ -319,12 +364,21 @@ function portalAdminSaveRegistration(payload){
     var result=adminEditRegistration(registrationId,payload.fields||{},payload.adminUser||'portal_admin');
     if(!result.success)return result;
     reg=getRegistrationById(registrationId);
+    var prevFinal=Number(reg.finalAmount||0);
     var warnings=[];
     var repFailed=false;
     if(Array.isArray(payload.attendees)){
       var rep=replaceAttendeesForRegistration_(reg,payload.attendees);
       warnings=rep.warnings||[];
       if(rep.success===false)repFailed=true;
+    }
+    // If a staff-entered change raised the balance (e.g. attendees added on the
+    // registrant's behalf), notify the payer with the new amount due + pay link.
+    if(!repFailed){
+      var afterReg=getRegistrationById(registrationId);
+      if(afterReg&&Number(afterReg.finalAmount||0)>prevFinal+0.01){
+        try{sendEditConfirmationEmail(afterReg);}catch(e){Logger.log('Admin-edit balance email failed: '+e.message);}
+      }
     }
     var bundle=portalGetRegistrationBundle(registrationId);
     bundle.warnings=warnings;

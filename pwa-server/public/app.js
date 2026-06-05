@@ -706,6 +706,13 @@ async function saveWorker() {
 }
 
 let groupParsed = { attendees: [], errors: [] };
+// Stable submission id, retained across retries so a lost response / re-click
+// de-dupes in GAS instead of importing the group twice. Reset after success.
+let groupEntryId = null;
+function ensureGroupEntryId() {
+  if (!groupEntryId) groupEntryId = `group-${(self.crypto && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
+  return groupEntryId;
+}
 
 function renderGroupPreview() {
   groupParsed = window.WR26_OPTIONS.parseRoster($('group-roster').value);
@@ -744,6 +751,7 @@ async function saveGroup() {
     church: $('group-church').value.trim(),
     payment_method: $('group-payment').value,
     promo_code: $('group-promo').value.trim(),
+    entry_id: ensureGroupEntryId(),
     attendees: groupParsed.attendees,
   };
   const payload = await api('/api/group/add', { method: 'POST', body });
@@ -752,6 +760,7 @@ async function saveGroup() {
   ['group-first', 'group-last', 'group-email', 'group-phone', 'group-church', 'group-promo', 'group-roster'].forEach((id) => { $(id).value = ''; });
   $('group-preview').innerHTML = '';
   groupParsed = { attendees: [], errors: [] };
+  groupEntryId = null;
   showToast('Group imported.');
   logActivity(`Imported group for ${first} ${last} (${payload.attendeeCount || ''} attendees)`);
 }

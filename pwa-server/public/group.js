@@ -1,6 +1,14 @@
 (() => {
   const $ = (id) => document.getElementById(id);
   let parsed = { attendees: [], errors: [] };
+  // Stable submission id, retained across retries so a lost response / re-click
+  // de-dupes in GAS (which keys on entry_id) instead of creating a second group.
+  // Regenerated only after a successful submit (resetForm).
+  let entryId = null;
+  function ensureEntryId() {
+    if (!entryId) entryId = `group-${(self.crypto && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
+    return entryId;
+  }
 
   function showStatus(message, type = 'info') {
     const status = $('group-status');
@@ -62,6 +70,7 @@
     parsed = { attendees: [], errors: [] };
     $('group-done-panel').hidden = true;
     $('group-form-panel').hidden = false;
+    entryId = null;
     showStatus('', 'info');
   }
 
@@ -83,6 +92,7 @@
         church: $('g-church').value.trim(),
         payment_method: selectedPayment(),
         promo_code: $('g-promo').value.trim(),
+        entry_id: ensureEntryId(),
         attendees: parsed.attendees,
       };
       const payload = await api('/api/group/register', body);

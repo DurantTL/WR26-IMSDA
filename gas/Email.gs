@@ -72,7 +72,20 @@ function sendConfirmationEmail(reg,edit,context){
 function sendWaitlistEmail(w){return sendEmailSafe_(Object.assign({to:w.email,subject:"Women's Retreat 2026 – You're on the Waitlist",htmlBody:'<p>You are currently #'+escapeHtml(w.position)+' on the waitlist. No payment will be charged until promoted.</p>'},bccObj()));}
 function sendWaitlistPromotionEmail(w,n,edit){var editUrl=portalMintLinkForRegistration_(n,'waitlist_promotion')||(String(edit||'')+'?token='+encodeURIComponent(String(n.editToken||'')));return sendEmailSafe_(Object.assign({to:n.email,subject:"Women's Retreat 2026 – Your Spot is Confirmed!",htmlBody:'<p>Great news! A spot opened up.</p><p>'+escapeHtml(n.firstName)+' '+escapeHtml(n.lastName)+'</p><p><a href="'+escapeHtml(editUrl)+'">Edit Registration</a></p><p><img src="'+escapeHtml(generateQRUrl(n.qrToken))+'"/></p>'},bccObj()));}
 function sendTransferEmail(o,n,reason,refund,edit){var sub="Women's Retreat 2026 – Registration Transfer Confirmation";sendEmailSafe_(Object.assign({to:o.email,subject:sub,htmlBody:'<p>Your registration has been transferred out.</p><p>Reason: '+escapeHtml(reason||'')+'</p><p>Refund notes: '+escapeHtml(refund||'')+'</p>'},bccObj()));var editUrl=portalMintLinkForRegistration_(n,'transfer')||(String(edit||'')+'?token='+encodeURIComponent(String(n.editToken||'')));return sendEmailSafe_(Object.assign({to:n.email,subject:sub,htmlBody:'<p>Your transfer registration is confirmed.</p><p><a href="'+escapeHtml(editUrl)+'">Edit Registration</a></p><p><img src="'+escapeHtml(generateQRUrl(n.qrToken))+'"/></p>'},bccObj()));}
-function sendEditConfirmationEmail(reg){return sendEmailSafe_(Object.assign({to:reg.email,subject:"Women's Retreat 2026 – Registration Updated",htmlBody:'<p>Your registration details were updated.</p><p>'+escapeHtml(reg.firstName)+' '+escapeHtml(reg.lastName)+' | '+escapeHtml(reg.church)+'</p>'},bccObj()));}
+function sendEditConfirmationEmail(reg){
+  // When an edit changes what's owed (e.g. attendees were added to the party),
+  // tell the registrant their new balance and give them a way to pay — otherwise
+  // a roster change would silently raise the amount due with no notification.
+  var isPaid=reg.paymentStatus==='paid'||reg.paymentStatus==='paid_onsite';
+  var owed=Math.round((Number(reg.finalAmount||0)-Number(reg.amountPaid||0))*100)/100;
+  var balanceBlock='';
+  if(!isPaid&&owed>0.01){
+    var payButton=squarePayButtonHtml_(reg);
+    balanceBlock='<p>Your current balance due is <b>$'+escapeHtml(String(owed))+'</b>.</p>'+
+      (payButton?payButton:'<p>Please mail a check payable to the Iowa-Missouri Conference, or use the “Pay by Card” button in your registration portal.</p>');
+  }
+  return sendEmailSafe_(Object.assign({to:reg.email,subject:"Women's Retreat 2026 – Registration Updated",htmlBody:'<p>Your registration details were updated.</p><p>'+escapeHtml(reg.firstName)+' '+escapeHtml(reg.lastName)+' | '+escapeHtml(reg.church)+'</p>'+balanceBlock},bccObj()));
+}
 // Individual-attendee transfer (in-place substitution) notice. Emails the new
 // attendee a welcome/confirmation, and — when a distinct address is on file — a
 // courtesy notice to the person who gave up the spot. The registration holder/payer
