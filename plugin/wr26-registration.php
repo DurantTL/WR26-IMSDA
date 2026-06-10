@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WR26 Registration
  * Description: Women's Retreat 2026 registration + waitlist + check-in bridge for Fluent Forms and Google Apps Script.
- * Version: 1.0.5
+ * Version: 1.0.6
  * Author: IMSDA
  */
 
@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WR26_VERSION', '1.0.5');
+define('WR26_VERSION', '1.0.6');
 
 function wr26_default_options() {
     return array(
@@ -938,6 +938,37 @@ function wr26_tools_fake_registration_payload() {
     );
 }
 
+/**
+ * Re-queue every paid Fluent Forms entry for the configured WR26 form so it is
+ * re-sent to GAS. Safe to run repeatedly: entries already in the Sheet are
+ * acknowledged as duplicates by GAS (de-duplicated by entry_id) and simply
+ * re-marked as dispatched, while entries the Sheet is missing get written.
+ * Returns the number of entries queued.
+ */
+function wr26_requeue_paid_entries() {
+    global $wpdb;
+    $form_id = intval(get_option('wr26_form_id', 0));
+    if (!$form_id) return 0;
+    $entry_ids = $wpdb->get_col($wpdb->prepare(
+        "SELECT id FROM {$wpdb->prefix}fluentform_submissions WHERE form_id=%d AND payment_status='paid' AND status != 'trashed' ORDER BY id ASC LIMIT 500",
+        $form_id
+    ));
+    if (empty($entry_ids)) return 0;
+    // A resent entry's queue item becomes its single pending dispatch record, so
+    // drop any stale copy from the failed list to avoid double bookkeeping.
+    $requeued = array_flip(array_map('intval', $entry_ids));
+    $failed = array_values(array_filter((array) get_option('wr26_failed_submissions', array()), function($item) use ($requeued) {
+        return !isset($requeued[intval($item['entry_id'] ?? 0)]);
+    }));
+    update_option('wr26_failed_submissions', $failed, false);
+    $count = 0;
+    foreach ($entry_ids as $entry_id) {
+        wr26_queue_paid_entry($entry_id);
+        $count++;
+    }
+    return $count;
+}
+
 function wr26_tools_page() {
     if (!current_user_can('manage_options')) {
         wp_die('Unauthorized');
@@ -979,6 +1010,20 @@ function wr26_tools_page() {
             $notice = !empty($result['success'])
                 ? array('type' => 'success', 'message' => 'GAS cache snapshot/ping succeeded.')
                 : array('type' => 'error', 'message' => 'GAS cache snapshot/ping failed. See response below.');
+        } elseif ($action === 'resend_paid') {
+            if (!intval(get_option('wr26_form_id', 0))) {
+                $notice = array('type' => 'error', 'message' => 'Set the Fluent Form ID in WR26 → Settings before resending paid registrations.');
+            } else {
+                $resent = wr26_requeue_paid_entries();
+                if ($resent > 0) {
+                    $notice = array('type' => 'success', 'message' => sprintf(
+                        'Queued %d paid registration(s) for resend to GAS. They will dispatch within 5 minutes — or run them now via WR26 → Dashboard → Run Queue. Entries already in the Sheet are skipped as duplicates by GAS, so nothing gets double-written.',
+                        $resent
+                    ));
+                } else {
+                    $notice = array('type' => 'info', 'message' => 'No paid Fluent Forms entries found for the configured form.');
+                }
+            }
         } else {
             $notice = array('type' => 'error', 'message' => 'Unknown GAS Tools action.');
         }
@@ -1035,6 +1080,13 @@ function wr26_tools_page() {
     wp_nonce_field('wr26_gas_tools');
     echo '<input type="hidden" name="wr26_gas_tools_action" value="ping_cache">';
     echo '<button class="button">Ping GAS / Cache Snapshot</button>';
+    echo '</form>';
+
+    echo '<p style="margin-top:18px"><strong>Resend paid registrations</strong> re-queues every Fluent Forms entry marked <em>paid</em> for the configured form (up to 500). Use this to deliver paid registrations that never reached the Sheet. Safe to run anytime: GAS de-duplicates by entry, so registrations already in the Sheet are skipped, not duplicated.</p>';
+    echo '<form method="post">';
+    wp_nonce_field('wr26_gas_tools');
+    echo '<input type="hidden" name="wr26_gas_tools_action" value="resend_paid">';
+    echo '<button class="button" onclick="return confirm(\'Re-queue all paid Fluent Forms entries for dispatch to GAS? Entries already in the Sheet are skipped as duplicates.\')">Resend Paid Registrations</button>';
     echo '</form>';
 
     echo '<p style="margin-top:18px"><strong>Send fake WR26 registration</strong> creates a real test registration in Google Sheets using a WR26-style two-attendee payload. Delete it from the Sheet after confirming the test.</p>';
