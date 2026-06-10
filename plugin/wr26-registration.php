@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WR26 Registration
  * Description: Women's Retreat 2026 registration + waitlist + check-in bridge for Fluent Forms and Google Apps Script.
- * Version: 1.0.4
+ * Version: 1.0.5
  * Author: IMSDA
  */
 
@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WR26_VERSION', '1.0.4');
+define('WR26_VERSION', '1.0.5');
 
 function wr26_default_options() {
     return array(
@@ -24,6 +24,7 @@ function wr26_default_options() {
         'wr26_edit_page_url' => site_url('/wr26-edit/'),
         'wr26_dispatch_queue' => array(),
         'wr26_failed_submissions' => array(),
+        'wr26_dispatched_entries' => array(),
         'wr26_payment_failures' => array(),
         'wr26_dispatch_last_run' => '',
         'wr26_event_name' => "Women's Retreat 2026",
@@ -454,13 +455,87 @@ function wr26_check_entry_processed($entry_id) {
     return null;
 }
 
+/**
+ * Remember that a Fluent Forms entry was successfully delivered to (or confirmed
+ * present in) GAS, so the backfill scan can skip it cheaply.
+ */
+function wr26_mark_entry_dispatched($entry_id) {
+    $entry_id = intval($entry_id);
+    if (!$entry_id) return;
+    $done = get_option('wr26_dispatched_entries', array());
+    if (!is_array($done)) $done = array();
+    $done[$entry_id] = current_time('mysql');
+    if (count($done) > 3000) {
+        $done = array_slice($done, -3000, null, true);
+    }
+    update_option('wr26_dispatched_entries', $done, false);
+}
+
+/**
+ * Safety net: queue any recent Fluent Forms entry for the WR26 form that never
+ * made it into the dispatch pipeline (e.g. a hook that didn't fire because of a
+ * Fluent Forms version difference, or the plugin being updated between the
+ * submission and the charge). Runs at the top of every dispatch cron cycle.
+ *
+ * Re-queuing an entry that actually did reach GAS is safe: handleRegister()/
+ * handleWaitlist() de-duplicate by entry_id and report duplicate-success, after
+ * which the entry is marked dispatched locally and skipped from then on.
+ */
+function wr26_backfill_missed_entries() {
+    global $wpdb;
+    $form_id = intval(get_option('wr26_form_id', 0));
+    if (!$form_id) return;
+
+    $skip = array();
+    foreach ((array) get_option('wr26_dispatch_queue', array()) as $item) {
+        $skip[intval($item['entry_id'] ?? 0)] = true;
+    }
+    foreach ((array) get_option('wr26_failed_submissions', array()) as $item) {
+        $skip[intval($item['entry_id'] ?? 0)] = true;
+    }
+    foreach ((array) get_option('wr26_dispatched_entries', array()) as $eid => $when) {
+        $skip[intval($eid)] = true;
+    }
+
+    $since = gmdate('Y-m-d H:i:s', current_time('timestamp') - 14 * DAY_IN_SECONDS);
+    $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT id, status, payment_status FROM {$wpdb->prefix}fluentform_submissions WHERE form_id=%d AND created_at >= %s ORDER BY id ASC LIMIT 200",
+        $form_id,
+        $since
+    ), ARRAY_A);
+    if (empty($rows)) return;
+
+    $queued = 0;
+    foreach ($rows as $row) {
+        $entry_id = intval($row['id']);
+        if (!$entry_id || !empty($skip[$entry_id])) continue;
+        if (($row['status'] ?? '') === 'trashed') continue;
+        $parsed = wr26_parse_ff_entry($entry_id);
+        if (empty($parsed)) continue;
+        $pm = $parsed['payment_method'] ?? '';
+        $is_online = (strpos($pm, 'square') !== false || strpos($pm, 'card') !== false || strpos($pm, 'credit') !== false);
+        if ($is_online) {
+            // Card path: only dispatch entries FF has marked paid. Pending means the
+            // charge hasn't resolved yet; failed/refunded must not register a seat.
+            if (strtolower((string) ($row['payment_status'] ?? '')) !== 'paid') continue;
+            wr26_queue_paid_entry($entry_id);
+        } else {
+            $action = intval(get_option('wr26_registered_count', 0)) < intval(get_option('wr26_capacity', 350)) ? 'register' : 'waitlist';
+            wr26_queue_entry($entry_id, $action, array('payment_status' => 'pending_offline'));
+        }
+        error_log('WR26 backfill queued Fluent Forms entry ' . $entry_id . ' that was missing from the dispatch pipeline.');
+        if (++$queued >= 25) break; // keep each cron cycle bounded
+    }
+}
+
 function wr26_process_dispatch_queue() {
+    wr26_backfill_missed_entries();
     $queue = get_option('wr26_dispatch_queue', array());
     $failed = get_option('wr26_failed_submissions', array());
     $new = array();
     foreach ($queue as $item) {
         $result = wr26_build_and_send($item['entry_id'], $item['action'], $item['extra'] ?? array());
-        if ($result === true) continue;
+        if ($result === true) { wr26_mark_entry_dispatched($item['entry_id']); continue; }
         $item['attempts'] = intval($item['attempts']) + 1;
         $item['error'] = sanitize_text_field($result);
         if ($item['attempts'] >= 5) {
@@ -482,6 +557,7 @@ function wr26_process_dispatch_queue() {
                     update_option('wr26_waitlist_count', intval(get_option('wr26_waitlist_count', 0)) + 1, false);
                 }
                 error_log('WR26 entry '.intval($item['entry_id']).' confirmed present in GAS after '.intval($item['attempts']).' transient failures; cleared from queue (local count reconciled), no admin alert.');
+                wr26_mark_entry_dispatched($item['entry_id']);
                 continue;
             }
             $item['failed_at'] = current_time('mysql');
@@ -495,81 +571,127 @@ function wr26_process_dispatch_queue() {
 }
 add_action('wr26_dispatch_queue_process', 'wr26_process_dispatch_queue');
 
-add_action('fluentform/submission_inserted', function($entry_id, $form_data, $form) {
+function wr26_handle_ff_submission_inserted($entry_id, $form_data, $form) {
     if (intval($form->id ?? 0) !== intval(get_option('wr26_form_id', 0))) return;
     $parsed = wr26_parse_ff_entry($entry_id);
     $pm = $parsed['payment_method'] ?? '';
     $is_online = (strpos($pm, 'square') !== false || strpos($pm, 'card') !== false || strpos($pm, 'credit') !== false);
     if ($is_online) {
-        // FF native payment handles this path — fluentform_payment_success fires after charge
+        // FF native payment handles this path — wr26_handle_ff_payment_status_change
+        // queues the entry when FF flips the submission's payment status to 'paid'.
         return;
     }
     // Pay Later / offline path — queue immediately
     $action = intval(get_option('wr26_registered_count', 0)) < intval(get_option('wr26_capacity', 350)) ? 'register' : 'waitlist';
     wr26_queue_entry($entry_id, $action, array('payment_status' => 'pending_offline'));
-}, 10, 3);
+}
+// Modern FF (4.3+) fires the slash hook; older builds only fire the underscore
+// one. Register both — wr26_queue_entry() de-duplicates by entry+action, so a
+// site where both fire queues the entry exactly once.
+add_action('fluentform/submission_inserted', 'wr26_handle_ff_submission_inserted', 10, 3);
+add_action('fluentform_submission_inserted', 'wr26_handle_ff_submission_inserted', 10, 3);
 
-// FF native Square charge succeeded — read transaction details and queue GAS dispatch
-add_action('fluentform_payment_success', function($transaction, $submission, $form) {
-    if (!is_object($submission)) return;
-    $entry_id = intval($submission->id ?? 0);
+/**
+ * Queue a card-paid entry for GAS dispatch, pulling the charge details from the
+ * Fluent Forms transactions table (payment_total is stored in cents). Safe to
+ * call more than once for the same entry — wr26_queue_entry() de-duplicates and
+ * GAS de-duplicates again by entry_id.
+ */
+function wr26_queue_paid_entry($entry_id) {
+    global $wpdb;
+    $entry_id = intval($entry_id);
     if (!$entry_id) return;
-
-    // Verify this is the WR26 form
-    $configured_form_id = intval(get_option('wr26_form_id', 0));
-    $form_id = is_object($form) ? intval($form->id ?? 0) : intval($form ?? 0);
-    if (!$form_id) {
-        global $wpdb;
-        $form_id = intval($wpdb->get_var($wpdb->prepare("SELECT form_id FROM {$wpdb->prefix}fluentform_submissions WHERE id=%d", $entry_id)));
+    $tx = $wpdb->get_row($wpdb->prepare(
+        "SELECT charge_id, transaction_hash, payment_total FROM {$wpdb->prefix}fluentform_transactions WHERE submission_id=%d AND status IN ('paid','succeeded') ORDER BY id DESC LIMIT 1",
+        $entry_id
+    ), ARRAY_A);
+    if (!$tx) {
+        $tx = $wpdb->get_row($wpdb->prepare(
+            "SELECT charge_id, transaction_hash, payment_total FROM {$wpdb->prefix}fluentform_transactions WHERE submission_id=%d ORDER BY id DESC LIMIT 1",
+            $entry_id
+        ), ARRAY_A);
     }
-    if ($configured_form_id && $form_id !== $configured_form_id) return;
-
-    $charge_id  = '';
-    $amount_paid = 0.0;
-    $coupon_used = '';
-
-    if (is_object($transaction)) {
-        $charge_id   = sanitize_text_field($transaction->charge_id ?? $transaction->transaction_hash ?? '');
-        $amount_paid = floatval(($transaction->payment_total ?? 0) / 100);
-        // Coupon may be stored as a code or an ID depending on FF Pro version
-        $coupon_used = sanitize_text_field($transaction->coupon_code ?? ($transaction->coupon_id ? (string) $transaction->coupon_id : ''));
-    }
-
     $action = intval(get_option('wr26_registered_count', 0)) < intval(get_option('wr26_capacity', 350)) ? 'register' : 'waitlist';
     wr26_queue_entry($entry_id, $action, array(
         'payment_status'   => 'paid',
-        'square_charge_id' => $charge_id,
-        'amount_paid'      => $amount_paid,
-        'coupon_used'      => $coupon_used,
+        'square_charge_id' => sanitize_text_field($tx['charge_id'] ?? '') ?: sanitize_text_field($tx['transaction_hash'] ?? ''),
+        'amount_paid'      => isset($tx['payment_total']) ? floatval($tx['payment_total']) / 100 : 0.0,
+        'coupon_used'      => '',
     ));
-}, 10, 3);
+}
 
-// FF native Square charge failed — log for admin visibility; FF blocks submission so no entry is created
-add_action('fluentform_payment_failed', function($transaction, $submission, $form) {
-    if (!is_object($submission)) return;
-    $entry_id = intval($submission->id ?? 0);
-
-    $form_id = is_object($form) ? intval($form->id ?? 0) : intval($form ?? 0);
-    if (!$form_id && $entry_id) {
-        global $wpdb;
-        $form_id = intval($wpdb->get_var($wpdb->prepare("SELECT form_id FROM {$wpdb->prefix}fluentform_submissions WHERE id=%d", $entry_id)));
-    }
-    $configured_form_id = intval(get_option('wr26_form_id', 0));
-    if ($configured_form_id && $form_id !== $configured_form_id) return;
-
+function wr26_log_payment_failure($entry_id, $form_id, $charge_id, $error) {
     $failures = get_option('wr26_payment_failures', array());
     $failures[] = array(
-        'entry_id'  => $entry_id,
-        'form_id'   => $form_id,
+        'entry_id'  => intval($entry_id),
+        'form_id'   => intval($form_id),
         'failed_at' => current_time('mysql'),
-        'charge_id' => sanitize_text_field(is_object($transaction) ? ($transaction->charge_id ?? $transaction->transaction_hash ?? '') : ''),
-        'error'     => sanitize_text_field(is_object($transaction) ? ($transaction->last_error ?? $transaction->status ?? '') : ''),
+        'charge_id' => sanitize_text_field($charge_id),
+        'error'     => sanitize_text_field($error),
     );
     if (count($failures) > 100) {
         $failures = array_slice($failures, -100);
     }
     update_option('wr26_payment_failures', $failures, false);
-    error_log('WR26 payment failed for entry ' . $entry_id . ': ' . (is_object($transaction) ? wp_json_encode($transaction) : '(no transaction)'));
+    error_log('WR26 payment failed for entry ' . intval($entry_id) . ': ' . sanitize_text_field($error));
+}
+
+/**
+ * FF native payment result — fluentform/after_payment_status_change is the hook
+ * Fluent Forms actually fires when a charge resolves (the previously used
+ * "fluentform_payment_success" does not exist in Fluent Forms, which is why
+ * card-paid registrations never reached GAS while the fake admin test — which
+ * bypasses Fluent Forms entirely — worked).
+ *
+ * Documented signature is ($newStatus, $submission), but accept either order
+ * defensively since $submission may arrive as an array or object.
+ */
+function wr26_handle_ff_payment_status_change($arg1, $arg2 = null) {
+    if (is_string($arg1) && (is_array($arg2) || is_object($arg2))) {
+        $status = $arg1;
+        $submission = $arg2;
+    } elseif (is_string($arg2) && (is_array($arg1) || is_object($arg1))) {
+        $status = $arg2;
+        $submission = $arg1;
+    } else {
+        return;
+    }
+    $status = strtolower(sanitize_text_field($status));
+    $submission = is_object($submission) ? get_object_vars($submission) : $submission;
+    $entry_id = intval($submission['id'] ?? $submission['submission_id'] ?? 0);
+    if (!$entry_id) return;
+
+    global $wpdb;
+    $form_id = intval($submission['form_id'] ?? 0);
+    if (!$form_id) {
+        $form_id = intval($wpdb->get_var($wpdb->prepare("SELECT form_id FROM {$wpdb->prefix}fluentform_submissions WHERE id=%d", $entry_id)));
+    }
+    $configured_form_id = intval(get_option('wr26_form_id', 0));
+    if ($configured_form_id && $form_id !== $configured_form_id) return;
+
+    if ($status === 'paid') {
+        wr26_queue_paid_entry($entry_id);
+        return;
+    }
+    if (in_array($status, array('failed', 'declined', 'cancelled'), true)) {
+        wr26_log_payment_failure($entry_id, $form_id, '', 'Payment status changed to ' . $status);
+    }
+}
+add_action('fluentform/after_payment_status_change', 'wr26_handle_ff_payment_status_change', 10, 2);
+add_action('fluentform_after_payment_status_change', 'wr26_handle_ff_payment_status_change', 10, 2);
+
+// Compatibility shim: kept in case any FF build fires this legacy name. Routes
+// into the same paid-entry path; harmless no-op everywhere else.
+add_action('fluentform_payment_success', function($transaction = null, $submission = null, $form = null) {
+    $entry_id = 0;
+    if (is_object($submission) && !empty($submission->id)) {
+        $entry_id = intval($submission->id);
+    } elseif (is_object($transaction) && !empty($transaction->submission_id)) {
+        $entry_id = intval($transaction->submission_id);
+    }
+    if ($entry_id) {
+        wr26_handle_ff_payment_status_change('paid', array('id' => $entry_id));
+    }
 }, 10, 3);
 
 function wr26_gas_request($payload, $timeout = 30) {
@@ -623,12 +745,11 @@ function wr26_gas_diagnose_non_json($code, $raw_body) {
 
     if ($code === 400 && $is_google_html) {
         return 'Google returned an HTTP 400 page instead of JSON, so this request did not reach Apps Script. '
-            . 'Apps Script\'s front end does this intermittently even when the URL and deployment are correct, so the plugin '
-            . 'retries automatically — and because registrations de-duplicate by entry, a momentary 400 here does NOT mean a '
-            . 'submission was lost (run the full test below to confirm the connection works). '
-            . 'Only if EVERY attempt fails (including the full test) is the GAS URL likely wrong or undeployed: in '
+            . 'The plugin already follows Apps Script\'s POST redirect correctly and retried with backoff, so a persistent 400 '
+            . 'usually means the GAS URL is wrong, truncated, or points to an undeployed/archived deployment. In '
             . 'WR26 → Settings → GAS URL, paste the current Web app URL ending in /exec from Apps Script → Deploy → Manage '
-            . 'deployments, redeploy (New deployment or Edit → new version) with "Who has access: Anyone", and retest.';
+            . 'deployments, redeploy (New deployment or Edit → new version) with "Who has access: Anyone", and retest. '
+            . 'Because registrations de-duplicate by entry, a transient 400 does NOT mean a submission was lost.';
     }
     if (($code === 401 || $code === 403) || stripos($raw, 'accounts.google.com') !== false || stripos($raw, 'sign in') !== false) {
         return 'Google returned a sign-in/authorization page instead of JSON (HTTP ' . intval($code) . '). '
@@ -644,13 +765,19 @@ function wr26_gas_diagnose_non_json($code, $raw_body) {
 /**
  * POST JSON to the GAS web app, retrying transient failures.
  *
- * Apps Script's front end (script.google.com → script.googleusercontent.com)
- * intermittently answers a perfectly valid POST with a Google "Error 400" /
- * non-JSON HTML page even when the URL and deployment are correct; an identical
- * request a moment later succeeds. Because handleRegister()/handleWaitlist()
- * de-duplicate by entry_id, replaying a register/waitlist POST is safe, so we
- * retry these transient responses (Google HTML 400, 5xx, 429, 408, and WP
- * network errors) with a short backoff instead of reporting a false failure.
+ * Apps Script answers a POST to the /exec URL with a 302 redirect to
+ * script.googleusercontent.com, where the response body must be fetched with a
+ * plain GET. WordPress's HTTP layer keeps the method on 302s, so letting it
+ * follow the redirect re-POSTs the JSON body to googleusercontent.com — which
+ * Google's front end rejects with its HTML "Error 400 (Bad Request)" robot page
+ * even though doPost() already ran. That was the source of the intermittent
+ * "HTTP 400 page instead of JSON" failures, so we follow the redirect manually
+ * with GET instead (see the redirection=>0 handling in the loop below).
+ *
+ * Any remaining non-JSON responses (5xx, 429, 408, network errors, residual
+ * Google HTML 400s) are retried with a short backoff; replaying a
+ * register/waitlist POST is safe because handleRegister()/handleWaitlist()
+ * de-duplicate by entry_id.
  *
  * Returns:
  *   on JSON reply: ['ok'=>true,  'body'=>array, 'http_code'=>int]
@@ -663,11 +790,26 @@ function wr26_gas_http_post($url, $payload, $timeout = 45, $tries = 3) {
         if ($attempt > 1) {
             sleep(2 * ($attempt - 1)); // 2s, 4s, … backoff between attempts
         }
+        // redirection=>0: do NOT let WP follow the 302 itself (it would re-POST
+        // the body to googleusercontent.com and get Google's HTML 400 page).
         $response = wp_remote_post($url, array(
             'timeout' => intval($timeout),
+            'redirection' => 0,
             'headers' => array('Content-Type' => 'application/json'),
             'body' => wp_json_encode($payload),
         ));
+        if (!is_wp_error($response)) {
+            $code = intval(wp_remote_retrieve_response_code($response));
+            if ($code >= 300 && $code < 400) {
+                $location = wp_remote_retrieve_header($response, 'location');
+                $location = is_array($location) ? end($location) : $location;
+                if ($location) {
+                    // The script has already executed; this GET only collects the
+                    // JSON body Apps Script staged at the one-time redirect URL.
+                    $response = wp_remote_get($location, array('timeout' => intval($timeout), 'redirection' => 5));
+                }
+            }
+        }
         if (is_wp_error($response)) {
             $last = array('ok' => false, 'http_code' => 0, 'raw_body' => '', 'message' => $response->get_error_message());
             continue; // network error — retry
@@ -827,7 +969,13 @@ function wr26_tools_page() {
                 ? array('type' => 'success', 'message' => 'Fake WR26 test registration sent to GAS successfully. Check Registrations, Attendees, and SeminarPreferences in the Sheet.')
                 : array('type' => 'error', 'message' => 'Fake WR26 test registration failed. See response below.');
         } elseif ($action === 'ping_cache') {
-            $result = wr26_tools_post_to_gas(array('action' => 'portalGetCacheSnapshot'), 45);
+            // Prefer the lightweight 'ping' action (validates URL + secret without
+            // building a cache snapshot). Older GAS deployments that predate it
+            // answer "Unknown action", so fall back to the snapshot for those.
+            $result = wr26_tools_post_to_gas(array('action' => 'ping'), 45);
+            if (empty($result['success']) && stripos((string) ($result['message'] ?? ''), 'unknown action') !== false) {
+                $result = wr26_tools_post_to_gas(array('action' => 'portalGetCacheSnapshot'), 45);
+            }
             $notice = !empty($result['success'])
                 ? array('type' => 'success', 'message' => 'GAS cache snapshot/ping succeeded.')
                 : array('type' => 'error', 'message' => 'GAS cache snapshot/ping failed. See response below.');

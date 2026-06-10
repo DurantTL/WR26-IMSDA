@@ -27,7 +27,7 @@ different directions. The decisions below resolve that.
 the 2026 event and, on review, is already healthy — it parses all four seminar
 sessions and attendee types, sends correct camelCase keys to GAS, gates the
 admin script enqueue, ships a real token-based edit form, and handles Square via
-Fluent Forms' native `fluentform_payment_success/_failed` hooks. The IMSDA
+Fluent Forms' native `fluentform/after_payment_status_change` hook. The IMSDA
 engine's blocking bugs are genuinely fixed in code too, but it stays parked until
 there is a need for multi-event support.
 
@@ -43,7 +43,7 @@ display/charge convenience only; drift is *flagged* by GAS, not silently charged
 ```
 Registrant → Fluent Forms (smart-payments.json)
   ├─ Pay Later  → fluentform/submission_inserted ──┐
-  └─ Square     → fluentform_payment_success ──────┤
+  └─ Square     → fluentform/after_payment_status_change ('paid') ─┤
                                                     ▼
         wr26_queue_entry()              plugin/wr26-registration.php:115
                                                     ▼  (WP cron, every 5 min)
