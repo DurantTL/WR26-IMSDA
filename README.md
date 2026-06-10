@@ -806,8 +806,9 @@ recommended path.
 Promo handling is split by payment path:
 
 - **Card / Pay Now discounts are handled by Fluent Forms' native coupon field.** The
-  coupon discounts the chargeable amount at checkout and the coupon code is reported
-  back through `fluentform_payment_success` into the Sheet (`Coupon Used`). The
+  coupon discounts the chargeable amount at checkout and the code entered in the
+  form's `promo_code` field is reported into the Sheet (`Coupon Used`) when the
+  paid entry is dispatched via `fluentform/after_payment_status_change`. The
   registration form intentionally does **not** apply its own promo discount in
   JavaScript, so a code never gets discounted twice.
 - **Pay-Later discounts** can be recorded via the GAS `PromoCodes` sheet: the
