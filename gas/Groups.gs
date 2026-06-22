@@ -38,17 +38,13 @@ function handleGroupRegistration(payload){
       var amountInfo=resolveRegistrationAmount(payload,attendeeCount,true);
       if(amountInfo.amount===null||amountInfo.amount===undefined||isNaN(Number(amountInfo.amount)))return {success:false,message:'Unable to determine registration amount: '+amountInfo.source};
       var originalAmount=Number(amountInfo.amount||0),discount=0,promo='',couponUsed='';
-      // Apply the promo ONCE to the whole party total, consuming ONE use — a group is
-      // a single registration. validateAndApplyPromoCode increments Current Uses, so
-      // it must be called exactly once here. couponUsed is set (mirroring the main
-      // form) so the group promo shows in getCouponStats and Max-Uses tracking.
-      // >>> DECISION POINT (per-lady vs per-party scholarships): the default is
-      // per-PARTY — one discount, one use for the whole group. If a code like the
-      // $60 Scholarship is meant to apply PER LADY instead, multiply both the
-      // discount and the consumption by attendeeCount here (e.g.
-      // discount=Number(pr.discount||0)*attendeeCount; and consume N uses). Left
-      // as per-party by default so the user can choose.
-      if(payload.promo_code){var pr=validateAndApplyPromoCode(payload.promo_code,originalAmount);if(pr.valid){discount=Number(pr.discount||0);promo=payload.promo_code;couponUsed=promo;}}
+      // Apply the promo once for the whole party, passing attendeeCount so the code
+      // type decides the scope: a FIXED code scales per-lady (discount x N, N slots
+      // consumed) while a PERCENT code stays one transaction (one use).
+      // validateAndApplyPromoCode owns that decision, so read pr.discount directly.
+      // couponUsed is set (mirroring the main form) so the group promo shows in
+      // getCouponStats and Max-Uses tracking.
+      if(payload.promo_code){var pr=validateAndApplyPromoCode(payload.promo_code,originalAmount,attendeeCount);if(pr.valid){discount=Number(pr.discount||0);promo=payload.promo_code;couponUsed=promo;}}
 
       var paymentMethod=normalizePaymentMethod(payload.payment_method||'pay_later');
       var paymentStatus='pending_pay_later';

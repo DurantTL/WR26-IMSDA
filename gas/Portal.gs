@@ -232,6 +232,54 @@ function preserveExistingAttendeeFields_(registrationId,normalized){
   }catch(e){Logger.log('preserveExistingAttendeeFields_ failed: '+e.message);}
 }
 
+// Per-lady promo/scholarship gate for a roster edit. Resolves the discount for the
+// NEW attendee count and, for a FIXED (per-lady) scholarship, enforces Max-Uses on
+// growth and adjusts the promo counter (consume on growth, RELEASE on shrink).
+// Returns {ok:true,discount[,warning]} or {ok:false,message}. Must run under the
+// caller's lock so the cap check + counter write are atomic (both portal save paths
+// already hold one). The Max-Uses cap is checked BEFORE writing Current Uses, so a
+// rejected save consumes nothing.
+function promoApplyDeltaForEdit_(reg,oldCount,newCount,newOriginal){
+  try{
+    var effOld=Math.max(Number(oldCount||0),1);
+    var effNew=Math.max(Number(newCount||0),1);
+    var orig=Number(newOriginal||0);
+    var storedDiscount=Number((reg&&reg.discountAmount)||0);
+    // Default: rescale the stored discount linearly with the count (cap at original).
+    var rescaled=Math.min(Math.round((storedDiscount/effOld*effNew)*100)/100,orig);
+    var code=String((reg&&reg.promoCode)||'').trim();
+    if(!code)return {ok:true,discount:rescaled};
+    var s=getSS().getSheetByName('PromoCodes');
+    var v=s.getDataRange().getValues();
+    for(var i=1;i<v.length;i++){
+      if(String(v[i][0]).toUpperCase()!==code.toUpperCase())continue;
+      var dtype=normalizeDiscountType(v[i][2]);
+      var rate=promoNumber_(v[i][3]);
+      if(dtype==='percent'){
+        // One transaction on the whole party total; the count change consumes no uses.
+        return {ok:true,discount:Math.min(orig*rate/100,orig)};
+      }
+      if(dtype==='fixed'){
+        var max=promoNumber_(v[i][4]),cur=promoNumber_(v[i][5]);
+        var delta=Number(newCount||0)-Number(oldCount||0);
+        // Only growth can breach the cap; check it BEFORE writing Current Uses so a
+        // rejected save consumes nothing.
+        if(delta>0&&max>0&&(cur+delta)>max){
+          var remain=Math.max(max-cur,0);
+          return {ok:false,message:'Scholarship code "'+code+'" has only '+remain+' of the '+delta+' added slot(s) remaining. Please remove '+(delta-remain)+' attendee(s) from this party, or contact the conference office to raise the limit.'};
+        }
+        // Consume on growth, RELEASE on shrink (negative delta lowers Current Uses).
+        s.getRange(i+1,6).setValue(cur+delta);
+        return {ok:true,discount:Math.min(rate*effNew,orig)};
+      }
+      // Code still on file but with an unrecognized discount type: rescale + warn.
+      return {ok:true,discount:rescaled,warning:'Promo code "'+code+'" has an unrecognized discount type; the discount was scaled proportionally.'};
+    }
+    // Code no longer in the sheet: rescale + warn.
+    return {ok:true,discount:rescaled,warning:'Promo code "'+code+'" is no longer on file; the discount was scaled proportionally.'};
+  }catch(e){return {ok:false,message:'Could not apply the scholarship change: '+e.message};}
+}
+
 // Capacity + pricing guard for portal/staff roster edits. Detail-only edits
 // (attendee count unchanged) never touch price. When the count CHANGES we
 // recompute the server-authoritative amount (N x per-head, keeping the original
@@ -259,15 +307,21 @@ function applyRosterCapacityAndPricing_(reg,oldCount,newCount){
       var perHead=Number(reg.originalAmount||0)/effOld;
       if(!isFinite(perHead)||perHead<0)perHead=0;
       var newOriginal=Math.round(perHead*newCount*100)/100;
-      var discount=Number(reg.discountAmount||0);
+      // Per-lady scholarship gate: resolves the discount for the new count and, for a
+      // FIXED code, enforces Max-Uses on growth (and adjusts the promo counter). A cap
+      // rejection here must abort the whole save, so bubble {rejected:true}.
+      var gate=promoApplyDeltaForEdit_(reg,oldCount,newCount,newOriginal);
+      if(!gate.ok)return {ok:false,rejected:true,message:gate.message};
+      var discount=Number(gate.discount||0);
       var newFinal=Math.max(newOriginal-discount,0);
-      var fields={originalAmount:newOriginal,finalAmount:newFinal};
+      var fields={originalAmount:newOriginal,discountAmount:discount,finalAmount:newFinal};
       var paid=Number(reg.amountPaid||0);
       // If a previously-settled registration now owes for added seats, reopen its
       // balance so reminders / the Square pay link collect the difference.
       if(newFinal>paid+0.01&&(reg.paymentStatus==='paid'||reg.paymentStatus==='paid_onsite'))fields.paymentStatus='partial_onsite';
       updateRegistration(reg.registrationId,fields);
-      reg.originalAmount=newOriginal;reg.finalAmount=newFinal;if(fields.paymentStatus)reg.paymentStatus=fields.paymentStatus;
+      reg.originalAmount=newOriginal;reg.discountAmount=discount;reg.finalAmount=newFinal;if(fields.paymentStatus)reg.paymentStatus=fields.paymentStatus;
+      if(gate.warning)return {ok:true,warning:gate.warning};
     }
     return {ok:true};
   }catch(e){Logger.log('applyRosterCapacityAndPricing_ failed: '+e.message);return {ok:true};}
@@ -282,7 +336,10 @@ function replaceAttendeesForRegistration_(reg,attendees){
   // Enforce capacity for roster growth and re-price for any count change BEFORE
   // touching any rows, so a rejected save leaves the existing roster intact.
   var gate=applyRosterCapacityAndPricing_(reg,getAttendeesForRegistration_(reg.registrationId).length,normalized.length);
-  if(!gate.ok)return {success:false,warnings:[gate.message]};
+  // Carry the rejected flag (scholarship cap) and any warning up to the save paths.
+  // The roster stays untouched on a rejection because we return before deleting rows.
+  if(!gate.ok)return {success:false,rejected:!!gate.rejected,warnings:[gate.message]};
+  if(gate.warning)warnings.push(gate.warning);
   // Preserve non-submitted fields before we delete anything.
   preserveExistingAttendeeFields_(reg.registrationId,normalized);
   // Only clear rows from sheets we can actually rewrite, so a missing/renamed tab
@@ -320,10 +377,11 @@ function portalSaveRegistrationByMagicToken(payload){
     reg=getRegistrationById(reg.registrationId);
     var warnings=[];
     var repFailed=false;
+    var repRejected=false;
     if(Array.isArray(payload.attendees)){
       var rep=replaceAttendeesForRegistration_(reg,payload.attendees);
       warnings=rep.warnings||[];
-      if(rep.success===false)repFailed=true;
+      if(rep.success===false){repFailed=true;repRejected=!!rep.rejected;}
     }
     logAudit_('portalEdit',reg.registrationId,v.email||'registrant',repFailed?'Magic-link self-service edit FAILED (attendee/seminar write)':'Magic-link self-service edit',payload&&payload.requestIp);
     // Only confirm "saved" by email when the attendee/seminar rewrite succeeded.
@@ -332,7 +390,9 @@ function portalSaveRegistrationByMagicToken(payload){
     bundle.warnings=warnings;
     // A failed rewrite must not be reported as a successful save, even though the
     // registrant fields above did persist. Surface it so the caller/UI shows an error.
-    if(repFailed){bundle.success=false;bundle.message='Your registrant details were saved, but attendee or seminar choices could not be written: '+warnings.join(' ')+' Please try again or contact us so nothing is lost.';}
+    // A scholarship cap rejection left the roster untouched, so surface ONLY that
+    // message; any other write failure keeps the generic "try again" copy.
+    if(repFailed){bundle.success=false;bundle.message=repRejected?warnings.join(' '):('Your registrant details were saved, but attendee or seminar choices could not be written: '+warnings.join(' ')+' Please try again or contact us so nothing is lost.');}
     return bundle;
   }catch(e){return {success:false,message:e.message};}
   finally{lock.releaseLock();}
@@ -367,10 +427,11 @@ function portalAdminSaveRegistration(payload){
     var prevFinal=Number(reg.finalAmount||0);
     var warnings=[];
     var repFailed=false;
+    var repRejected=false;
     if(Array.isArray(payload.attendees)){
       var rep=replaceAttendeesForRegistration_(reg,payload.attendees);
       warnings=rep.warnings||[];
-      if(rep.success===false)repFailed=true;
+      if(rep.success===false){repFailed=true;repRejected=!!rep.rejected;}
     }
     // If a staff-entered change raised the balance (e.g. attendees added on the
     // registrant's behalf), notify the payer with the new amount due + pay link.
@@ -383,7 +444,9 @@ function portalAdminSaveRegistration(payload){
     var bundle=portalGetRegistrationBundle(registrationId);
     bundle.warnings=warnings;
     // A failed attendee/seminar rewrite must not be reported as a successful save.
-    if(repFailed){bundle.success=false;bundle.message='Registration fields saved, but attendee or seminar choices could not be written: '+warnings.join(' ')+' Please try again.';}
+    // A scholarship cap rejection left the roster untouched, so surface ONLY that
+    // message; any other write failure keeps the generic "try again" copy.
+    if(repFailed){bundle.success=false;bundle.message=repRejected?warnings.join(' '):('Registration fields saved, but attendee or seminar choices could not be written: '+warnings.join(' ')+' Please try again.');}
     return bundle;
   }catch(e){return {success:false,message:e.message};}
   finally{lock.releaseLock();}

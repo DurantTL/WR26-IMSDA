@@ -61,7 +61,8 @@ function handleRegister(payload){try{
       // neither a charge-time coupon nor a form promo code on record.
       if(!promo&&(amountPaid-originalAmount)<-0.01)reconNote='[reconcile '+new Date().toISOString()+'] Charged $'+amountPaid+' is below expected base $'+originalAmount+' (no coupon recorded) — review.';
     }else if(payload.promo_code){
-      var pr=validateAndApplyPromoCode(payload.promo_code,originalAmount);
+      // Pass attendeeCount so a FIXED code applies per-lady (discount x N, N slots).
+      var pr=validateAndApplyPromoCode(payload.promo_code,originalAmount,attendeeCount);
       // couponUsed must be set (not just promoCode) so getCouponStats and Max-Uses
       // tracking count pay-later promos, matching the inline card-paid branch above.
       if(pr.valid){discount=Number(pr.discount||0);promo=payload.promo_code;couponUsed=promo;}
