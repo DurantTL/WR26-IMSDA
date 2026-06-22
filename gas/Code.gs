@@ -62,7 +62,9 @@ function handleRegister(payload){try{
       if(!promo&&(amountPaid-originalAmount)<-0.01)reconNote='[reconcile '+new Date().toISOString()+'] Charged $'+amountPaid+' is below expected base $'+originalAmount+' (no coupon recorded) — review.';
     }else if(payload.promo_code){
       var pr=validateAndApplyPromoCode(payload.promo_code,originalAmount);
-      if(pr.valid){discount=Number(pr.discount||0);promo=payload.promo_code;}
+      // couponUsed must be set (not just promoCode) so getCouponStats and Max-Uses
+      // tracking count pay-later promos, matching the inline card-paid branch above.
+      if(pr.valid){discount=Number(pr.discount||0);promo=payload.promo_code;couponUsed=promo;}
     }
     var paymentMethod=normalizePaymentMethod(payload.payment_method||'');
     var paymentStatus;if(payload.payment_status==='paid'||payload.payment_status==='pending_offline'){paymentStatus=payload.payment_status;}else{paymentStatus='pending_pay_later';if(paymentMethod==='check')paymentStatus='pending_check';else if(paymentMethod==='square')paymentStatus='pending_square';else if(paymentMethod!=='pay_later')paymentStatus='pending_other';}
