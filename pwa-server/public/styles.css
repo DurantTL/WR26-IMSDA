@@ -67,3 +67,10 @@
 .staff-roles legend{font-weight:800;color:var(--text);padding:0 6px;font-size:.9rem;}
 .staff-roles .role-check{display:inline-flex;align-items:center;gap:6px;margin:4px 12px 4px 0;font-weight:600;}
 .staff-roles .role-check input{width:auto;margin:0;}
+
+/* Full-screen loading overlay shown while the dashboard syncs after sign-in */
+.loading-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(237,243,250,.92);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:400;}
+.loading-overlay[hidden]{display:none;}
+.loading-card{max-width:320px;text-align:center;background:var(--surface-elevated);border:1px solid rgba(255,255,255,.58);border-radius:var(--radius-lg);padding:26px 22px;box-shadow:var(--shadow-md),var(--surface-glow);}
+.loading-spinner{width:42px;height:42px;margin:0 auto 16px;border-radius:50%;border:4px solid rgba(44,111,182,.2);border-top-color:var(--primary);animation:portal-spin .8s linear infinite;}
+.loading-card p{margin:0;color:var(--primary-dark);font-weight:700;line-height:1.45;}
