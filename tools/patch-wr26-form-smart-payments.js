@@ -484,11 +484,11 @@ function gateLegacyBehindRoster(fields) {
 // LABELS only — values are never touched, so GAS/parser matching is unaffected.
 const SEMINAR_SPEAKERS = {
   'Color Me Golden: Embracing Life in Every Season': 'Panel Discussion',
-  'Refined by Fire, Revealed in Beauty': 'Presenter TBD',
+  'Refined by Fire, Revealed in Beauty': 'Rita Tasche',
   'Repainted by Grace': 'Valerie Haveman',
   'Color Me Open': 'Mary Kendall',
   'Nourished by Color': 'Stephanie Richards',
-  'Color Me Prayerful: Discovering the Beautiful Ways We Talk With God': 'Shannon Pigsley',
+  'Color Me Prayerful: Discovering the Beautiful Ways We Talk With God': 'Shannon Pigsley & Penny Gallant',
   'Shades of Peace': 'Melissa Morris',
   'Coloring Through the Chaos: Raising Children with Grace and Truth': 'Panel Discussion',
   'Broken Crayons Still Color': '',
