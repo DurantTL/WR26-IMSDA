@@ -61,11 +61,18 @@ function handleRegister(payload){try{
       // neither a charge-time coupon nor a form promo code on record.
       if(!promo&&(amountPaid-originalAmount)<-0.01)reconNote='[reconcile '+new Date().toISOString()+'] Charged $'+amountPaid+' is below expected base $'+originalAmount+' (no coupon recorded) — review.';
     }else if(payload.promo_code){
+      // Always record the code the registrant entered in the Promo Code column,
+      // valid or not, so it is visible in the sheet. The discount and couponUsed are
+      // set only when it actually applies — couponUsed is the "consumed a slot" signal
+      // that drives Max-Uses / coupon stats, so a rejected code must not set it.
+      promo=String(payload.promo_code);
       // Pass attendeeCount so a FIXED code applies per-lady (discount x N, N slots).
       var pr=validateAndApplyPromoCode(payload.promo_code,originalAmount,attendeeCount);
-      // couponUsed must be set (not just promoCode) so getCouponStats and Max-Uses
-      // tracking count pay-later promos, matching the inline card-paid branch above.
-      if(pr.valid){discount=Number(pr.discount||0);promo=payload.promo_code;couponUsed=promo;}
+      if(pr.valid){discount=Number(pr.discount||0);couponUsed=promo;}
+      // A rejected code applies no discount: the registrant is billed full price.
+      // Leave a trail in Admin Notes so staff can see the code, why it didn't apply,
+      // and fix the discount manually.
+      else{reconNote='[promo '+new Date().toISOString()+'] Code "'+promo+'" entered but NOT applied: '+(pr.message||'rejected')+'. Billed full $'+originalAmount+' — review.';}
     }
     var paymentMethod=normalizePaymentMethod(payload.payment_method||'');
     var paymentStatus;if(payload.payment_status==='paid'||payload.payment_status==='pending_offline'){paymentStatus=payload.payment_status;}else{paymentStatus='pending_pay_later';if(paymentMethod==='check')paymentStatus='pending_check';else if(paymentMethod==='square')paymentStatus='pending_square';else if(paymentMethod!=='pay_later')paymentStatus='pending_other';}
