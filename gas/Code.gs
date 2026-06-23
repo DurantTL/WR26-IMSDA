@@ -66,6 +66,10 @@ function handleRegister(payload){try{
       // couponUsed must be set (not just promoCode) so getCouponStats and Max-Uses
       // tracking count pay-later promos, matching the inline card-paid branch above.
       if(pr.valid){discount=Number(pr.discount||0);promo=payload.promo_code;couponUsed=promo;}
+      // A rejected code would otherwise vanish: the registrant is billed full price
+      // with no signal to anyone. Leave a trail in Admin Notes so staff can see a
+      // code was entered, why it didn't apply, and fix the discount manually.
+      else{reconNote='[promo '+new Date().toISOString()+'] Code "'+String(payload.promo_code)+'" entered but NOT applied: '+(pr.message||'rejected')+'. Billed full $'+originalAmount+' — review.';}
     }
     var paymentMethod=normalizePaymentMethod(payload.payment_method||'');
     var paymentStatus;if(payload.payment_status==='paid'||payload.payment_status==='pending_offline'){paymentStatus=payload.payment_status;}else{paymentStatus='pending_pay_later';if(paymentMethod==='check')paymentStatus='pending_check';else if(paymentMethod==='square')paymentStatus='pending_square';else if(paymentMethod!=='pay_later')paymentStatus='pending_other';}

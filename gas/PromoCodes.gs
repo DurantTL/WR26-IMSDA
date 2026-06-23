@@ -3,10 +3,18 @@ function normalizeDiscountType(discountType){var t=String(discountType||'').toLo
 // Strips everything but digits, a decimal point, and a leading minus so a stray
 // currency/grouping character never yields NaN. Blank/garbage reads as 0.
 function promoNumber_(raw){var n=parseFloat(String(raw==null?'':raw).replace(/[^0-9.\-]/g,''));return isNaN(n)?0:n;}
+// Robust truthiness for the PromoCodes "Active" cell. A checkbox reads as a real
+// boolean, but a hand-typed cell may say TRUE / Yes / Y / 1 / Active / x — all of
+// which a staffer reasonably means as "on". Only an explicit negative
+// (FALSE/No/N/0/Inactive/Disabled/Off) or a blank cell counts as inactive. This
+// mirrors the defensive parsing already used for Discount Type ("Price") and the
+// numeric cells, and closes the same silent-failure trap: a code that looks active
+// in the sheet but never applies because the cell isn't the literal word TRUE.
+function promoIsActive_(raw){if(raw===true)return true;if(raw===false)return false;var t=String(raw==null?'':raw).trim().toLowerCase();if(t==='')return false;if(t==='false'||t==='no'||t==='n'||t==='0'||t==='inactive'||t==='disabled'||t==='off')return false;return true;}
 // `units` (default 1) is the attendee count: a FIXED-amount code is a per-lady
 // scholarship that discounts perLady x N and consumes N Max-Uses slots; a PERCENT
 // code is one transaction on the whole party total and consumes exactly ONE use.
-function validateAndApplyPromoCode(code,originalAmount,units){var n=Math.max(parseInt(units,10)||1,1);var lock=LockService.getScriptLock();var acquired=false;try{acquired=lock.tryLock(8000);if(!acquired)return {valid:false,message:'Promo code is busy, please try again'};var s=getSS().getSheetByName('PromoCodes');var v=s.getDataRange().getValues();for(var i=1;i<v.length;i++){if(String(v[i][0]).toUpperCase()===String(code).toUpperCase()){var active=String(v[i][7]).toUpperCase()==='TRUE';if(!active)return {valid:false,message:'Inactive code'};if(v[i][6]){var exp=normalizeConfigDateEndOfDay(v[i][6]);if(exp&&exp<new Date())return {valid:false,message:'Expired'};}var max=promoNumber_(v[i][4]),cur=promoNumber_(v[i][5]),min=promoNumber_(v[i][8]);
+function validateAndApplyPromoCode(code,originalAmount,units){var n=Math.max(parseInt(units,10)||1,1);var lock=LockService.getScriptLock();var acquired=false;try{acquired=lock.tryLock(8000);if(!acquired)return {valid:false,message:'Promo code is busy, please try again'};var s=getSS().getSheetByName('PromoCodes');var v=s.getDataRange().getValues();for(var i=1;i<v.length;i++){if(String(v[i][0]).toUpperCase()===String(code).toUpperCase()){var active=promoIsActive_(v[i][7]);if(!active)return {valid:false,message:'Inactive code'};if(v[i][6]){var exp=normalizeConfigDateEndOfDay(v[i][6]);if(exp&&exp<new Date())return {valid:false,message:'Expired'};}var max=promoNumber_(v[i][4]),cur=promoNumber_(v[i][5]),min=promoNumber_(v[i][8]);
 // Resolve the discount TYPE first — consumption depends on it (a fixed code takes
 // one slot per lady), so this must precede the Max-Uses check.
 var dtype=normalizeDiscountType(v[i][2]);if(!dtype)return {valid:false,message:'Invalid discount type'};var consume=(dtype==='fixed')?n:1;

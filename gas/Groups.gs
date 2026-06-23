@@ -44,7 +44,8 @@ function handleGroupRegistration(payload){
       // validateAndApplyPromoCode owns that decision, so read pr.discount directly.
       // couponUsed is set (mirroring the main form) so the group promo shows in
       // getCouponStats and Max-Uses tracking.
-      if(payload.promo_code){var pr=validateAndApplyPromoCode(payload.promo_code,originalAmount,attendeeCount);if(pr.valid){discount=Number(pr.discount||0);promo=payload.promo_code;couponUsed=promo;}}
+      var promoReject='';
+      if(payload.promo_code){var pr=validateAndApplyPromoCode(payload.promo_code,originalAmount,attendeeCount);if(pr.valid){discount=Number(pr.discount||0);promo=payload.promo_code;couponUsed=promo;}else{promoReject=' | [promo] Code "'+String(payload.promo_code)+'" entered but NOT applied: '+(pr.message||'rejected')+'. Billed full $'+originalAmount+' — review.';}}
 
       var paymentMethod=normalizePaymentMethod(payload.payment_method||'pay_later');
       var paymentStatus='pending_pay_later';
@@ -66,7 +67,7 @@ function handleGroupRegistration(payload){
         squarePaymentId:'',ffEntryId:String(payload.entry_id||''),status:'active',
         transferNotes:'',checkedIn:false,checkInTime:'',checkInBy:'',
         qrToken:Utilities.getUuid(),editToken:Utilities.getUuid(),
-        adminNotes:'[group] coordinator: '+coordinatorName+'; '+attendeeCount+' attendee(s)',
+        adminNotes:'[group] coordinator: '+coordinatorName+'; '+attendeeCount+' attendee(s)'+promoReject,
         amountPaid:null,couponUsed:couponUsed
       };
       var w=writeRegistration(reg);if(!w.success)return w;
