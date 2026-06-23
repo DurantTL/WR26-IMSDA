@@ -77,6 +77,9 @@ function getCouponStats() {
   var breakdown = {};
 
   getAllRegistrations({}).forEach(function(r) {
+    // Promo Code now records codes that were entered but never applied, so count a
+    // code toward usage stats only when it actually produced a discount.
+    if (Number(r.discountAmount || 0) <= 0) return;
     var code = String(r.couponUsed || r.promoCode || '').toUpperCase();
     if (!code) return;
     if (!breakdown[code]) {

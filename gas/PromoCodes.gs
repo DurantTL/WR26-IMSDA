@@ -5,12 +5,13 @@ function normalizeDiscountType(discountType){var t=String(discountType||'').toLo
 function promoNumber_(raw){var n=parseFloat(String(raw==null?'':raw).replace(/[^0-9.\-]/g,''));return isNaN(n)?0:n;}
 // Robust truthiness for the PromoCodes "Active" cell. A checkbox reads as a real
 // boolean, but a hand-typed cell may say TRUE / Yes / Y / 1 / Active / x — all of
-// which a staffer reasonably means as "on". Only an explicit negative
-// (FALSE/No/N/0/Inactive/Disabled/Off) or a blank cell counts as inactive. This
-// mirrors the defensive parsing already used for Discount Type ("Price") and the
-// numeric cells, and closes the same silent-failure trap: a code that looks active
-// in the sheet but never applies because the cell isn't the literal word TRUE.
-function promoIsActive_(raw){if(raw===true)return true;if(raw===false)return false;var t=String(raw==null?'':raw).trim().toLowerCase();if(t==='')return false;if(t==='false'||t==='no'||t==='n'||t==='0'||t==='inactive'||t==='disabled'||t==='off')return false;return true;}
+// which a staffer reasonably means as "on". This closes the silent-failure trap
+// where a code that looks active never applies because the cell isn't the literal
+// word TRUE, mirroring the defensive parsing already used for Discount Type ("Price").
+// Active is enabled ONLY for a recognized affirmative; anything else — a blank cell,
+// an explicit negative, a typo ("fasle"), or a status note ("hold"/"delete") — stays
+// inactive, so an unrecognized value never accidentally re-enables a disabled code.
+function promoIsActive_(raw){if(raw===true)return true;if(raw===false)return false;var t=String(raw==null?'':raw).trim().toLowerCase();return t==='true'||t==='yes'||t==='y'||t==='1'||t==='active'||t==='enabled'||t==='on'||t==='x'||t==='✓'||t==='checked';}
 // `units` (default 1) is the attendee count: a FIXED-amount code is a per-lady
 // scholarship that discounts perLady x N and consumes N Max-Uses slots; a PERCENT
 // code is one transaction on the whole party total and consumes exactly ONE use.

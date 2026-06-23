@@ -249,6 +249,10 @@ function promoApplyDeltaForEdit_(reg,oldCount,newCount,newOriginal){
     var rescaled=Math.min(Math.round((storedDiscount/effOld*effNew)*100)/100,orig);
     var code=String((reg&&reg.promoCode)||'').trim();
     if(!code)return {ok:true,discount:rescaled};
+    // The Promo Code column records what the registrant entered even when the code
+    // never applied (discount 0 — e.g. it was rejected at signup). Such a code must
+    // NOT spring to life and start discounting when the roster is later edited.
+    if(storedDiscount<=0)return {ok:true,discount:0};
     var s=getSS().getSheetByName('PromoCodes');
     var v=s.getDataRange().getValues();
     for(var i=1;i<v.length;i++){

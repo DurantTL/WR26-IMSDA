@@ -45,7 +45,9 @@ function handleGroupRegistration(payload){
       // couponUsed is set (mirroring the main form) so the group promo shows in
       // getCouponStats and Max-Uses tracking.
       var promoReject='';
-      if(payload.promo_code){var pr=validateAndApplyPromoCode(payload.promo_code,originalAmount,attendeeCount);if(pr.valid){discount=Number(pr.discount||0);promo=payload.promo_code;couponUsed=promo;}else{promoReject=' | [promo] Code "'+String(payload.promo_code)+'" entered but NOT applied: '+(pr.message||'rejected')+'. Billed full $'+originalAmount+' — review.';}}
+      // Record the entered code in the Promo Code column whether or not it applies;
+      // couponUsed (and the discount) are set only on a valid apply.
+      if(payload.promo_code){promo=String(payload.promo_code);var pr=validateAndApplyPromoCode(payload.promo_code,originalAmount,attendeeCount);if(pr.valid){discount=Number(pr.discount||0);couponUsed=promo;}else{promoReject=' | [promo] Code "'+promo+'" entered but NOT applied: '+(pr.message||'rejected')+'. Billed full $'+originalAmount+' — review.';}}
 
       var paymentMethod=normalizePaymentMethod(payload.payment_method||'pay_later');
       var paymentStatus='pending_pay_later';
