@@ -15,6 +15,38 @@ function showToast(message) {
   showToast.timer = setTimeout(() => { toast.hidden = true; }, 3200);
 }
 
+let loadingTimers = [];
+
+function showLoading(message) {
+  const overlay = $('loading-overlay');
+  const msg = $('loading-message');
+  if (!overlay) return;
+  if (msg && message) msg.textContent = message;
+  overlay.hidden = false;
+}
+
+function hideLoading() {
+  loadingTimers.forEach(clearTimeout);
+  loadingTimers = [];
+  const overlay = $('loading-overlay');
+  if (overlay) overlay.hidden = true;
+}
+
+// Sign-in kicks off a full data sync from Google Sheets. When the server cache
+// is cold (e.g. right after a restart) and the group is large, that first sync
+// can take the better part of a minute, so reassure staff while they wait.
+async function bootstrapWithLoading() {
+  const msg = $('loading-message');
+  showLoading('Loading registrations…');
+  loadingTimers.push(setTimeout(() => { if (msg) msg.textContent = 'Still loading — larger groups take a little longer the first time…'; }, 6000));
+  loadingTimers.push(setTimeout(() => { if (msg) msg.textContent = 'Almost there — syncing every registration from Google Sheets. The first sign-in can take up to a minute.'; }, 18000));
+  try {
+    await bootstrap();
+  } finally {
+    hideLoading();
+  }
+}
+
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
@@ -152,7 +184,7 @@ async function restoreSession() {
       currentUser = payload.user;
       $('user-display').textContent = `Signed in as ${currentUser.username}`;
       hideAuth();
-      await bootstrap();
+      await bootstrapWithLoading();
     } catch (error) {
       showAuth(error.message === 'UNAUTHORIZED' ? 'Login link is invalid or expired.' : error.message);
     }
@@ -163,7 +195,7 @@ async function restoreSession() {
     currentUser = payload.user;
     $('user-display').textContent = `Signed in as ${currentUser.username}`;
     hideAuth();
-    await bootstrap();
+    await bootstrapWithLoading();
   } catch (_error) {
     showAuth();
   }
@@ -181,7 +213,7 @@ async function handleLogin(event) {
     $('login-password').value = '';
     $('user-display').textContent = `Signed in as ${currentUser.username}`;
     hideAuth();
-    await bootstrap();
+    await bootstrapWithLoading();
   } catch (error) {
     $('login-error').textContent = error.message === 'UNAUTHORIZED' ? 'Sign in failed.' : error.message;
     $('login-error').hidden = false;
