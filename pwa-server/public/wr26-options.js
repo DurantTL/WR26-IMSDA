@@ -62,7 +62,7 @@
       full: 'Every season of a woman\'s life holds unique beauty, but later chapters often bring transitions that feel like winding down. God views this stage not as a time of fading, but as a vibrant season of deep impact and fruitfulness. <strong>Come hear real stories of faith and uncover fresh avenues for kingdom purpose while exploring practical ways to transform your life experience into a lasting legacy.</strong>',
     },
     'Refined by Fire, Revealed in Beauty': {
-      presenter: 'Presenter TBD',
+      presenter: 'Rita Tasche',
       slot: 'Friday 4:00–5:00 PM',
       summary: 'We will learn how to walk through trials without losing our faith and how to find purpose in pain while developing a strength that comes only through surrender to God.',
       full: 'In this seminar we will learn how hard seasons shape strength, depth and resilience. <strong>We will learn how to walk through trials without losing our faith and how to find purpose in pain while developing a strength that comes only through surrender to God.</strong>',
@@ -86,7 +86,7 @@
       full: 'This seminar explores simple, evidence-based ways to improve overall health by focusing on colorful nutrition, regular movement, and healthy sun exposure. <strong>Participants will learn how "eating the rainbow" — incorporating a variety of brightly colored fruits and vegetables — supports immunity, heart health, gut health, and energy.</strong> The session will also highlight how daily activity and safe sunshine exposure work together with nutrition to promote long-term wellness and healthy aging.',
     },
     'Color Me Prayerful: Discovering the Beautiful Ways We Talk With God': {
-      presenter: 'Shannon Pigsley',
+      presenter: 'Shannon Pigsley & Penny Gallant',
       slot: 'Sabbath 2:00–3:15 PM',
       summary: 'We will explore why prayer matters so deeply in our relationship and discover the many beautiful ways we can communicate with our Heavenly Father.',
       full: 'Prayer is powerful—an intimate, ongoing conversation with a God who listens, loves, and responds. In this session, <strong>we will explore why prayer matters so deeply in our relationship and discover the many beautiful ways we can communicate with our Heavenly Father.</strong> From kneeling in quiet surrender, to praying in community, to whispering private heart-conversations throughout the day, we\'ll reflect on how the privilege of prayer draws us closer to God\'s heart. Participants will also have the opportunity to visit interactive prayer stations, each designed to help you experience different forms of prayer in meaningful, hands-on ways. This is a space to learn, to practice, and to rediscover the joy of talking with God in every shade of life.',

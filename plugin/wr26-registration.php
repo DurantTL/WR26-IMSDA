@@ -1193,7 +1193,7 @@ function wr26_seminar_catalog() {
             ),
             array(
                 'title' => 'Refined by Fire, Revealed in Beauty',
-                'speaker' => 'Presenter TBD',
+                'speaker' => 'Rita Tasche',
                 'description' => "Learn how hard seasons shape strength, depth, and resilience — how to walk through trials without losing our faith, and how to find purpose in pain while developing a strength that comes only through surrender to God.",
             ),
         )),
@@ -1215,7 +1215,7 @@ function wr26_seminar_catalog() {
             ),
             array(
                 'title' => 'Color Me Prayerful: Discovering the Beautiful Ways We Talk With God',
-                'speaker' => 'Shannon Pigsley',
+                'speaker' => 'Shannon Pigsley & Penny Gallant',
                 'description' => "Prayer is an intimate, ongoing conversation with a God who listens, loves, and responds. Discover the many beautiful ways we can talk with our Heavenly Father — from quiet surrender to praying in community — with interactive prayer stations that let you experience different forms of prayer hands-on.",
             ),
         )),
